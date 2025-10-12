@@ -101,18 +101,73 @@ const retryWithBackoff = async (fn, maxRetries = CONFIG.discord.maxRetries, base
 // ============================================
 // DISCORD WEBHOOK WITH RETRY
 // ============================================
-const sendToDiscord = async (message, metadata = {}) => {
+const sendToDiscord = async (logData, metadata = {}) => {
+  // Xác định màu sắc dựa trên level
+  const levelColors = {
+    'ERROR': 0xFF0000,   // Red
+    'WARNING': 0xFFA500, // Orange
+    'INFO': 0x0099FF     // Blue
+  };
+  
+  const color = levelColors[logData.level] || 0xFF0000;
+  
+  // Tạo emoji dựa trên level
+  const levelEmojis = {
+    'ERROR': '🚨',
+    'WARNING': '⚠️',
+    'INFO': 'ℹ️'
+  };
+  
+  const emoji = levelEmojis[logData.level] || '🚨';
+  
+  // Tạo fields cho embed
+  const fields = [
+    { name: '🆔 ID', value: logData.id || 'N/A', inline: true },
+    { name: '🕐 Timestamp', value: logData.timestamp || new Date().toISOString(), inline: true },
+    { name: '📊 Level', value: logData.level || 'ERROR', inline: true },
+    { name: '🔧 Service', value: logData.service || 'Unknown', inline: true }
+  ];
+  
+  // Thêm user nếu có
+  if (logData.user) {
+    fields.push({ name: '👤 User', value: logData.user, inline: true });
+  }
+  
+  // Thêm requestId nếu có
+  if (logData.requestId) {
+    fields.push({ name: '🔗 Request ID', value: logData.requestId, inline: true });
+  }
+  
+  // Thêm additionalData nếu có
+  if (logData.additionalData && Object.keys(logData.additionalData).length > 0) {
+    fields.push({ 
+      name: '📦 Additional Data', 
+      value: '```json\n' + JSON.stringify(logData.additionalData, null, 2).slice(0, 1000) + '\n```',
+      inline: false 
+    });
+  }
+  
+  // Tạo description với message và stackTrace
+  let description = logData.message || 'No message provided';
+  
+  if (logData.stackTrace) {
+    // Giới hạn độ dài stackTrace để không vượt quá giới hạn Discord
+    const truncatedStack = logData.stackTrace.length > 500 
+      ? logData.stackTrace.slice(0, 500) + '...\n[Truncated]'
+      : logData.stackTrace;
+    
+    description += '\n\n**Stack Trace:**\n```\n' + truncatedStack + '\n```';
+  }
+  
   const payload = {
     embeds: [{
-      title: '🚨 Error Log Alert',
-      description: message,
-      color: 0xFF0000, // Red
-      fields: [
-        { name: 'Timestamp', value: metadata.timestamp || new Date().toISOString(), inline: true },
-        { name: 'Service', value: metadata.service || 'Unknown', inline: true },
-        { name: 'Level', value: metadata.level || 'ERROR', inline: true }
-      ],
-      footer: { text: `Kafka Partition: ${metadata.partition || 'N/A'} | Offset: ${metadata.offset || 'N/A'}` },
+      title: `${emoji} ${logData.level || 'ERROR'} - ${logData.service || 'Unknown Service'}`,
+      description: description,
+      color: color,
+      fields: fields,
+      footer: { 
+        text: `Kafka Partition: ${metadata.partition || 'N/A'} | Offset: ${metadata.offset || 'N/A'}` 
+      },
       timestamp: new Date().toISOString()
     }]
   };
@@ -243,23 +298,30 @@ const processMessage = async ({ topic, partition, message }) => {
       }
     }
 
-    // Validate message structure
+    // Validate message structure theo cấu trúc mới
+    if (!logData.id) {
+      console.warn('⚠️  Warning: Message missing "id" field');
+    }
     if (!logData.message) {
       throw new Error('Invalid message format: missing "message" field');
     }
+    if (!logData.level) {
+      console.warn('⚠️  Warning: Message missing "level" field, defaulting to ERROR');
+      logData.level = 'ERROR';
+    }
+    if (!logData.service) {
+      console.warn('⚠️  Warning: Message missing "service" field');
+      logData.service = 'Unknown';
+    }
 
-    // Process message
-    const alertMessage = `${logData.message}`;
+    // Metadata cho tracking
     const discordMetadata = {
-      timestamp: logData.timestamp || new Date().toISOString(),
-      service: logData.service || 'Unknown',
-      level: logData.level || 'ERROR',
       partition,
       offset: message.offset
     };
 
     // Send to Discord with retry
-    await sendToDiscord(alertMessage, discordMetadata);
+    await sendToDiscord(logData, discordMetadata);
     
     metrics.processed++;
     if (attemptCount > 0) {

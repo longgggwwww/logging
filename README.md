@@ -134,15 +134,36 @@ Test producer sẽ gửi 5 messages:
 
 ## 🔍 Ví dụ Messages
 
-### Valid message:
+### Cấu trúc Message Mới (Chi tiết đầy đủ trong [MESSAGE_STRUCTURE.md](MESSAGE_STRUCTURE.md)):
+
 ```json
 {
-  "timestamp": "2025-10-09T16:00:00Z",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-10-05T12:34:56Z",
   "level": "ERROR",
+  "service": "api-service",
   "message": "Database connection failed",
-  "service": "api-service"
+  "stackTrace": "Error: Connection timeout\n  at Database.connect...",
+  "user": "user@example.com",
+  "requestId": "req-abc123",
+  "additionalData": {
+    "database": "postgres",
+    "host": "db.example.com",
+    "port": 5432
+  }
 }
 ```
+
+### Fields:
+- **id** (required): ID duy nhất (UUID)
+- **timestamp** (required): ISO 8601 format
+- **level** (required): `ERROR`, `WARNING`, hoặc `INFO`
+- **service** (required): Tên service
+- **message** (required): Mô tả lỗi
+- **stackTrace** (optional): Stack trace chi tiết
+- **user** (optional): User liên quan
+- **requestId** (optional): Request ID để tracing
+- **additionalData** (optional): Thông tin bổ sung dạng object
 
 ### Message trong DLQ:
 ```json

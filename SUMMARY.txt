@@ -6,7 +6,23 @@
 📦 TỔNG QUAN HỆ THỐNG
 ═══════════════════════════════════════════════════════════════════════════
 
-✅ Trả lời câu hỏi của bạn:
+✅ Cấu trúc Message Mới:
+   
+   {
+     "id": "unique-id",                    // UUID - Bắt buộc
+     "timestamp": "2023-10-05T12:34:56Z",  // ISO 8601 - Bắt buộc
+     "level": "ERROR",                      // ERROR/WARNING/INFO - Bắt buộc
+     "service": "tên-service",              // Tên service - Bắt buộc
+     "message": "Mô tả lỗi",                // Mô tả - Bắt buộc
+     "stackTrace": "stack trace...",        // Stack trace - Tùy chọn
+     "user": "user@example.com",            // User liên quan - Tùy chọn
+     "requestId": "req-abc123",             // Request ID - Tùy chọn
+     "additionalData": {}                   // Dữ liệu bổ sung - Tùy chọn
+   }
+
+   Chi tiết đầy đủ: MESSAGE_STRUCTURE.md
+
+✅ Tính năng:
    
    1. Dead Letter Queue (DLQ)         → ✅ ĐÃ CÓ
    2. Error Handling                  → ✅ ĐẦY ĐỦ
