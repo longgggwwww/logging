@@ -102,6 +102,28 @@ services:
       - kafka-controller-2
       - kafka-controller-3
 
+  # Log Processor Service (Prisma + PostgreSQL)
+  log-processor:
+    build:
+      context: ./log-processor
+      dockerfile: Dockerfile
+    container_name: log-processor
+    environment:
+      DATABASE_URL: "postgresql://kafka_user:kafka_password@postgres:5432/kafka_db?schema=public"
+      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
+      KAFKA_GROUP_ID: "log-processor-group"
+      KAFKA_CLIENT_ID: "log-processor"
+      KAFKA_TOPIC: "logs.error.dlq"
+      NODE_ENV: "production"
+    networks:
+      - kafka-network
+    depends_on:
+      - postgres
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+    restart: unless-stopped
+
 volumes:
   postgres_data:
 

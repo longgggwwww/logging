@@ -66,10 +66,19 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 
 ## 📚 Documentation
 
+### General Documentation
 - **[MESSAGE_STRUCTURE.md](./MESSAGE_STRUCTURE.md)** - Chi tiết cấu trúc message
 - **[NEW_STRUCTURE_GUIDE.md](./NEW_STRUCTURE_GUIDE.md)** - Hướng dẫn sử dụng
 - **[UPDATE_SUMMARY.md](./UPDATE_SUMMARY.md)** - Tổng hợp thay đổi
 - **[QUICK_START.md](./QUICK_START.md)** - Hướng dẫn quick start
+
+### 📊 Log Processor Service Documentation
+- **[LOG_PROCESSOR_IMPLEMENTATION.md](./LOG_PROCESSOR_IMPLEMENTATION.md)** - ✨ Complete implementation summary
+- **[LOG_PROCESSOR_SUMMARY.md](./LOG_PROCESSOR_SUMMARY.md)** - Technical summary
+- **[log-processor/README.md](./log-processor/README.md)** - Quick overview
+- **[log-processor/SETUP_GUIDE.md](./log-processor/SETUP_GUIDE.md)** - Detailed setup guide
+- **[log-processor/ARCHITECTURE_DIAGRAM.md](./log-processor/ARCHITECTURE_DIAGRAM.md)** - System architecture
+- **[log-processor/QUICK_REFERENCE.md](./log-processor/QUICK_REFERENCE.md)** - Quick reference card
 
 ### ✅ **Dead Letter Queue (DLQ)**
 - Messages thất bại sau khi retry tối đa sẽ được gửi vào `error-logs-dlq`
@@ -101,12 +110,33 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 - **Rich Discord embeds**: Format đẹp với metadata đầy đủ
 - **Configurable timeouts**: Có thể config timeout cho mọi thao tác
 
+## 🏗️ System Architecture
+
+### Services
+
+1. **Discord Webhook Service** - Gửi error logs đến Discord
+   - Xử lý messages từ `error-logs` topic
+   - Retry mechanism với exponential backoff
+   - DLQ cho messages thất bại
+
+2. **FCM Service** - Push notifications qua Firebase Cloud Messaging
+   - Consumer từ `error-logs` topic
+   - Gửi notifications đến mobile devices
+
+3. **Log Processor Service** 📊 **NEW**
+   - Consumer từ `logs.error.dlq` topic
+   - Lưu error logs vào PostgreSQL database
+   - Sử dụng Prisma ORM
+   - 3 tables: Projects, Functions, Logs
+   - Full-text search và analytics capabilities
+
 ## 📁 Cấu trúc Topics
 
 ```
 error-logs          → Main topic (messages mới)
 error-logs-retry    → Retry queue (messages đang retry)
 error-logs-dlq      → Dead Letter Queue (messages thất bại cuối cùng)
+logs.error.dlq      → Error logs for database storage (Log Processor)
 ```
 
 ## 🔧 Cấu hình
@@ -255,8 +285,68 @@ Test producer sẽ gửi 5 messages:
 |--------|-------|
 | `./create-topics.sh` | Tạo tất cả topics cần thiết |
 | `./monitor-dlq.sh` | Xem messages trong Dead Letter Queue |
+| `./setup-log-processor.sh` | Setup Log Processor service (install deps, generate Prisma) |
+| `./test-log-processor.sh` | Test Log Processor bằng cách gửi message mẫu |
 | `node test-producer.js` | Gửi test messages (bao gồm cả invalid) |
 | `node index.js` | Chạy consumer chính |
+
+## 🚀 Quick Start - Log Processor Service
+
+### Setup & Run
+
+```bash
+# 1. Setup service (install dependencies, generate Prisma client)
+./setup-log-processor.sh
+
+# 2. Start all services with Docker
+docker-compose up -d
+
+# 3. Check logs
+docker logs -f log-processor
+
+# 4. Send test message
+./test-log-processor.sh
+
+# 5. View data in Prisma Studio
+cd log-processor
+npm run prisma:studio
+# Access at: http://localhost:5555
+```
+
+### Local Development
+
+```bash
+cd log-processor
+
+# Install dependencies
+npm install
+
+# Generate Prisma Client
+npm run prisma:generate
+
+# Push schema to database
+npm run prisma:push
+
+# Start in development mode
+npm run dev
+
+# Open Prisma Studio to view data
+npm run prisma:studio
+```
+
+### Query Examples
+
+```javascript
+import { getRecentErrors, getLogsByProject } from './queries.js';
+
+// Get 50 most recent errors
+const errors = await getRecentErrors(50);
+
+// Get logs by project with pagination
+const logs = await getLogsByProject(projectId, page, limit);
+```
+
+📖 **Full Documentation**: [log-processor/SETUP_GUIDE.md](./log-processor/SETUP_GUIDE.md)
 
 ## 🎯 Best Practices
 

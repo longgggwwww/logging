@@ -1,0 +1,32 @@
+{
+  "name": "log-processor",
+  "version": "1.0.0",
+  "description": "Kafka consumer service to process error logs and store to PostgreSQL using Prisma",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:push": "prisma db push"
+  },
+  "keywords": [
+    "kafka",
+    "consumer",
+    "prisma",
+    "postgresql",
+    "logging"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "prisma": "^5.20.0"
+  }
+}

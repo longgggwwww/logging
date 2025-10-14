@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Project table - Quản lý các dự án
+model Project {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // Relations
+  functions Function[]
+  logs      Log[]
+
+  @@index([name])
+  @@map("projects")
+}
+
+// Function table - Quản lý các function/endpoint của project
+model Function {
+  id        String   @id @default(uuid())
+  name      String
+  projectId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  logs    Log[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([name])
+  @@map("functions")
+}
+
+// Log table - Lưu trữ log messages
+model Log {
+  id        String   @id @default(uuid())
+  projectId String
+  functionId String
+  
+  // Log information
+  method    String   // GET, POST, PATCH, PUT, DELETE
+  type      String   // DEBUG, SUCCESS, INFO, WARNING, ERROR
+  
+  // Request information
+  requestHeaders   Json?    @db.JsonB
+  requestUserAgent String?  @db.Text
+  requestUrl       String?  @db.Text
+  requestParams    Json?    @db.JsonB
+  requestBody      Json?    @db.JsonB
+  
+  // Response information
+  responseCode    Int?
+  responseSuccess Boolean?
+  responseMessage String?   @db.Text
+  responseData    Json?     @db.JsonB
+  
+  // Additional information
+  consoleLog      String?   @db.Text
+  additionalData  Json?     @db.JsonB
+  latency         Int?      // in milliseconds
+  
+  // User information
+  createdById       String?
+  createdByFullname String?
+  createdByEmplCode String?
+  
+  // Timestamps
+  createdAt DateTime
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  function Function @relation(fields: [functionId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([functionId])
+  @@index([type])
+  @@index([method])
+  @@index([createdAt])
+  @@index([projectId, functionId])
+  @@index([projectId, type])
+  @@index([projectId, createdAt])
+  @@index([functionId, type])
+  @@index([responseCode])
+  @@index([createdById])
+  @@map("logs")
+}
