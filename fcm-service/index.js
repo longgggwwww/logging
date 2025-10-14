@@ -21,7 +21,13 @@ const CONFIG = {
       // 'DEVICE_TOKEN_1',
       // 'DEVICE_TOKEN_2',
       // Thêm các device token ở đây
-    ]
+    ],
+    // Filter settings - chỉ gửi thông báo cho lỗi nghiêm trọng
+    filter: {
+      enabled: true,
+      minSeverityCode: 500, // Chỉ gửi khi response code >= 500
+      criticalTypes: ['ERROR'] // Chỉ gửi cho type ERROR
+    }
   },
   processing: {
     maxRetries: 3,
@@ -85,7 +91,8 @@ const metrics = {
   retriedSuccessfully: 0,
   sentToDLQ: 0,
   fcmErrors: 0,
-  fcmSuccess: 0
+  fcmSuccess: 0,
+  filtered: 0 // Messages filtered out (not severe enough)
 };
 
 const logMetrics = () => {
@@ -95,7 +102,8 @@ const logMetrics = () => {
   console.log(`   🔄 Retried Successfully: ${metrics.retriedSuccessfully}`);
   console.log(`   ⚰️  Sent to DLQ: ${metrics.sentToDLQ}`);
   console.log(`   📱 FCM Success: ${metrics.fcmSuccess}`);
-  console.log(`   📵 FCM Errors: ${metrics.fcmErrors}\n`);
+  console.log(`   📵 FCM Errors: ${metrics.fcmErrors}`);
+  console.log(`   🔕 Filtered (Not Severe): ${metrics.filtered}\n`);
 };
 
 // Log metrics every 30 seconds
@@ -123,41 +131,106 @@ const retryWithBackoff = async (fn, maxRetries = CONFIG.fcm.maxRetries, baseDela
 };
 
 // ============================================
+// SEVERITY FILTER
+// ============================================
+const shouldSendNotification = (logData) => {
+  // Nếu filter không được enable, gửi tất cả
+  if (!CONFIG.fcm.filter.enabled) {
+    return true;
+  }
+
+  // Chỉ gửi cho ERROR type
+  if (!CONFIG.fcm.filter.criticalTypes.includes(logData.type)) {
+    console.log(`🔕 Filtered: Type '${logData.type}' is not critical`);
+    return false;
+  }
+
+  // Kiểm tra response code
+  const responseCode = logData.response?.code;
+  if (!responseCode) {
+    console.log('⚠️  No response code found, sending notification anyway');
+    return true;
+  }
+
+  // Chỉ gửi khi response code >= minSeverityCode (500)
+  if (responseCode < CONFIG.fcm.filter.minSeverityCode) {
+    console.log(`🔕 Filtered: Response code ${responseCode} < ${CONFIG.fcm.filter.minSeverityCode} (not severe enough)`);
+    return false;
+  }
+
+  console.log(`✅ Severity check passed: ${logData.type} with code ${responseCode}`);
+  return true;
+};
+
+// ============================================
 // FCM NOTIFICATION WITH RETRY
 // ============================================
 const sendFCMNotification = async (logData, metadata = {}) => {
+  // Filter: Kiểm tra xem có nên gửi notification không
+  if (!shouldSendNotification(logData)) {
+    metrics.filtered++;
+    return false;
+  }
+
   // Kiểm tra có device tokens không
   if (!CONFIG.fcm.deviceTokens || CONFIG.fcm.deviceTokens.length === 0) {
     console.warn('⚠️  Warning: No FCM device tokens configured. Skipping FCM notification.');
     return false;
   }
 
-  // Xác định emoji và priority dựa trên level
-  const levelEmojis = {
+  // Xác định emoji và priority dựa trên type
+  const typeEmojis = {
     'ERROR': '🚨',
     'WARNING': '⚠️',
-    'INFO': 'ℹ️'
+    'INFO': 'ℹ️',
+    'SUCCESS': '✅',
+    'DEBUG': '🔍'
   };
   
-  const levelPriority = {
+  const typePriority = {
     'ERROR': 'high',
     'WARNING': 'high',
-    'INFO': 'normal'
+    'INFO': 'normal',
+    'SUCCESS': 'normal',
+    'DEBUG': 'normal'
   };
   
-  const emoji = levelEmojis[logData.level] || '🚨';
-  const priority = levelPriority[logData.level] || 'high';
+  const emoji = typeEmojis[logData.type] || '🚨';
+  const priority = typePriority[logData.type] || 'high';
   
-  // Tạo notification title
-  const title = `${emoji} ${logData.level || 'ERROR'} - ${logData.service || 'Unknown Service'}`;
+  // Tạo notification title theo cấu trúc mới
+  const title = `${emoji} ${logData.type || 'ERROR'} - ${logData.projectName || 'Unknown Project'}`;
   
-  // Tạo notification body
-  let body = logData.message || 'No message provided';
-  if (logData.user) {
-    body += `\n👤 User: ${logData.user}`;
+  // Tạo notification body với thông tin mới
+  let body = '';
+  
+  // Thêm function và method
+  if (logData.function) {
+    body += `⚡ ${logData.function}`;
   }
-  if (logData.requestId) {
-    body += `\n🔗 Request: ${logData.requestId}`;
+  if (logData.method) {
+    body += ` [${logData.method}]`;
+  }
+  
+  // Thêm response message
+  if (logData.response && logData.response.message) {
+    body += `\n💬 ${logData.response.message}`;
+  }
+  
+  // Thêm response code
+  if (logData.response && logData.response.code) {
+    const codeEmoji = logData.response.code >= 500 ? '🔴' : logData.response.code >= 400 ? '🟠' : '🟢';
+    body += `\n${codeEmoji} Code: ${logData.response.code}`;
+  }
+  
+  // Thêm user nếu có
+  if (logData.createdBy && logData.createdBy.fullname) {
+    body += `\n� ${logData.createdBy.fullname}`;
+  }
+  
+  // Thêm latency
+  if (logData.latency) {
+    body += `\n⏱️ ${logData.latency}ms`;
   }
   
   // Giới hạn độ dài body (FCM có giới hạn 4KB cho toàn bộ payload)
@@ -165,23 +238,30 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     body = body.slice(0, 197) + '...';
   }
   
-  // Tạo data payload với thông tin chi tiết
+  // Tạo data payload với thông tin chi tiết theo cấu trúc mới
   const dataPayload = {
-    id: logData.id || 'N/A',
-    timestamp: logData.timestamp || new Date().toISOString(),
-    level: logData.level || 'ERROR',
-    service: logData.service || 'Unknown',
-    message: logData.message || 'No message',
+    projectName: logData.projectName || 'N/A',
+    function: logData.function || 'N/A',
+    method: logData.method || 'N/A',
+    type: logData.type || 'ERROR',
+    createdAt: logData.createdAt || new Date().toISOString(),
+    latency: String(logData.latency || 0),
+    responseCode: String(logData.response?.code || 'N/A'),
+    responseMessage: logData.response?.message || 'No message',
     kafkaPartition: String(metadata.partition || 'N/A'),
     kafkaOffset: String(metadata.offset || 'N/A')
   };
   
   // Thêm các trường optional nếu có
-  if (logData.user) dataPayload.user = logData.user;
-  if (logData.requestId) dataPayload.requestId = logData.requestId;
-  if (logData.stackTrace) {
-    // Giới hạn stackTrace vì FCM có giới hạn kích thước
-    dataPayload.stackTrace = logData.stackTrace.slice(0, 500);
+  if (logData.createdBy) {
+    dataPayload.createdBy = JSON.stringify(logData.createdBy);
+  }
+  if (logData.request?.url) {
+    dataPayload.url = logData.request.url;
+  }
+  if (logData.consoleLog) {
+    // Giới hạn consoleLog vì FCM có giới hạn kích thước
+    dataPayload.consoleLog = logData.consoleLog.slice(0, 500);
   }
   if (logData.additionalData) {
     dataPayload.additionalData = JSON.stringify(logData.additionalData).slice(0, 500);
@@ -201,8 +281,9 @@ const sendFCMNotification = async (logData, metadata = {}) => {
         priority: priority,
         defaultSound: true,
         defaultVibrateTimings: true,
-        color: logData.level === 'ERROR' ? '#FF0000' : 
-               logData.level === 'WARNING' ? '#FFA500' : '#0099FF'
+        color: logData.type === 'ERROR' ? '#FF0000' : 
+               logData.type === 'WARNING' ? '#FFA500' : 
+               logData.type === 'SUCCESS' ? '#00FF00' : '#0099FF'
       }
     },
     apns: {
@@ -364,19 +445,23 @@ const processMessage = async ({ topic, partition, message }) => {
     }
 
     // Validate message structure theo cấu trúc mới
-    if (!logData.id) {
-      console.warn('⚠️  Warning: Message missing "id" field');
+    if (!logData.projectName) {
+      console.warn('⚠️  Warning: Message missing "projectName" field');
+      logData.projectName = 'Unknown';
     }
-    if (!logData.message) {
-      throw new Error('Invalid message format: missing "message" field');
+    if (!logData.function) {
+      console.warn('⚠️  Warning: Message missing "function" field');
     }
-    if (!logData.level) {
-      console.warn('⚠️  Warning: Message missing "level" field, defaulting to ERROR');
-      logData.level = 'ERROR';
+    if (!logData.type) {
+      console.warn('⚠️  Warning: Message missing "type" field, defaulting to ERROR');
+      logData.type = 'ERROR';
     }
-    if (!logData.service) {
-      console.warn('⚠️  Warning: Message missing "service" field');
-      logData.service = 'Unknown';
+    if (!logData.method) {
+      console.warn('⚠️  Warning: Message missing "method" field');
+    }
+    if (!logData.createdAt) {
+      console.warn('⚠️  Warning: Message missing "createdAt" field');
+      logData.createdAt = new Date().toISOString();
     }
 
     // Metadata cho tracking
