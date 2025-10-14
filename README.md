@@ -1,8 +1,75 @@
-# 🚀 Kafka Error Logs Consumer - Production Ready
+# 🚀 Kafka Error Logging System - Updated Structure
 
-Hệ thống consumer Kafka với đầy đủ cơ chế error handling, retry, và Dead Letter Queue cho môi trường production.
+Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase Cloud Messaging (FCM) với **cấu trúc message mới**.
 
-## ✨ Tính năng
+## 📋 Cấu Trúc Message Mới
+
+### Required Fields
+- `projectName`: Tên project/ứng dụng
+- `function`: Tên function/endpoint
+- `method`: HTTP Method (GET, POST, PATCH, PUT, DELETE)
+- `type`: Loại log (ERROR, WARNING, INFO, SUCCESS, DEBUG)
+- `createdAt`: Timestamp (ISO 8601)
+- `latency`: Thời gian xử lý (ms)
+
+### Optional Fields
+- `request`: Object chứa headers, userAgent, url, params, body
+- `response`: Object chứa code, success, message, data
+- `consoleLog`: Console log hoặc stack trace
+- `createdBy`: Object chứa id, fullname, emplCode (hoặc null nếu guest)
+- `additionalData`: Dữ liệu bổ sung dạng JSON
+
+### Example Message
+```json
+{
+  "projectName": "myapp",
+  "function": "login",
+  "method": "POST",
+  "type": "ERROR",
+  "request": {
+    "headers": {},
+    "userAgent": "Mozilla/5.0...",
+    "url": "/api/auth/login",
+    "params": {},
+    "body": { "email": "user@example.com" }
+  },
+  "response": {
+    "code": 500,
+    "success": false,
+    "message": "Database connection failed",
+    "data": []
+  },
+  "consoleLog": "Error: Connection timeout...",
+  "createdAt": "2023-10-05T12:34:56.789Z",
+  "createdBy": {
+    "id": "user123",
+    "fullname": "Nguyen Van A",
+    "emplCode": "EMP001"
+  },
+  "additionalData": {
+    "database": "postgres",
+    "timeout": 30000
+  },
+  "latency": 30250
+}
+```
+
+## 🎨 Types và Màu Sắc
+
+| Type | Emoji | Color | Khi Nào Sử Dụng |
+|------|-------|-------|------------------|
+| ERROR | 🚨 | Red (#FF0000) | Lỗi nghiêm trọng |
+| WARNING | ⚠️ | Orange (#FFA500) | Cảnh báo |
+| INFO | ℹ️ | Blue (#0099FF) | Thông tin tracking |
+| SUCCESS | ✅ | Green (#00FF00) | Thao tác thành công |
+| DEBUG | 🐛 | Gray (#808080) | Debug info |
+
+## 📚 Documentation
+
+- **[MESSAGE_STRUCTURE.md](./MESSAGE_STRUCTURE.md)** - Chi tiết cấu trúc message
+- **[NEW_STRUCTURE_GUIDE.md](./NEW_STRUCTURE_GUIDE.md)** - Hướng dẫn sử dụng
+- **[UPDATE_SUMMARY.md](./UPDATE_SUMMARY.md)** - Tổng hợp thay đổi
+- **[QUICK_START.md](./QUICK_START.md)** - Hướng dẫn quick start
 
 ### ✅ **Dead Letter Queue (DLQ)**
 - Messages thất bại sau khi retry tối đa sẽ được gửi vào `error-logs-dlq`

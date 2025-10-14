@@ -102,73 +102,104 @@ const retryWithBackoff = async (fn, maxRetries = CONFIG.discord.maxRetries, base
 // DISCORD WEBHOOK WITH RETRY
 // ============================================
 const sendToDiscord = async (logData, metadata = {}) => {
-  // Xác định màu sắc dựa trên level
-  const levelColors = {
-    'ERROR': 0xFF0000,   // Red
-    'WARNING': 0xFFA500, // Orange
-    'INFO': 0x0099FF     // Blue
+  // Xác định màu sắc dựa trên type
+  const typeColors = {
+    'ERROR': 0xFF0000,      // Red
+    'WARNING': 0xFFA500,    // Orange
+    'INFO': 0x0099FF,       // Blue
+    'SUCCESS': 0x00FF00,    // Green
+    'DEBUG': 0x808080       // Gray
   };
   
-  const color = levelColors[logData.level] || 0xFF0000;
+  const color = typeColors[logData.type] || 0xFF0000;
   
-  // Tạo emoji dựa trên level
-  const levelEmojis = {
+  // Tạo emoji dựa trên type
+  const typeEmojis = {
     'ERROR': '🚨',
     'WARNING': '⚠️',
-    'INFO': 'ℹ️'
+    'INFO': 'ℹ️',
+    'SUCCESS': '✅',
+    'DEBUG': '🔍'
   };
   
-  const emoji = levelEmojis[logData.level] || '🚨';
+  const emoji = typeEmojis[logData.type] || '🚨';
   
   // Tạo fields cho embed
   const fields = [
-    { name: '🆔 ID', value: logData.id || 'N/A', inline: true },
-    { name: '🕐 Timestamp', value: logData.timestamp || new Date().toISOString(), inline: true },
-    { name: '📊 Level', value: logData.level || 'ERROR', inline: true },
-    { name: '🔧 Service', value: logData.service || 'Unknown', inline: true }
+    { name: '📱 Project', value: logData.projectName || 'N/A', inline: true },
+    { name: '⚡ Function', value: logData.function || 'N/A', inline: true },
+    { name: '🔧 Method', value: logData.method || 'N/A', inline: true },
+    { name: '📊 Type', value: logData.type || 'ERROR', inline: true },
+    { name: '� Created At', value: logData.createdAt || new Date().toISOString(), inline: true },
+    { name: '⏱️ Latency', value: logData.latency ? `${logData.latency}ms` : 'N/A', inline: true }
   ];
   
-  // Thêm user nếu có
-  if (logData.user) {
-    fields.push({ name: '👤 User', value: logData.user, inline: true });
+  // Thêm thông tin user (createdBy) nếu có
+  if (logData.createdBy) {
+    const userInfo = logData.createdBy.fullname || logData.createdBy.id || 'N/A';
+    const emplCode = logData.createdBy.emplCode ? ` (${logData.createdBy.emplCode})` : '';
+    fields.push({ name: '👤 Created By', value: userInfo + emplCode, inline: true });
   }
   
-  // Thêm requestId nếu có
-  if (logData.requestId) {
-    fields.push({ name: '🔗 Request ID', value: logData.requestId, inline: true });
-  }
-  
-  // Thêm additionalData nếu có
-  if (logData.additionalData && Object.keys(logData.additionalData).length > 0) {
+  // Thêm response code nếu có
+  if (logData.response && logData.response.code) {
+    const statusEmoji = logData.response.success ? '✅' : '❌';
     fields.push({ 
-      name: '📦 Additional Data', 
-      value: '```json\n' + JSON.stringify(logData.additionalData, null, 2).slice(0, 1000) + '\n```',
+      name: '� Response Code', 
+      value: `${statusEmoji} ${logData.response.code}`,
+      inline: true 
+    });
+  }
+  
+  // Thêm request URL nếu có
+  if (logData.request && logData.request.url) {
+    fields.push({ 
+      name: '🌐 URL', 
+      value: logData.request.url,
       inline: false 
     });
   }
   
-  // Tạo description với message và stackTrace
-  let description = logData.message || 'No message provided';
+  // Tạo description với response message và consoleLog
+  let description = '';
   
-  if (logData.stackTrace) {
-    // Giới hạn độ dài stackTrace để không vượt quá giới hạn Discord
-    const truncatedStack = logData.stackTrace.length > 500 
-      ? logData.stackTrace.slice(0, 500) + '...\n[Truncated]'
-      : logData.stackTrace;
+  if (logData.response && logData.response.message) {
+    description += `**Message:** ${logData.response.message}\n`;
+  }
+  
+  if (logData.consoleLog) {
+    // Giới hạn độ dài consoleLog để không vượt quá giới hạn Discord
+    const truncatedLog = logData.consoleLog.length > 800 
+      ? logData.consoleLog.slice(0, 800) + '...\n[Truncated]'
+      : logData.consoleLog;
     
-    description += '\n\n**Stack Trace:**\n```\n' + truncatedStack + '\n```';
+    description += '\n**Console Log:**\n```\n' + truncatedLog + '\n```';
+  }
+  
+  // Thêm additionalData nếu có
+  if (logData.additionalData && Object.keys(logData.additionalData).length > 0) {
+    const additionalDataStr = JSON.stringify(logData.additionalData, null, 2);
+    const truncatedData = additionalDataStr.length > 400 
+      ? additionalDataStr.slice(0, 400) + '...\n[Truncated]'
+      : additionalDataStr;
+    
+    description += '\n**Additional Data:**\n```json\n' + truncatedData + '\n```';
+  }
+  
+  if (!description) {
+    description = 'No detailed information available';
   }
   
   const payload = {
     embeds: [{
-      title: `${emoji} ${logData.level || 'ERROR'} - ${logData.service || 'Unknown Service'}`,
+      title: `${emoji} ${logData.type || 'ERROR'} - ${logData.projectName || 'Unknown Project'} - ${logData.function || 'Unknown Function'}`,
       description: description,
       color: color,
       fields: fields,
       footer: { 
         text: `Kafka Partition: ${metadata.partition || 'N/A'} | Offset: ${metadata.offset || 'N/A'}` 
       },
-      timestamp: new Date().toISOString()
+      timestamp: logData.createdAt || new Date().toISOString()
     }]
   };
 
@@ -299,19 +330,29 @@ const processMessage = async ({ topic, partition, message }) => {
     }
 
     // Validate message structure theo cấu trúc mới
-    if (!logData.id) {
-      console.warn('⚠️  Warning: Message missing "id" field');
+    if (!logData.projectName) {
+      console.warn('⚠️  Warning: Message missing "projectName" field');
+      logData.projectName = 'Unknown';
     }
-    if (!logData.message) {
-      throw new Error('Invalid message format: missing "message" field');
+    if (!logData.function) {
+      console.warn('⚠️  Warning: Message missing "function" field');
+      logData.function = 'Unknown';
     }
-    if (!logData.level) {
-      console.warn('⚠️  Warning: Message missing "level" field, defaulting to ERROR');
-      logData.level = 'ERROR';
+    if (!logData.method) {
+      console.warn('⚠️  Warning: Message missing "method" field');
+      logData.method = 'UNKNOWN';
     }
-    if (!logData.service) {
-      console.warn('⚠️  Warning: Message missing "service" field');
-      logData.service = 'Unknown';
+    if (!logData.type) {
+      console.warn('⚠️  Warning: Message missing "type" field, defaulting to ERROR');
+      logData.type = 'ERROR';
+    }
+    if (!logData.createdAt) {
+      console.warn('⚠️  Warning: Message missing "createdAt" field');
+      logData.createdAt = new Date().toISOString();
+    }
+    if (logData.latency === undefined) {
+      console.warn('⚠️  Warning: Message missing "latency" field');
+      logData.latency = 0;
     }
 
     // Metadata cho tracking
