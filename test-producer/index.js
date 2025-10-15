@@ -294,7 +294,7 @@ const sendTestMessages = async () => {
   for (let i = 0; i < testMessages.length; i++) {
     try {
       await producer.send({
-        topic: 'error-logs',
+        topic: 'all_users',
         messages: [
           { 
             value: JSON.stringify(testMessages[i]) 

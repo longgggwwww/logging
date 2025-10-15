@@ -16,7 +16,14 @@ const CONFIG = {
     maxRetries: 3,
     retryDelay: 1000, // 1 second
     timeout: 10000,
-    // Danh sách device tokens - cập nhật các token thực tế của bạn
+    // Danh sách FCM topics - gửi thông báo đến topics
+    topics: [
+      'all_users',        // Topic cho tất cả users
+      'error_alerts',     // Topic cho error alerts
+      // 'admin_alerts',  // Topic cho admin
+      // Thêm các topics khác ở đây
+    ],
+    // Danh sách device tokens (optional) - nếu muốn gửi trực tiếp đến device
     deviceTokens: [
       // 'DEVICE_TOKEN_1',
       // 'DEVICE_TOKEN_2',
@@ -34,7 +41,8 @@ const CONFIG = {
     retryDelay: 2000
   },
   topics: {
-    main: 'error-logs',
+    // main: 'error-logs',
+    main: 'all_users',
     deadLetter: 'error-logs-dlq',
     retry: 'error-logs-retry'
   }
@@ -172,9 +180,12 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     return false;
   }
 
-  // Kiểm tra có device tokens không
-  if (!CONFIG.fcm.deviceTokens || CONFIG.fcm.deviceTokens.length === 0) {
-    console.warn('⚠️  Warning: No FCM device tokens configured. Skipping FCM notification.');
+  // Kiểm tra có topics hoặc device tokens không
+  const hasTopics = CONFIG.fcm.topics && CONFIG.fcm.topics.length > 0;
+  const hasDeviceTokens = CONFIG.fcm.deviceTokens && CONFIG.fcm.deviceTokens.length > 0;
+
+  if (!hasTopics && !hasDeviceTokens) {
+    console.warn('⚠️  Warning: No FCM topics or device tokens configured. Skipping FCM notification.');
     return false;
   }
 
@@ -225,7 +236,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
   
   // Thêm user nếu có
   if (logData.createdBy && logData.createdBy.fullname) {
-    body += `\n� ${logData.createdBy.fullname}`;
+    body += `\n👤 ${logData.createdBy.fullname}`;
   }
   
   // Thêm latency
@@ -267,8 +278,8 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     dataPayload.additionalData = JSON.stringify(logData.additionalData).slice(0, 500);
   }
 
-  // Tạo FCM message
-  const message = {
+  // Tạo FCM message (base message không có token/topic)
+  const baseMessage = {
     notification: {
       title: title,
       body: body
@@ -296,37 +307,68 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     }
   };
 
-  // Gửi notification đến tất cả device tokens
   const results = {
     success: 0,
     failure: 0,
     errors: []
   };
 
-  for (const token of CONFIG.fcm.deviceTokens) {
-    try {
-      await retryWithBackoff(async () => {
-        const response = await admin.messaging().send({
-          ...message,
-          token: token
+  // Gửi notification đến các FCM topics (ưu tiên)
+  if (hasTopics) {
+    console.log(`📡 Sending to ${CONFIG.fcm.topics.length} FCM topic(s)...`);
+    
+    for (const topic of CONFIG.fcm.topics) {
+      try {
+        await retryWithBackoff(async () => {
+          const response = await admin.messaging().send({
+            ...baseMessage,
+            topic: topic
+          });
+          return response;
         });
-        return response;
-      });
-      
-      results.success++;
-      console.log(`✅ FCM notification sent successfully to token: ${token.slice(0, 20)}...`);
-    } catch (error) {
-      results.failure++;
-      results.errors.push({
-        token: token.slice(0, 20) + '...',
-        error: error.message
-      });
-      console.error(`❌ Failed to send FCM to token ${token.slice(0, 20)}...:`, error.message);
+        
+        results.success++;
+        console.log(`✅ FCM notification sent successfully to topic: ${topic}`);
+      } catch (error) {
+        results.failure++;
+        results.errors.push({
+          target: `topic:${topic}`,
+          error: error.message
+        });
+        console.error(`❌ Failed to send FCM to topic ${topic}:`, error.message);
+      }
+    }
+  }
+
+  // Gửi notification đến device tokens (nếu có cấu hình)
+  if (hasDeviceTokens) {
+    console.log(`📱 Sending to ${CONFIG.fcm.deviceTokens.length} device token(s)...`);
+    
+    for (const token of CONFIG.fcm.deviceTokens) {
+      try {
+        await retryWithBackoff(async () => {
+          const response = await admin.messaging().send({
+            ...baseMessage,
+            token: token
+          });
+          return response;
+        });
+        
+        results.success++;
+        console.log(`✅ FCM notification sent successfully to token: ${token.slice(0, 20)}...`);
+      } catch (error) {
+        results.failure++;
+        results.errors.push({
+          target: `token:${token.slice(0, 20)}...`,
+          error: error.message
+        });
+        console.error(`❌ Failed to send FCM to token ${token.slice(0, 20)}...:`, error.message);
+      }
     }
   }
 
   // Log kết quả
-  console.log(`📱 FCM Results: ${results.success} success, ${results.failure} failed`);
+  console.log(`� FCM Results: ${results.success} success, ${results.failure} failed`);
   
   if (results.success > 0) {
     metrics.fcmSuccess += results.success;
