@@ -7,8 +7,8 @@ API service for querying logs with Redis caching.
 ### 1. GET /v1/logs - List logs with filters and pagination
 
 Query parameters:
-- `projectId` (optional): Filter by project ID
-- `functionId` (optional): Filter by function ID
+- `projectIds` (optional): Filter by project IDs (comma-separated, max 10 IDs)
+- `functionIds` (optional): Filter by function IDs (comma-separated, max 10 IDs)
 - `method` (optional): Filter by HTTP method (GET, POST, PUT, PATCH, DELETE)
 - `level` (optional): Filter by log level/type (DEBUG, SUCCESS, INFO, WARNING, ERROR)
 - `timeRange` (optional): Predefined time range (15m, 30m, 1h, 3h, 6h, 12h, 24h, 7d, 30d)
@@ -22,8 +22,11 @@ Example:
 # Get all ERROR logs from last 24 hours
 curl "http://localhost:3000/v1/logs?level=ERROR&timeRange=24h"
 
-# Get logs for specific project and function
-curl "http://localhost:3000/v1/logs?projectId=xxx&functionId=yyy&take=100"
+# Get logs for specific projects and functions (multiple IDs)
+curl "http://localhost:3000/v1/logs?projectIds=xxx,yyy&functionIds=aaa,bbb&take=100"
+
+# Get logs for single project
+curl "http://localhost:3000/v1/logs?projectIds=xxx&take=100"
 
 # Pagination - get next page
 curl "http://localhost:3000/v1/logs?cursorId=xxx&take=50"
@@ -75,8 +78,8 @@ Response:
     "count": 50
   },
   "filters": {
-    "projectId": null,
-    "functionId": null,
+    "projectIds": ["uuid1", "uuid2"],
+    "functionIds": ["uuid3"],
     "method": null,
     "level": "ERROR",
     "timeRange": "24h",
