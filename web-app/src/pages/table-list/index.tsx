@@ -10,7 +10,6 @@ import {
     ProTable,
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import type { CascaderProps } from 'antd';
 import { Badge, Cascader, DatePicker, Drawer, Tag } from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useRef, useState } from 'react';
@@ -33,6 +32,7 @@ const TableList: React.FC = () => {
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [currentRow, setCurrentRow] = useState<LOG.Log>();
   const [cascaderOptions, setCascaderOptions] = useState<CascaderOption[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState<any[]>([]);
 
   /**
    * @en-US International configuration
@@ -114,15 +114,15 @@ const TableList: React.FC = () => {
       dataIndex: 'filter',
       hideInTable: true,
       renderFormItem: () => {
-        const onChange: CascaderProps<CascaderOption, 'value', true>['onChange'] = (value) => {
-          console.log('Cascader value changed:', value);
-        };
-        
         return (
           <Cascader
             style={{ width: '100%' }}
             options={cascaderOptions}
-            onChange={onChange}
+            value={selectedFilters}
+            onChange={(selectedValues) => {
+              console.log('✏️ Cascader onChange:', selectedValues);
+              setSelectedFilters(selectedValues);
+            }}
             multiple
             maxTagCount="responsive"
             showCheckedStrategy={SHOW_CHILD}
@@ -283,22 +283,53 @@ const TableList: React.FC = () => {
         }}
         request={async (params: any) => {
           console.log('📊 Filter params received:', params);
+          console.log('🎯 Selected filters from state:', selectedFilters);
           
-          // Parse filter to extract projectIds and functionIds
-          const filter = params.filter;
+          // Use selectedFilters state instead of params.filter
+          const filter = selectedFilters;
           let projectIds: string[] = [];
           let functionIds: string[] = [];
 
-          if (filter && Array.isArray(filter)) {
-            filter.forEach((item: string) => {
-              if (item.startsWith('project-')) {
-                const projectId = item.replace('project-', '');
-                projectIds.push(projectId);
-              } else if (item.startsWith('function-')) {
-                const functionId = item.replace('function-', '');
-                functionIds.push(functionId);
+          if (filter && Array.isArray(filter) && filter.length > 0) {
+            console.log('🔍 Filter array:', filter);
+            
+            // Cascader with multiple returns array of arrays like [["project-1"], ["project-2", "function-2"]]
+            filter.forEach((path: any) => {
+              if (Array.isArray(path)) {
+                // Each path is an array like ["project-1"] or ["project-1", "function-1"]
+                path.forEach((item: string) => {
+                  if (typeof item === 'string') {
+                    if (item.startsWith('project-')) {
+                      const projectId = item.replace('project-', '');
+                      if (!projectIds.includes(projectId)) {
+                        projectIds.push(projectId);
+                      }
+                    } else if (item.startsWith('function-')) {
+                      const functionId = item.replace('function-', '');
+                      if (!functionIds.includes(functionId)) {
+                        functionIds.push(functionId);
+                      }
+                    }
+                  }
+                });
+              } else if (typeof path === 'string') {
+                // Fallback for single values
+                if (path.startsWith('project-')) {
+                  const projectId = path.replace('project-', '');
+                  if (!projectIds.includes(projectId)) {
+                    projectIds.push(projectId);
+                  }
+                } else if (path.startsWith('function-')) {
+                  const functionId = path.replace('function-', '');
+                  if (!functionIds.includes(functionId)) {
+                    functionIds.push(functionId);
+                  }
+                }
               }
             });
+            
+            console.log('📋 Parsed projectIds:', projectIds);
+            console.log('📋 Parsed functionIds:', functionIds);
           }
 
           // Build request parameters
