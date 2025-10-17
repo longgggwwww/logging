@@ -60,14 +60,24 @@ declare namespace LOG {
     timeRange?: string;
     startTime?: string;
     endTime?: string;
-    cursorId?: string;
+    paginationType?: 'cursor' | 'offset';
+    page?: number;
     take?: number;
   };
 
   type LogListResponse = {
     data: Log[];
     pagination: {
-      nextCursor: string | null;
+      type: 'cursor' | 'offset';
+      // Cursor pagination fields
+      nextCursor?: string | null;
+      // Offset pagination fields
+      page?: number;
+      pageSize?: number;
+      total?: number;
+      totalPages?: number;
+      hasPrevious?: boolean;
+      // Common fields
       hasMore: boolean;
       count: number;
     };

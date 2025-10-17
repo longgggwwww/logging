@@ -1,19 +1,19 @@
+import { getLogs, getProjects } from '@/services/log';
 import type {
-  ActionType,
-  ProColumns,
-  ProDescriptionsItemProps,
+    ActionType,
+    ProColumns,
+    ProDescriptionsItemProps,
 } from '@ant-design/pro-components';
 import {
-  PageContainer,
-  ProDescriptions,
-  ProTable,
+    PageContainer,
+    ProDescriptions,
+    ProTable,
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Cascader, DatePicker, Drawer, Tag } from 'antd';
 import type { CascaderProps } from 'antd';
-import React, { useEffect, useRef, useState } from 'react';
-import { getLogs, getProjects } from '@/services/log';
+import { Badge, Cascader, DatePicker, Drawer, Tag } from 'antd';
 import dayjs from 'dayjs';
+import React, { useEffect, useRef, useState } from 'react';
 
 const { SHOW_CHILD } = Cascader;
 const { RangePicker } = DatePicker;
@@ -303,6 +303,8 @@ const TableList: React.FC = () => {
 
           // Build request parameters
           const requestParams: LOG.LogListParams = {
+            paginationType: 'offset',
+            page: params.current || 1,
             take: params.pageSize || 50,
           };
 
@@ -351,7 +353,7 @@ const TableList: React.FC = () => {
             return {
               data: response.data,
               success: true,
-              total: response.pagination.count,
+              total: response.pagination.total || 0,
             };
           } catch (error) {
             console.error('❌ Failed to fetch logs:', error);
