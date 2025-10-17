@@ -9,16 +9,27 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Drawer, Tag, TreeSelect } from 'antd';
+import { Badge, Cascader, Drawer, Tag } from 'antd';
+import type { CascaderProps } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { getLogs, getProjects } from '@/services/log';
+
+const { SHOW_CHILD } = Cascader;
+
+interface CascaderOption {
+  value: string | number;
+  label: string;
+  projectId?: string;
+  functionId?: string;
+  children?: CascaderOption[];
+}
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
 
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [currentRow, setCurrentRow] = useState<LOG.Log>();
-  const [treeData, setTreeData] = useState<any[]>([]);
+  const [cascaderOptions, setCascaderOptions] = useState<CascaderOption[]>([]);
 
   /**
    * @en-US International configuration
@@ -26,29 +37,27 @@ const TableList: React.FC = () => {
    * */
   const intl = useIntl();
 
-  // Load projects with functions for tree select
+  // Load projects with functions for cascader
   useEffect(() => {
     const loadProjectsAndFunctions = async () => {
       try {
         const response = await getProjects({ expand: 'functions' });
         const projects = response.data;
         
-        // Convert to tree structure
-        const tree = projects.map((project: LOG.Project) => ({
-          title: project.name,
+        // Convert to cascader structure
+        const options: CascaderOption[] = projects.map((project: LOG.Project) => ({
+          label: project.name,
           value: `project-${project.id}`,
-          key: `project-${project.id}`,
           projectId: project.id,
           children: project.functions?.map((func: LOG.Function) => ({
-            title: func.name,
+            label: func.name,
             value: `function-${func.id}`,
-            key: `function-${func.id}`,
             functionId: func.id,
             projectId: project.id,
           })) || [],
         }));
         
-        setTreeData(tree);
+        setCascaderOptions(options);
       } catch (error) {
         console.error('Failed to load projects:', error);
       }
@@ -87,19 +96,24 @@ const TableList: React.FC = () => {
       },
     },
     {
-      title: 'Project/Function Filter',
+      title: 'Project Filter',
       dataIndex: 'filter',
       hideInTable: true,
       renderFormItem: () => {
+        const onChange: CascaderProps<CascaderOption, 'value', true>['onChange'] = (value) => {
+          console.log('Cascader value changed:', value);
+        };
+        
         return (
-          <TreeSelect
-            treeData={treeData}
-            placeholder="Select project or function"
-            treeCheckable
-            showCheckedStrategy={TreeSelect.SHOW_ALL}
-            treeDefaultExpandAll
+          <Cascader
             style={{ width: '100%' }}
-            maxTagCount={3}
+            options={cascaderOptions}
+            onChange={onChange}
+            multiple
+            maxTagCount="responsive"
+            showCheckedStrategy={SHOW_CHILD}
+            placeholder="Select project or function"
+            changeOnSelect
           />
         );
       },
@@ -309,7 +323,7 @@ const TableList: React.FC = () => {
       >
         {currentRow?.requestUrl && (
           <ProDescriptions<LOG.Log>
-            column={2}
+            column={1}
             title={currentRow?.requestUrl}
             request={async () => ({
               data: currentRow || {},
