@@ -102,7 +102,7 @@ const retryWithBackoff = async (fn, maxRetries = CONFIG.discord.maxRetries, base
 // DISCORD WEBHOOK WITH RETRY
 // ============================================
 const sendToDiscord = async (logData, metadata = {}) => {
-  // Xác định màu sắc dựa trên type
+  // Define color based on type
   const typeColors = {
     'ERROR': 0xFF0000,      // Red
     'WARNING': 0xFFA500,    // Orange
@@ -113,7 +113,7 @@ const sendToDiscord = async (logData, metadata = {}) => {
   
   const color = typeColors[logData.type] || 0xFF0000;
   
-  // Tạo emoji dựa trên type
+  // Create emoji based on type
   const typeEmojis = {
     'ERROR': '🚨',
     'WARNING': '⚠️',
@@ -124,7 +124,7 @@ const sendToDiscord = async (logData, metadata = {}) => {
   
   const emoji = typeEmojis[logData.type] || '🚨';
   
-  // Tạo fields cho embed
+  // Create fields for embed
   const fields = [
     { name: '📱 Project', value: logData.projectName || 'N/A', inline: true },
     { name: '⚡ Function', value: logData.function || 'N/A', inline: true },
@@ -134,14 +134,14 @@ const sendToDiscord = async (logData, metadata = {}) => {
     { name: '⏱️ Latency', value: logData.latency ? `${logData.latency}ms` : 'N/A', inline: true }
   ];
   
-  // Thêm thông tin user (createdBy) nếu có
+  // Add user information (createdBy) if available
   if (logData.createdBy) {
     const userInfo = logData.createdBy.fullname || logData.createdBy.id || 'N/A';
     const emplCode = logData.createdBy.emplCode ? ` (${logData.createdBy.emplCode})` : '';
     fields.push({ name: '👤 Created By', value: userInfo + emplCode, inline: true });
   }
-  
-  // Thêm response code nếu có
+
+  // Add response code if available
   if (logData.response && logData.response.code) {
     const statusEmoji = logData.response.success ? '✅' : '❌';
     fields.push({ 
@@ -150,8 +150,8 @@ const sendToDiscord = async (logData, metadata = {}) => {
       inline: true 
     });
   }
-  
-  // Thêm request URL nếu có
+
+  // Add request URL if available
   if (logData.request && logData.request.url) {
     fields.push({ 
       name: '🌐 URL', 
@@ -159,8 +159,8 @@ const sendToDiscord = async (logData, metadata = {}) => {
       inline: false 
     });
   }
-  
-  // Tạo description với response message và consoleLog
+
+  // Create description with response message and consoleLog
   let description = '';
   
   if (logData.response && logData.response.message) {
@@ -168,7 +168,7 @@ const sendToDiscord = async (logData, metadata = {}) => {
   }
   
   if (logData.consoleLog) {
-    // Giới hạn độ dài consoleLog để không vượt quá giới hạn Discord
+    // Limit consoleLog length to avoid exceeding Discord limits
     const truncatedLog = logData.consoleLog.length > 800 
       ? logData.consoleLog.slice(0, 800) + '...\n[Truncated]'
       : logData.consoleLog;
@@ -176,7 +176,7 @@ const sendToDiscord = async (logData, metadata = {}) => {
     description += '\n**Console Log:**\n```\n' + truncatedLog + '\n```';
   }
   
-  // Thêm additionalData nếu có
+  // Include additionalData if present
   if (logData.additionalData && Object.keys(logData.additionalData).length > 0) {
     const additionalDataStr = JSON.stringify(logData.additionalData, null, 2);
     const truncatedData = additionalDataStr.length > 400 
