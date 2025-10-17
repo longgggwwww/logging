@@ -50,6 +50,31 @@ curl -s "${BASE_URL}/v1/stats?timeRange=24h" | jq '.'
 echo ""
 echo ""
 
+# Test 6.5: Test multiple project IDs
+echo -e "${YELLOW}Test 6.5: Get logs with multiple project IDs${NC}"
+# Get first 2 project IDs from projects list
+PROJECT_IDS=$(curl -s "${BASE_URL}/v1/projects" | jq -r '.data[0:2] | .[].id' | tr '\n' ',' | sed 's/,$//')
+if [ -n "$PROJECT_IDS" ]; then
+    echo -e "${GREEN}Testing with project IDs: $PROJECT_IDS${NC}"
+    curl -s "${BASE_URL}/v1/logs?projectIds=${PROJECT_IDS}&take=10" | jq '.pagination, .filters'
+else
+    echo -e "${YELLOW}No projects found to test${NC}"
+fi
+echo ""
+echo ""
+
+# Test 6.6: Test validation - more than 10 project IDs
+echo -e "${YELLOW}Test 6.6: Test validation (more than 10 project IDs - should fail)${NC}"
+curl -s "${BASE_URL}/v1/logs?projectIds=id1,id2,id3,id4,id5,id6,id7,id8,id9,id10,id11" | jq '.'
+echo ""
+echo ""
+
+# Test 6.7: Test validation - more than 10 function IDs
+echo -e "${YELLOW}Test 6.7: Test validation (more than 10 function IDs - should fail)${NC}"
+curl -s "${BASE_URL}/v1/logs?functionIds=id1,id2,id3,id4,id5,id6,id7,id8,id9,id10,id11" | jq '.'
+echo ""
+echo ""
+
 # Test 7: Get specific log by ID (will need a real ID)
 echo -e "${YELLOW}Test 7: Get first log ID and fetch by ID${NC}"
 LOG_ID=$(curl -s "${BASE_URL}/v1/logs?take=1" | jq -r '.data[0].id')
