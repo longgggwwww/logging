@@ -28,6 +28,7 @@ interface CascaderOption {
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
+  const formRef = useRef<any>(null);
 
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [currentRow, setCurrentRow] = useState<LOG.Log>();
@@ -66,6 +67,17 @@ const TableList: React.FC = () => {
     };
     
     loadProjectsAndFunctions();
+  }, []);
+
+  // Ensure dateRange is cleared when timeRange has initial value
+  useEffect(() => {
+    if (formRef.current) {
+      const formValues = formRef.current.getFieldsValue();
+      if (formValues.timeRange && formValues.dateRange) {
+        // If both have values, clear dateRange (prioritize timeRange with initialValue)
+        formRef.current.setFieldsValue({ dateRange: undefined });
+      }
+    }
   }, []);
 
   // Convert log type to badge status
@@ -246,10 +258,23 @@ const TableList: React.FC = () => {
       <ProTable<LOG.Log, LOG.LogListParams>
         headerTitle="Logs"
         actionRef={actionRef}
+        formRef={formRef}
         rowKey="id"
         search={{
           labelWidth: 120,
           defaultCollapsed: false,
+        }}
+        form={{
+          onValuesChange: (changedValues: any) => {
+            // When timeRange changes, clear dateRange
+            if (changedValues.timeRange !== undefined) {
+              formRef.current?.setFieldsValue({ dateRange: undefined });
+            }
+            // When dateRange changes, clear timeRange
+            if (changedValues.dateRange !== undefined) {
+              formRef.current?.setFieldsValue({ timeRange: undefined });
+            }
+          },
         }}
         pagination={{
           defaultPageSize: 10,
