@@ -102,7 +102,9 @@ app.get('/v1/logs', async (req, res) => {
       startTime,
       endTime,
       cursorId,
-      take = DEFAULT_TAKE
+      page = 1,
+      take = DEFAULT_TAKE,
+      paginationType = 'cursor' // 'cursor' or 'offset'
     } = req.query;
 
     // Parse and validate projectIds
@@ -129,8 +131,16 @@ app.get('/v1/logs', async (req, res) => {
       }
     }
 
+    // Validate pagination type
+    const validPaginationTypes = ['cursor', 'offset'];
+    const selectedPaginationType = validPaginationTypes.includes(paginationType) ? paginationType : 'cursor';
+
     // Validate and parse take
     const limit = Math.min(parseInt(take) || DEFAULT_TAKE, MAX_TAKE);
+
+    // Validate and parse page for offset pagination
+    const pageNumber = Math.max(parseInt(page) || 1, 1);
+    const skip = (pageNumber - 1) * limit;
 
     // Build cache key
     const cacheParams = { 
@@ -142,7 +152,9 @@ app.get('/v1/logs', async (req, res) => {
       startTime, 
       endTime, 
       cursorId, 
-      take: limit 
+      page: pageNumber,
+      take: limit,
+      paginationType: selectedPaginationType
     };
     const cacheKey = generateCacheKey('logs:list', cacheParams);
 
@@ -180,17 +192,9 @@ app.get('/v1/logs', async (req, res) => {
       where.createdAt = timeFilter;
     }
 
-    // Handle cursor-based pagination
-    if (cursorId) {
-      where.id = {
-        lt: cursorId // Get logs before this cursor
-      };
-    }
-
-    // Query logs
-    const logs = await prisma.log.findMany({
+    // Build query options
+    const queryOptions = {
       where,
-      take: limit + 1, // Get one extra to check if there are more
       orderBy: {
         createdAt: 'desc'
       },
@@ -208,32 +212,85 @@ app.get('/v1/logs', async (req, res) => {
           }
         }
       }
-    });
-
-    // Check if there are more results
-    const hasMore = logs.length > limit;
-    const results = hasMore ? logs.slice(0, -1) : logs;
-
-    // Get next cursor
-    const nextCursor = hasMore ? results[results.length - 1].id : null;
-
-    const response = {
-      data: results,
-      pagination: {
-        nextCursor,
-        hasMore,
-        count: results.length
-      },
-      filters: {
-        projectIds: projectIdArray.length > 0 ? projectIdArray : undefined,
-        functionIds: functionIdArray.length > 0 ? functionIdArray : undefined,
-        method,
-        level,
-        timeRange,
-        startTime,
-        endTime
-      }
     };
+
+    let response;
+
+    if (selectedPaginationType === 'offset') {
+      // Offset-based pagination
+      queryOptions.skip = skip;
+      queryOptions.take = limit;
+
+      // Get total count for offset pagination
+      const [logs, totalCount] = await Promise.all([
+        prisma.log.findMany(queryOptions),
+        prisma.log.count({ where })
+      ]);
+
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasMore = pageNumber < totalPages;
+
+      response = {
+        data: logs,
+        pagination: {
+          type: 'offset',
+          page: pageNumber,
+          pageSize: limit,
+          total: totalCount,
+          totalPages,
+          hasMore,
+          hasPrevious: pageNumber > 1,
+          count: logs.length
+        },
+        filters: {
+          projectIds: projectIdArray.length > 0 ? projectIdArray : undefined,
+          functionIds: functionIdArray.length > 0 ? functionIdArray : undefined,
+          method,
+          level,
+          timeRange,
+          startTime,
+          endTime
+        }
+      };
+    } else {
+      // Cursor-based pagination
+      // Handle cursor
+      if (cursorId) {
+        queryOptions.where.id = {
+          lt: cursorId // Get logs before this cursor
+        };
+      }
+
+      queryOptions.take = limit + 1; // Get one extra to check if there are more
+
+      const logs = await prisma.log.findMany(queryOptions);
+
+      // Check if there are more results
+      const hasMore = logs.length > limit;
+      const results = hasMore ? logs.slice(0, -1) : logs;
+
+      // Get next cursor
+      const nextCursor = hasMore ? results[results.length - 1].id : null;
+
+      response = {
+        data: results,
+        pagination: {
+          type: 'cursor',
+          nextCursor,
+          hasMore,
+          count: results.length
+        },
+        filters: {
+          projectIds: projectIdArray.length > 0 ? projectIdArray : undefined,
+          functionIds: functionIdArray.length > 0 ? functionIdArray : undefined,
+          method,
+          level,
+          timeRange,
+          startTime,
+          endTime
+        }
+      };
+    }
 
     // Cache the response
     await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(response));
