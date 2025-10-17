@@ -9,12 +9,14 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Cascader, Drawer, Tag } from 'antd';
+import { Badge, Cascader, DatePicker, Drawer, Tag } from 'antd';
 import type { CascaderProps } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { getLogs, getProjects } from '@/services/log';
+import dayjs from 'dayjs';
 
 const { SHOW_CHILD } = Cascader;
+const { RangePicker } = DatePicker;
 
 interface CascaderOption {
   value: string | number;
@@ -219,6 +221,17 @@ const TableList: React.FC = () => {
       initialValue: '24h',
     },
     {
+      title: 'Date Range',
+      dataIndex: 'dateRange',
+      hideInTable: true,
+      renderFormItem: () => (
+        <RangePicker
+          format="YYYY-MM-DD"
+          style={{ width: '100%' }}
+        />
+      ),
+    },
+    {
       title: 'Created At',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
@@ -236,6 +249,12 @@ const TableList: React.FC = () => {
         rowKey="id"
         search={{
           labelWidth: 120,
+          defaultCollapsed: false,
+        }}
+        pagination={{
+          defaultPageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
         }}
         request={async (params: any) => {
           console.log('📊 Filter params received:', params);
@@ -271,7 +290,16 @@ const TableList: React.FC = () => {
             requestParams.level = params.level;
           }
 
-          if (params.timeRange) {
+          // Handle custom date range or time range
+          if (params.dateRange && Array.isArray(params.dateRange) && params.dateRange.length === 2) {
+            const startDate = dayjs(params.dateRange[0]).startOf('day');
+            const endDate = dayjs(params.dateRange[1]).endOf('day');
+            
+            if (startDate.isValid() && endDate.isValid()) {
+              requestParams.startTime = startDate.toISOString();
+              requestParams.endTime = endDate.toISOString();
+            }
+          } else if (params.timeRange) {
             requestParams.timeRange = params.timeRange;
           } else {
             requestParams.timeRange = '24h'; // Default
@@ -313,7 +341,7 @@ const TableList: React.FC = () => {
       />
 
       <Drawer
-        width={800}
+        width={200}
         open={showDetail}
         onClose={() => {
           setCurrentRow(undefined);
