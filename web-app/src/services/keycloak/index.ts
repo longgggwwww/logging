@@ -41,8 +41,8 @@ export const initKeycloakWithSession = async (): Promise<boolean> => {
       // Restore token từ localStorage
       token: token || undefined,
       refreshToken: refreshToken || undefined,
-      // Enable silent check SSO
-      silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+      // Silent SSO disabled due to CSP issues
+      // silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
     });
 
     if (authenticated) {
