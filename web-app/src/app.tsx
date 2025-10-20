@@ -12,6 +12,13 @@ import {
   SelectLang,
 } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
+import { 
+  getKeycloak, 
+  formatUserForDashboard, 
+  loadKeycloakUserProfile,
+  getAccessToken,
+  initKeycloakWithSession 
+} from '@/services/keycloak';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 import '@ant-design/v5-patch-for-react-19';
@@ -31,19 +38,38 @@ export async function getInitialState(): Promise<{
 }> {
   const fetchUserInfo = async () => {
     try {
+      // Thử restore Keycloak session từ localStorage
+      const authenticated = await initKeycloakWithSession();
+      
+      if (authenticated) {
+        const keycloak = getKeycloak();
+        if (keycloak && keycloak.tokenParsed) {
+          // Lấy thông tin user từ Keycloak
+          const profile = await loadKeycloakUserProfile();
+          const currentUser = formatUserForDashboard(keycloak.tokenParsed, profile);
+          console.log('User from Keycloak (restored):', currentUser);
+          return currentUser;
+        }
+      }
+
+      // Nếu không có Keycloak, thử lấy từ API thông thường
       const msg = await queryCurrentUser({
         skipErrorHandler: true,
       });
       return msg.data;
     } catch (_error) {
-      history.push(loginPath);
+      // Nếu có lỗi và không phải trang login, redirect
+      if (history.location.pathname !== loginPath) {
+        history.push(loginPath);
+      }
     }
     return undefined;
   };
+  
   // 如果不是登录页面，执行
   const { location } = history;
   if (
-    ![loginPath, '/user/register', '/user/register-result'].includes(
+    ![loginPath, '/user/register', '/user/register-result', '/callback/keycloak'].includes(
       location.pathname,
     )
   ) {
@@ -150,4 +176,18 @@ export const layout: RunTimeLayoutConfig = ({
 export const request: RequestConfig = {
   baseURL: isDev ? '' : 'https://proapi.azurewebsites.net',
   ...errorConfig,
+  // Request interceptor - tự động thêm Keycloak token
+  requestInterceptors: [
+    (config: any) => {
+      // Lấy token từ Keycloak nếu có
+      const token = getAccessToken();
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+      }
+      return config;
+    },
+  ],
 };

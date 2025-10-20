@@ -24,6 +24,8 @@ export default {
   'pages.login.submit': 'Login',
   'pages.login.loginWith': 'Login with :',
   'pages.login.registerAccount': 'Register Account',
+  'pages.login.or': 'Or',
+  'pages.login.keycloak': 'Login with Keycloak',
   'pages.welcome.link': 'Welcome',
   'pages.welcome.alertMessage':
     'Faster and stronger heavy-duty components have been released.',

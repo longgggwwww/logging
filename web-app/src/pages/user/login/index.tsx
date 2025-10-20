@@ -5,6 +5,7 @@ import {
   TaobaoCircleOutlined,
   UserOutlined,
   WeiboCircleOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import {
   LoginForm,
@@ -19,13 +20,14 @@ import {
   useIntl,
   useModel,
 } from '@umijs/max';
-import { Alert, App, Tabs } from 'antd';
+import { Alert, App, Button, Divider, Tabs } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
 import { login } from '@/services/ant-design-pro/api';
 import { getFakeCaptcha } from '@/services/ant-design-pro/login';
+import { loginWithKeycloak } from '@/services/keycloak';
 import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
@@ -157,6 +159,16 @@ const Login: React.FC = () => {
       message.error(defaultLoginFailureMessage);
     }
   };
+
+  const handleKeycloakLogin = async () => {
+    try {
+      await loginWithKeycloak();
+    } catch (error) {
+      console.error('Keycloak login error:', error);
+      message.error('Đăng nhập Keycloak thất bại!');
+    }
+  };
+
   const { status, type: loginType } = userLoginState;
 
   return (
@@ -388,6 +400,37 @@ const Login: React.FC = () => {
             </a>
           </div>
         </LoginForm>
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginTop: 24,
+          width: '100%',
+        }}
+      >
+        <Divider plain style={{ minWidth: 280, maxWidth: '75vw' }}>
+          <FormattedMessage
+            id="pages.login.or"
+            defaultMessage="或"
+          />
+        </Divider>
+        <Button
+          type="primary"
+          size="large"
+          icon={<KeyOutlined />}
+          onClick={handleKeycloakLogin}
+          style={{
+            minWidth: 280,
+            maxWidth: '75vw',
+          }}
+        >
+          <FormattedMessage
+            id="pages.login.keycloak"
+            defaultMessage="使用 Keycloak 登录"
+          />
+        </Button>
       </div>
       <Footer />
     </div>

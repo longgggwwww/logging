@@ -23,6 +23,11 @@ export default [
     ],
   },
   {
+    path: '/callback/keycloak',
+    layout: false,
+    component: './user/callback/keycloak',
+  },
+  {
     path: '/welcome',
     name: 'welcome',
     icon: 'smile',
