@@ -162,12 +162,13 @@ export const logoutKeycloakLocal = () => {
   localStorage.removeItem('keycloak_refresh_token');
   localStorage.removeItem('keycloak_id_token');
   
-  // Clear Keycloak instance
+  // Clear Keycloak instance and token
   if (keycloakInstance) {
     keycloakInstance.clearToken();
   }
+  keycloakInstance = null;
   
-  console.log('Local session cleared. Keycloak SSO session still active.');
+  console.log('Local session and Keycloak instance cleared. Keycloak SSO session still active.');
 };
 
 /**
