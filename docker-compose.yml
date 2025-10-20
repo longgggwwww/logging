@@ -114,6 +114,53 @@ services:
       - kafka-controller-2
       - kafka-controller-3
 
+  # Kafka Topics Initialization
+  kafka-init:
+    image: apache/kafka:3.7.0
+    container_name: kafka-init
+    networks:
+      - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo '⏳ Waiting for Kafka brokers to be ready...'
+        sleep 20
+        
+        echo '🚀 Creating Kafka topics...'
+        
+        # Create topic error-logs (main topic)
+        echo '📝 Creating main topic: error-logs'
+        /opt/kafka/bin/kafka-topics.sh --create --topic error-logs --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        
+        # Create topic retry queue
+        echo '📝 Creating retry topic: error-logs-retry'
+        /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-retry --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        
+        # Create Dead Letter Queue
+        echo '📝 Creating dead letter queue: error-logs-dlq'
+        /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        
+        echo '✅ Topics creation completed!'
+        echo ''
+        echo '📋 Current topics list:'
+        /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server kafka-controller-1:9092
+        
+        echo ''
+        echo '📊 Topics details:'
+        /opt/kafka/bin/kafka-topics.sh --describe --topic error-logs --bootstrap-server kafka-controller-1:9092
+        
+        /opt/kafka/bin/kafka-topics.sh --describe --topic error-logs-retry --bootstrap-server kafka-controller-1:9092
+        
+        /opt/kafka/bin/kafka-topics.sh --describe --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092
+        
+        echo ''
+        echo '✅ Kafka topics initialization completed!'
+    restart: "no"
+
   # Log Processor Service (Prisma + PostgreSQL)
   log-processor:
     build:
@@ -134,6 +181,7 @@ services:
       - kafka-controller-1
       - kafka-controller-2
       - kafka-controller-3
+      - kafka-init
     restart: unless-stopped
 
   # API Service
