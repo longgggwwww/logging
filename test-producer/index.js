@@ -11,11 +11,11 @@ const sendTestMessages = async () => {
   await producer.connect();
   console.log('✅ Producer đã kết nối\n');
 
-  // Test messages với cấu trúc mới
+  // Test messages với đa dạng project và function
   const testMessages = [
-    // 1. ERROR - Login failed với đầy đủ thông tin
+    // 1. E-COMMERCE - Login failed
     {
-      projectName: 'myapp',
+      projectName: 'ecommerce-platform',
       function: 'login',
       method: 'POST',
       type: 'ERROR',
@@ -29,7 +29,7 @@ const sendTestMessages = async () => {
         url: '/api/auth/login',
         params: {},
         body: { 
-          email: 'test@example.com',
+          email: 'customer@shop.com',
           password: '[REDACTED]'
         }
       },
@@ -41,8 +41,7 @@ const sendTestMessages = async () => {
       },
       consoleLog: `Error: Connection timeout
     at Database.connect (/app/db/connection.js:45:12)
-    at AuthService.login (/app/services/auth.js:78:20)
-    at async Server.start (/app/server.js:23:5)`,
+    at AuthService.login (/app/services/auth.js:78:20)`,
       createdAt: new Date().toISOString(),
       createdBy: {
         id: 'user123',
@@ -51,53 +50,15 @@ const sendTestMessages = async () => {
       },
       additionalData: {
         database: 'postgres',
-        host: 'db.example.com',
-        port: 5432,
-        timeout: 30000,
-        retryAttempts: 3
+        host: 'db.shop.com',
+        port: 5432
       },
       latency: 30250
     },
 
-    // 2. WARNING - Too many registration attempts
+    // 2. E-COMMERCE - Create order success
     {
-      projectName: 'myapp',
-      function: 'register',
-      method: 'POST',
-      type: 'WARNING',
-      request: {
-        headers: {
-          'content-type': 'application/json'
-        },
-        userAgent: 'PostmanRuntime/7.32.0',
-        url: '/api/auth/register',
-        params: {},
-        body: { 
-          email: 'suspicious@example.com',
-          password: '[REDACTED]'
-        }
-      },
-      response: {
-        code: 429,
-        success: false,
-        message: 'Too many registration attempts',
-        data: []
-      },
-      consoleLog: 'Warning: Rate limit exceeded for IP 192.168.1.100',
-      createdAt: new Date().toISOString(),
-      createdBy: null, // Guest user
-      additionalData: {
-        ipAddress: '192.168.1.100',
-        attemptCount: 5,
-        timeWindow: '5 minutes',
-        blocked: true
-      },
-      latency: 125
-    },
-
-    // 3. SUCCESS - Order created successfully
-    {
-      projectName: 'myapp',
+      projectName: 'ecommerce-platform',
       function: 'createOrder',
       method: 'POST',
       type: 'SUCCESS',
@@ -111,25 +72,18 @@ const sendTestMessages = async () => {
         params: {},
         body: { 
           items: [
-            { id: 'ITEM-1', quantity: 2, price: 50.00 },
-            { id: 'ITEM-2', quantity: 1, price: 100.00 }
+            { id: 'ITEM-1', quantity: 2, price: 50.00 }
           ],
-          total: 200.00
+          total: 100.00
         }
       },
       response: {
         code: 201,
         success: true,
         message: 'Order created successfully',
-        data: [
-          { 
-            orderId: 'ORD-12345',
-            status: 'pending',
-            estimatedDelivery: '2023-10-10'
-          }
-        ]
+        data: [{ orderId: 'ORD-12345', status: 'pending' }]
       },
-      consoleLog: 'Success: Large order processed successfully. Order ID: ORD-12345',
+      consoleLog: 'Success: Order created. Order ID: ORD-12345',
       createdAt: new Date().toISOString(),
       createdBy: {
         id: 'vip123',
@@ -138,101 +92,14 @@ const sendTestMessages = async () => {
       },
       additionalData: {
         orderId: 'ORD-12345',
-        amount: 200.00,
-        itemCount: 3,
-        paymentMethod: 'credit_card',
-        shippingAddress: '123 Main St, City'
+        amount: 100.00
       },
       latency: 850
     },
 
-    // 4. INFO - User profile accessed
+    // 3. E-COMMERCE - Process payment error
     {
-      projectName: 'myapp',
-      function: 'getUserProfile',
-      method: 'GET',
-      type: 'INFO',
-      request: {
-        headers: {
-          'authorization': 'Bearer admin-token'
-        },
-        userAgent: 'Chrome/120.0.0.0',
-        url: '/api/users/123',
-        params: { id: '123' }
-      },
-      response: {
-        code: 200,
-        success: true,
-        message: 'User profile retrieved successfully',
-        data: [
-          { 
-            userId: '123', 
-            name: 'John Doe',
-            email: 'john@example.com'
-          }
-        ]
-      },
-      consoleLog: 'Info: User profile accessed by admin for audit purposes',
-      createdAt: new Date().toISOString(),
-      createdBy: {
-        id: 'admin456',
-        fullname: 'Le Van C',
-        emplCode: 'EMP003'
-      },
-      additionalData: {
-        accessedBy: 'admin',
-        purpose: 'audit',
-        targetUserId: '123'
-      },
-      latency: 45
-    },
-
-    // 5. DEBUG - Tax calculation
-    {
-      projectName: 'myapp',
-      function: 'calculateTax',
-      method: 'POST',
-      type: 'DEBUG',
-      request: {
-        headers: {},
-        userAgent: 'Internal/Debug',
-        url: '/api/internal/tax',
-        params: {},
-        body: { 
-          amount: 1000,
-          region: 'US-CA'
-        }
-      },
-      response: {
-        code: 200,
-        success: true,
-        message: 'Tax calculated',
-        data: [
-          { 
-            tax: 100,
-            total: 1100,
-            taxRate: 0.1
-          }
-        ]
-      },
-      consoleLog: 'Debug: Tax calculation completed. Steps: validate -> calculate -> round',
-      createdAt: new Date().toISOString(),
-      createdBy: {
-        id: 'dev456',
-        fullname: 'Developer User',
-        emplCode: 'DEV001'
-      },
-      additionalData: {
-        steps: ['validate', 'calculate', 'round'],
-        taxRate: 0.1,
-        region: 'US-CA'
-      },
-      latency: 15
-    },
-
-    // 6. ERROR - Payment gateway timeout
-    {
-      projectName: 'myapp',
+      projectName: 'ecommerce-platform',
       function: 'processPayment',
       method: 'POST',
       type: 'ERROR',
@@ -253,10 +120,7 @@ const sendTestMessages = async () => {
         message: 'Payment gateway timeout',
         data: []
       },
-      consoleLog: `Error: Timeout after 30000ms
-    at PaymentGateway.charge (/app/gateways/stripe.js:156:10)
-    at PaymentService.process (/app/services/payment.js:89:15)
-    at PaymentController.processPayment (/app/controllers/payment.js:34:20)`,
+      consoleLog: 'Error: Timeout after 30000ms at PaymentGateway.charge',
       createdAt: new Date().toISOString(),
       createdBy: {
         id: 'customer789',
@@ -266,15 +130,377 @@ const sendTestMessages = async () => {
       additionalData: {
         gateway: 'stripe',
         orderId: 'ORD-67890',
-        amount: 299.99,
-        timeoutDuration: 30000
+        amount: 299.99
       },
       latency: 30500
     },
 
-    // 7. Message thiếu required fields (để test error handling)
+    // 4. CRM - Get customer warning
     {
-      projectName: 'myapp',
+      projectName: 'crm-system',
+      function: 'getCustomerDetails',
+      method: 'GET',
+      type: 'WARNING',
+      request: {
+        headers: {
+          'authorization': 'Bearer crm-token'
+        },
+        userAgent: 'CRM-App/2.1.0',
+        url: '/api/customers/999',
+        params: { id: '999' }
+      },
+      response: {
+        code: 404,
+        success: false,
+        message: 'Customer not found',
+        data: []
+      },
+      consoleLog: 'Warning: Attempt to access non-existent customer ID: 999',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'sales123',
+        fullname: 'Le Thi C',
+        emplCode: 'SALES001'
+      },
+      additionalData: {
+        requestedId: '999',
+        attemptCount: 3
+      },
+      latency: 120
+    },
+
+    // 5. CRM - Update customer success
+    {
+      projectName: 'crm-system',
+      function: 'updateCustomer',
+      method: 'PUT',
+      type: 'SUCCESS',
+      request: {
+        headers: {
+          'content-type': 'application/json'
+        },
+        userAgent: 'CRM-App/2.1.0',
+        url: '/api/customers/555',
+        params: { id: '555' },
+        body: {
+          name: 'John Updated',
+          email: 'john.updated@example.com'
+        }
+      },
+      response: {
+        code: 200,
+        success: true,
+        message: 'Customer updated successfully',
+        data: [{ customerId: '555', updated: true }]
+      },
+      consoleLog: 'Success: Customer 555 updated',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'sales456',
+        fullname: 'Hoang Van D',
+        emplCode: 'SALES002'
+      },
+      additionalData: {
+        customerId: '555',
+        fieldsUpdated: ['name', 'email']
+      },
+      latency: 95
+    },
+
+    // 6. INVENTORY - Check stock info
+    {
+      projectName: 'inventory-management',
+      function: 'checkStock',
+      method: 'GET',
+      type: 'INFO',
+      request: {
+        headers: {},
+        userAgent: 'InventoryApp/1.5.0',
+        url: '/api/inventory/check',
+        params: { productId: 'PROD-123' }
+      },
+      response: {
+        code: 200,
+        success: true,
+        message: 'Stock level retrieved',
+        data: [{ productId: 'PROD-123', quantity: 150 }]
+      },
+      consoleLog: 'Info: Stock check for PROD-123. Current: 150 units',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'wh123',
+        fullname: 'Nguyen Van E',
+        emplCode: 'WH001'
+      },
+      additionalData: {
+        productId: 'PROD-123',
+        quantity: 150,
+        warehouse: 'WH-A'
+      },
+      latency: 45
+    },
+
+    // 7. INVENTORY - Low stock warning
+    {
+      projectName: 'inventory-management',
+      function: 'checkStock',
+      method: 'GET',
+      type: 'WARNING',
+      request: {
+        headers: {},
+        userAgent: 'InventoryApp/1.5.0',
+        url: '/api/inventory/check',
+        params: { productId: 'PROD-456' }
+      },
+      response: {
+        code: 200,
+        success: true,
+        message: 'Low stock alert',
+        data: [{ productId: 'PROD-456', quantity: 5 }]
+      },
+      consoleLog: 'Warning: Low stock for PROD-456. Only 5 units remaining',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'wh456',
+        fullname: 'Tran Van F',
+        emplCode: 'WH002'
+      },
+      additionalData: {
+        productId: 'PROD-456',
+        quantity: 5,
+        threshold: 10
+      },
+      latency: 55
+    },
+
+    // 8. ANALYTICS - Generate report success
+    {
+      projectName: 'analytics-dashboard',
+      function: 'generateReport',
+      method: 'POST',
+      type: 'SUCCESS',
+      request: {
+        headers: {
+          'content-type': 'application/json'
+        },
+        userAgent: 'Analytics/3.0.0',
+        url: '/api/reports/generate',
+        params: {},
+        body: {
+          type: 'sales',
+          period: 'monthly',
+          year: 2025,
+          month: 10
+        }
+      },
+      response: {
+        code: 200,
+        success: true,
+        message: 'Report generated successfully',
+        data: [{ reportId: 'RPT-789', url: '/reports/RPT-789.pdf' }]
+      },
+      consoleLog: 'Success: Monthly sales report generated. ID: RPT-789',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'analyst123',
+        fullname: 'Pham Thi G',
+        emplCode: 'ANA001'
+      },
+      additionalData: {
+        reportId: 'RPT-789',
+        type: 'sales',
+        period: 'monthly'
+      },
+      latency: 2500
+    },
+
+    // 9. ANALYTICS - Export data error
+    {
+      projectName: 'analytics-dashboard',
+      function: 'exportData',
+      method: 'GET',
+      type: 'ERROR',
+      request: {
+        headers: {},
+        userAgent: 'Analytics/3.0.0',
+        url: '/api/export/customers',
+        params: { format: 'csv' }
+      },
+      response: {
+        code: 500,
+        success: false,
+        message: 'Export failed - disk space full',
+        data: []
+      },
+      consoleLog: 'Error: ENOSPC: no space left on device',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'analyst456',
+        fullname: 'Le Van H',
+        emplCode: 'ANA002'
+      },
+      additionalData: {
+        format: 'csv',
+        recordCount: 50000,
+        estimatedSize: '2GB'
+      },
+      latency: 15000
+    },
+
+    // 10. HR SYSTEM - Calculate salary
+    {
+      projectName: 'hr-management',
+      function: 'calculateSalary',
+      method: 'POST',
+      type: 'DEBUG',
+      request: {
+        headers: {},
+        userAgent: 'Internal/Debug',
+        url: '/api/hr/salary/calculate',
+        params: {},
+        body: { 
+          employeeId: 'EMP123',
+          month: 10,
+          year: 2025
+        }
+      },
+      response: {
+        code: 200,
+        success: true,
+        message: 'Salary calculated',
+        data: [
+          { 
+            employeeId: 'EMP123',
+            basicSalary: 10000000,
+            bonus: 2000000,
+            total: 12000000
+          }
+        ]
+      },
+      consoleLog: 'Debug: Salary calculation steps: base -> allowances -> tax -> final',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'hr123',
+        fullname: 'Nguyen Thi I',
+        emplCode: 'HR001'
+      },
+      additionalData: {
+        employeeId: 'EMP123',
+        steps: ['base', 'allowances', 'tax', 'final']
+      },
+      latency: 180
+    },
+
+    // 11. HR SYSTEM - Employee leave request
+    {
+      projectName: 'hr-management',
+      function: 'createLeaveRequest',
+      method: 'POST',
+      type: 'INFO',
+      request: {
+        headers: {
+          'content-type': 'application/json'
+        },
+        userAgent: 'HR-Portal/1.0.0',
+        url: '/api/hr/leave',
+        params: {},
+        body: {
+          employeeId: 'EMP456',
+          startDate: '2025-10-25',
+          endDate: '2025-10-27',
+          type: 'annual'
+        }
+      },
+      response: {
+        code: 201,
+        success: true,
+        message: 'Leave request created',
+        data: [{ requestId: 'LR-001', status: 'pending' }]
+      },
+      consoleLog: 'Info: Leave request created for EMP456',
+      createdAt: new Date().toISOString(),
+      createdBy: {
+        id: 'emp456',
+        fullname: 'Tran Van J',
+        emplCode: 'EMP456'
+      },
+      additionalData: {
+        requestId: 'LR-001',
+        days: 3
+      },
+      latency: 110
+    },
+
+    // 12. NOTIFICATION - Send email success
+    {
+      projectName: 'notification-service',
+      function: 'sendEmail',
+      method: 'POST',
+      type: 'SUCCESS',
+      request: {
+        headers: {
+          'content-type': 'application/json'
+        },
+        userAgent: 'NotificationWorker/2.0.0',
+        url: '/api/notifications/email',
+        params: {},
+        body: {
+          to: 'user@example.com',
+          subject: 'Order Confirmation',
+          template: 'order-confirm'
+        }
+      },
+      response: {
+        code: 200,
+        success: true,
+        message: 'Email sent successfully',
+        data: [{ messageId: 'MSG-12345' }]
+      },
+      consoleLog: 'Success: Email sent to user@example.com',
+      createdAt: new Date().toISOString(),
+      createdBy: null,
+      additionalData: {
+        messageId: 'MSG-12345',
+        provider: 'sendgrid'
+      },
+      latency: 1200
+    },
+
+    // 13. NOTIFICATION - SMS failed
+    {
+      projectName: 'notification-service',
+      function: 'sendSMS',
+      method: 'POST',
+      type: 'ERROR',
+      request: {
+        headers: {},
+        userAgent: 'NotificationWorker/2.0.0',
+        url: '/api/notifications/sms',
+        params: {},
+        body: {
+          phone: '+84912345678',
+          message: 'Your OTP is 123456'
+        }
+      },
+      response: {
+        code: 503,
+        success: false,
+        message: 'SMS provider unavailable',
+        data: []
+      },
+      consoleLog: 'Error: SMS provider connection refused',
+      createdAt: new Date().toISOString(),
+      createdBy: null,
+      additionalData: {
+        provider: 'twilio',
+        retryCount: 3
+      },
+      latency: 5000
+    },
+
+    // 14. Message thiếu required fields (test error handling)
+    {
+      projectName: 'test-project',
       method: 'POST',
       type: 'ERROR',
       createdAt: new Date().toISOString(),
@@ -282,28 +508,42 @@ const sendTestMessages = async () => {
       // Thiếu: function (required field)
     },
 
-    // 8. Invalid message structure (để test DLQ)
+    // 15. Invalid message structure (test DLQ)
     {
-      projectName: 'myapp',
+      projectName: 'test-project',
       function: 'testInvalid',
       // Thiếu: method, type, createdAt, latency
     }
   ];
 
-  // Gửi từng message
+  // Gửi từng message đến cả 2 topic
   for (let i = 0; i < testMessages.length; i++) {
     try {
+      const messageValue = JSON.stringify(testMessages[i]);
+      
+      // Gửi đến topic all_users
       await producer.send({
         topic: 'all_users',
         messages: [
           { 
-            value: JSON.stringify(testMessages[i]) 
+            value: messageValue
+          }
+        ],
+      });
+
+      // Gửi đến topic error-logs
+      await producer.send({
+        topic: 'error-logs',
+        messages: [
+          { 
+            value: messageValue
           }
         ],
       });
 
       const msg = testMessages[i];
-      console.log(`📨 [${i + 1}/${testMessages.length}] Đã gửi ${msg.type || 'INVALID'} message:`);
+      console.log(`📨 [${i + 1}/${testMessages.length}] Đã gửi ${msg.type || 'INVALID'} message đến 2 topics:`);
+      console.log(`   Topics: all_users, error-logs`);
       console.log(`   Project: ${msg.projectName || 'N/A'}`);
       console.log(`   Function: ${msg.function || '[MISSING]'}`);
       console.log(`   Method: ${msg.method || '[MISSING]'}`);
@@ -321,8 +561,11 @@ const sendTestMessages = async () => {
 
   console.log('\n✅ Đã gửi tất cả test messages');
   console.log('📋 Summary:');
-  console.log('   - Valid messages: 6 (ERROR x2, WARNING, SUCCESS, INFO, DEBUG)');
+  console.log('   - Total messages: 15');
+  console.log('   - Projects: 6 (ecommerce, crm, inventory, analytics, hr, notification)');
+  console.log('   - Valid messages: 13');
   console.log('   - Invalid messages (will go to DLQ): 2');
+  console.log('   - Topics: all_users, error-logs');
   console.log('\n💡 Check consumer logs to see processing in action!');
   
   await producer.disconnect();
