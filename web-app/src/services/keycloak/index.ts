@@ -154,9 +154,26 @@ export const handleKeycloakCallback = async (): Promise<KeycloakAuthData | null>
 };
 
 /**
- * Đăng xuất khỏi Keycloak
+ * Đăng xuất local (chỉ xóa session trong app, không logout khỏi Keycloak server)
  */
-export const logoutKeycloak = () => {
+export const logoutKeycloakLocal = () => {
+  // Clear localStorage
+  localStorage.removeItem('keycloak_token');
+  localStorage.removeItem('keycloak_refresh_token');
+  localStorage.removeItem('keycloak_id_token');
+  
+  // Clear Keycloak instance
+  if (keycloakInstance) {
+    keycloakInstance.clearToken();
+  }
+  
+  console.log('Local session cleared. Keycloak SSO session still active.');
+};
+
+/**
+ * Đăng xuất hoàn toàn khỏi Keycloak (logout cả SSO session)
+ */
+export const logoutKeycloakFull = () => {
   const keycloak = getKeycloak();
   
   if (keycloak && keycloak.authenticated) {
@@ -176,6 +193,11 @@ export const logoutKeycloak = () => {
     window.location.href = `${logoutUrl}?${params.toString()}`;
   }
 };
+
+/**
+ * Alias cho local logout (mặc định)
+ */
+export const logoutKeycloak = logoutKeycloakLocal;
 
 /**
  * Lấy thông tin user từ Keycloak token

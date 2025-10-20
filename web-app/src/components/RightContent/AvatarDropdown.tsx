@@ -54,8 +54,14 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     const isKeycloak = isKeycloakAuthenticated();
     
     if (isKeycloak) {
-      // Logout từ Keycloak (sẽ tự động clear localStorage và redirect)
-      logoutKeycloak();
+      // Local logout - chỉ xóa session trong app, không logout khỏi Keycloak
+      logoutKeycloak(); // Xóa tokens trong localStorage
+      
+      // Redirect về trang login
+      history.replace({
+        pathname: '/user/login',
+        search: '',
+      });
     } else {
       // Logout thông thường
       await outLogin();
