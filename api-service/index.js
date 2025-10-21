@@ -97,7 +97,7 @@ app.get('/v1/logs', async (req, res) => {
       projectIds,
       functionIds,
       method,
-      level, // type in database (DEBUG, SUCCESS, INFO, WARNING, ERROR)
+      type: level, // type in database (DEBUG, SUCCESS, INFO, WARNING, ERROR)
       timeRange,
       startTime,
       endTime,
