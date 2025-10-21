@@ -38,3 +38,7 @@ screenshot
 .firebase
 
 build
+
+# Environment variables
+.env
+.env.local
