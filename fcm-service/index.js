@@ -16,24 +16,24 @@ const CONFIG = {
     maxRetries: 3,
     retryDelay: 1000, // 1 second
     timeout: 10000,
-    // Danh sách FCM topics - gửi thông báo đến topics
+    // List of FCM topics - send notifications to topics
     topics: [
-      'all_users',        // Topic cho tất cả users
-      'error_alerts',     // Topic cho error alerts
-      // 'admin_alerts',  // Topic cho admin
-      // Thêm các topics khác ở đây
+      'all_users',        // Topic for all users
+      'error_alerts',     // Topic for error alerts
+      // 'admin_alerts',  // Topic for admin
+      // Add other topics here
     ],
-    // Danh sách device tokens (optional) - nếu muốn gửi trực tiếp đến device
+    // List of device tokens (optional) - if you want to send directly to device
     deviceTokens: [
       // 'DEVICE_TOKEN_1',
       // 'DEVICE_TOKEN_2',
-      // Thêm các device token ở đây
+      // Add device tokens here
     ],
-    // Filter settings - chỉ gửi thông báo cho lỗi nghiêm trọng
+    // Filter settings - only send notifications for critical errors
     filter: {
       enabled: true,
-      minSeverityCode: 500, // Chỉ gửi khi response code >= 500
-      criticalTypes: ['ERROR'] // Chỉ gửi cho type ERROR
+      minSeverityCode: 500, // Only send when response code >= 500
+      criticalTypes: ['ERROR'] // Only send for ERROR type
     }
   },
   processing: {
@@ -142,25 +142,25 @@ const retryWithBackoff = async (fn, maxRetries = CONFIG.fcm.maxRetries, baseDela
 // SEVERITY FILTER
 // ============================================
 const shouldSendNotification = (logData) => {
-  // Nếu filter không được enable, gửi tất cả
+  // If filter is not enabled, send all
   if (!CONFIG.fcm.filter.enabled) {
     return true;
   }
 
-  // Chỉ gửi cho ERROR type
+  // Only send for ERROR type
   if (!CONFIG.fcm.filter.criticalTypes.includes(logData.type)) {
     console.log(`🔕 Filtered: Type '${logData.type}' is not critical`);
     return false;
   }
 
-  // Kiểm tra response code
+  // Check response code
   const responseCode = logData.response?.code;
   if (!responseCode) {
     console.log('⚠️  No response code found, sending notification anyway');
     return true;
   }
 
-  // Chỉ gửi khi response code >= minSeverityCode (500)
+  // Only send when response code >= minSeverityCode (500)
   if (responseCode < CONFIG.fcm.filter.minSeverityCode) {
     console.log(`🔕 Filtered: Response code ${responseCode} < ${CONFIG.fcm.filter.minSeverityCode} (not severe enough)`);
     return false;
@@ -174,13 +174,13 @@ const shouldSendNotification = (logData) => {
 // FCM NOTIFICATION WITH RETRY
 // ============================================
 const sendFCMNotification = async (logData, metadata = {}) => {
-  // Filter: Kiểm tra xem có nên gửi notification không
+  // Filter: Check if notification should be sent
   if (!shouldSendNotification(logData)) {
     metrics.filtered++;
     return false;
   }
 
-  // Kiểm tra có topics hoặc device tokens không
+  // Check if there are topics or device tokens
   const hasTopics = CONFIG.fcm.topics && CONFIG.fcm.topics.length > 0;
   const hasDeviceTokens = CONFIG.fcm.deviceTokens && CONFIG.fcm.deviceTokens.length > 0;
 
@@ -189,7 +189,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     return false;
   }
 
-  // Xác định emoji và priority dựa trên type
+  // Determine emoji and priority based on type
   const typeEmojis = {
     'ERROR': '🚨',
     'WARNING': '⚠️',
@@ -209,13 +209,13 @@ const sendFCMNotification = async (logData, metadata = {}) => {
   const emoji = typeEmojis[logData.type] || '🚨';
   const priority = typePriority[logData.type] || 'high';
   
-  // Tạo notification title theo cấu trúc mới
+  // Create notification title according to new structure
   const title = `${emoji} ${logData.type || 'ERROR'} - ${logData.projectName || 'Unknown Project'}`;
   
-  // Tạo notification body với thông tin mới
+  // Create notification body with new information
   let body = '';
   
-  // Thêm function và method
+  // Add function and method
   if (logData.function) {
     body += `⚡ ${logData.function}`;
   }
@@ -223,33 +223,33 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     body += ` [${logData.method}]`;
   }
   
-  // Thêm response message
+  // Add response message
   if (logData.response && logData.response.message) {
     body += `\n💬 ${logData.response.message}`;
   }
   
-  // Thêm response code
+  // Add response code
   if (logData.response && logData.response.code) {
     const codeEmoji = logData.response.code >= 500 ? '🔴' : logData.response.code >= 400 ? '🟠' : '🟢';
     body += `\n${codeEmoji} Code: ${logData.response.code}`;
   }
   
-  // Thêm user nếu có
+  // Add user if available
   if (logData.createdBy && logData.createdBy.fullname) {
     body += `\n👤 ${logData.createdBy.fullname}`;
   }
   
-  // Thêm latency
+  // Add latency
   if (logData.latency) {
     body += `\n⏱️ ${logData.latency}ms`;
   }
   
-  // Giới hạn độ dài body (FCM có giới hạn 4KB cho toàn bộ payload)
+  // Limit body length (FCM has 4KB limit for entire payload)
   if (body.length > 200) {
     body = body.slice(0, 197) + '...';
   }
   
-  // Tạo data payload với thông tin chi tiết theo cấu trúc mới
+  // Create data payload with detailed information according to new structure
   const dataPayload = {
     projectName: logData.projectName || 'N/A',
     function: logData.function || 'N/A',
@@ -263,7 +263,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     kafkaOffset: String(metadata.offset || 'N/A')
   };
   
-  // Thêm các trường optional nếu có
+  // Add optional fields if available
   if (logData.createdBy) {
     dataPayload.createdBy = JSON.stringify(logData.createdBy);
   }
@@ -271,14 +271,14 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     dataPayload.url = logData.request.url;
   }
   if (logData.consoleLog) {
-    // Giới hạn consoleLog vì FCM có giới hạn kích thước
+    // Limit consoleLog because FCM has size limits
     dataPayload.consoleLog = logData.consoleLog.slice(0, 500);
   }
   if (logData.additionalData) {
     dataPayload.additionalData = JSON.stringify(logData.additionalData).slice(0, 500);
   }
 
-  // Tạo FCM message (base message không có token/topic)
+  // Create FCM message (base message without token/topic)
   const baseMessage = {
     notification: {
       title: title,
@@ -313,7 +313,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     errors: []
   };
 
-  // Gửi notification đến các FCM topics (ưu tiên)
+  // Send notification to FCM topics (priority)
   if (hasTopics) {
     console.log(`📡 Sending to ${CONFIG.fcm.topics.length} FCM topic(s)...`);
     
@@ -340,7 +340,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     }
   }
 
-  // Gửi notification đến device tokens (nếu có cấu hình)
+  // Send notification to device tokens (if configured)
   if (hasDeviceTokens) {
     console.log(`📱 Sending to ${CONFIG.fcm.deviceTokens.length} device token(s)...`);
     
@@ -367,8 +367,8 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     }
   }
 
-  // Log kết quả
-  console.log(`� FCM Results: ${results.success} success, ${results.failure} failed`);
+  // Log results
+  console.log(`📊 FCM Results: ${results.success} success, ${results.failure} failed`);
   
   if (results.success > 0) {
     metrics.fcmSuccess += results.success;
@@ -486,7 +486,7 @@ const processMessage = async ({ topic, partition, message }) => {
       }
     }
 
-    // Validate message structure theo cấu trúc mới
+    // Validate message structure according to new structure
     if (!logData.projectName) {
       console.warn('⚠️  Warning: Message missing "projectName" field');
       logData.projectName = 'Unknown';
@@ -506,7 +506,7 @@ const processMessage = async ({ topic, partition, message }) => {
       logData.createdAt = new Date().toISOString();
     }
 
-    // Metadata cho tracking
+    // Metadata for tracking
     const fcmMetadata = {
       partition,
       offset: message.offset

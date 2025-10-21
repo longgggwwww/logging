@@ -13,7 +13,7 @@
     "kafka",
     "notification"
   ],
-  "author": "",
+  "author": "DANH PHI LONG",
   "license": "ISC",
   "dependencies": {
     "firebase-admin": "^12.0.0",
