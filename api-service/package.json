@@ -20,14 +20,15 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.20.0",
-    "express": "^4.18.2",
-    "redis": "^4.6.10",
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
+    "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "compression": "^1.7.4"
+    "redis": "^4.6.10"
   },
   "devDependencies": {
     "nodemon": "^3.1.7",
-    "prisma": "^5.20.0"
+    "prisma": "^5.20.0",
+    "yenv": "^3.0.1"
   }
 }

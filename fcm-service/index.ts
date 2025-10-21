@@ -1,6 +1,10 @@
 import { Kafka } from 'kafkajs';
 import * as admin from 'firebase-admin';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // ============================================
 // TYPE DEFINITIONS
@@ -95,7 +99,7 @@ interface MessageMetadata {
 const CONFIG: Config = {
   kafka: {
     clientId: 'fcm-error-logs-consumer',
-    brokers: ['localhost:19092', 'localhost:29092', 'localhost:39092'],
+    brokers: process.env.KAFKA_BROKERS?.split(',') || ['localhost:19092', 'localhost:29092', 'localhost:39092'],
     connectionTimeout: 30000,
     requestTimeout: 30000
   },
@@ -104,14 +108,14 @@ const CONFIG: Config = {
     retryDelay: 1000, // 1 second
     timeout: 10000,
     // List of FCM topics - send notifications to topics
-    topics: [
+    topics: process.env.FCM_TOPICS?.split(',') || [
       'all_users',        // Topic for all users
       'error_alerts',     // Topic for error alerts
       // 'admin_alerts',  // Topic for admin
       // Add other topics here
     ],
     // List of device tokens (optional) - if you want to send directly to device
-    deviceTokens: [
+    deviceTokens: process.env.FCM_DEVICE_TOKENS?.split(',').filter(Boolean) || [
       // 'DEVICE_TOKEN_1',
       // 'DEVICE_TOKEN_2',
       // Add device tokens here
@@ -119,8 +123,8 @@ const CONFIG: Config = {
     // Filter settings - only send notifications for critical errors
     filter: {
       enabled: true,
-      minSeverityCode: 500, // Only send when response code >= 500
-      criticalTypes: ['ERROR'] // Only send for ERROR type
+      minSeverityCode: parseInt(process.env.FCM_MIN_SEVERITY_CODE || '500'),
+      criticalTypes: process.env.FCM_CRITICAL_TYPES?.split(',') || ['ERROR'] // Only send for ERROR type
     }
   },
   processing: {
@@ -129,9 +133,9 @@ const CONFIG: Config = {
   },
   topics: {
     // main: 'error-logs',
-    main: 'all_users',
-    deadLetter: 'error-logs-dlq',
-    retry: 'error-logs-retry'
+    main: process.env.KAFKA_MAIN_TOPIC || 'all_users',
+    deadLetter: process.env.KAFKA_DLQ_TOPIC || 'error-logs-dlq',
+    retry: process.env.KAFKA_RETRY_TOPIC || 'error-logs-retry'
   }
 };
 
@@ -139,7 +143,8 @@ const CONFIG: Config = {
 // FIREBASE ADMIN SETUP
 // ============================================
 try {
-  const serviceAccount = require(path.join(__dirname, '..', 'service-account.json'));
+  const serviceAccountPath = process.env.SERVICE_ACCOUNT_PATH || path.join(__dirname, '..', 'service-account.json');
+  const serviceAccount = require(serviceAccountPath);
   
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
