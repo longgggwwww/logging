@@ -1,5 +1,5 @@
-import { CONFIG } from './config';
-import { LogData } from './types';
+import { CONFIG } from './config.js';
+import { LogData } from './types.js';
 import { Client, TextChannel, ChannelType } from 'discord.js';
 
 let discordClient: Client;

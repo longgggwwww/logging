@@ -1,5 +1,5 @@
 import { Kafka, logLevel } from 'kafkajs';
-import { CONFIG } from './config';
+import { CONFIG } from './config.js';
 
 export const kafka = new Kafka({
   clientId: CONFIG.kafka.clientId,

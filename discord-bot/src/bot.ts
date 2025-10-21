@@ -1,10 +1,10 @@
 import * as dotenv from 'dotenv';
 import { Client, GatewayIntentBits } from 'discord.js';
 // import { loadCommands } from './commands';
-import { onReady } from './events/ready';
-import { consumer, producer } from './kafka';
-import { CONFIG } from './config';
-import { processMessage, setDiscordClient } from './processor';
+import { onReady } from './events/ready.js';
+import { consumer, producer } from './kafka.js';
+import { CONFIG } from './config.js';
+import { processMessage, setDiscordClient } from './processor.js';
 
 // Load environment variables
 dotenv.config();
@@ -14,7 +14,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 // Set Discord client for processor
 setDiscordClient(client);
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log('🤖 Discord bot is ready!');
   onReady();
 
