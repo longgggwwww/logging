@@ -223,6 +223,28 @@ services:
       - kafka-init
     restart: unless-stopped
 
+  # FCM Service
+  fcm-service:
+    build:
+      context: ./fcm-service
+      dockerfile: Dockerfile
+    container_name: fcm-service
+    environment:
+      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
+      KAFKA_MAIN_TOPIC: "error-logs"
+      KAFKA_DLQ_TOPIC: "error-logs-dlq"
+      KAFKA_RETRY_TOPIC: "error-logs-retry"
+      FCM_TOPICS: "all_users,error_alerts"
+      NODE_ENV: "production"
+    networks:
+      - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+      - kafka-init
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
