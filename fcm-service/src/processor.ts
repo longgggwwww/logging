@@ -4,7 +4,6 @@ import { sendToRetryQueue } from './retry-queue.js';
 import { sendToDLQ } from './dlq.js';
 import { sleep } from './retry.js';
 import { CONFIG } from './config.js';
-import { LogData, MessageMetadata } from './types.js';
 
 // ============================================
 // MESSAGE PROCESSOR
