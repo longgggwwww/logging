@@ -31,11 +31,13 @@ discord-bot
 ## Installation
 
 1. Clone the repository:
+
    ```
    git clone <repository-url>
    ```
 
 2. Navigate to the project directory:
+
    ```
    cd discord-bot
    ```
@@ -48,6 +50,7 @@ discord-bot
 ## Usage
 
 To start the bot, run the following command:
+
 ```
 npm start
 ```
@@ -56,7 +59,7 @@ Make sure to set up your Discord bot token in the environment variables or direc
 
 ## Contributing
 
-Feel free to submit issues or pull requests to improve the bot or add new features. 
+Feel free to submit issues or pull requests to improve the bot or add new features.
 
 ## License
 

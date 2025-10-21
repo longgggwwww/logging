@@ -1,13 +1,16 @@
 {
   "name": "discord-bot",
   "version": "1.0.0",
+  "type": "module",
   "description": "A simple Discord bot built with TypeScript",
   "main": "dist/bot.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/bot.js",
     "dev": "ts-node src/bot.ts",
-    "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
     "format": "prettier --write ."
   },
   "keywords": [
@@ -15,18 +18,23 @@
     "bot",
     "typescript"
   ],
-  "author": "Your Name",
+  "author": "DANH PHI LONG + AI",
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.15.0",
-    "kafkajs": "^2.2.4",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "kafkajs": "^2.2.4"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "@types/kafkajs": "^1.8.2",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
     "ts-node": "^10.0.0",
-    "eslint": "^8.0.0",
-    "prettier": "^2.0.0",
-    "@types/kafkajs": "^1.8.2"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
   }
 }

@@ -52,7 +52,9 @@ const startKafkaConsumer = async (): Promise<void> => {
       eachMessage: processMessage,
     });
 
-    console.log('\n🚀 Kafka consumer is running and ready to process messages...\n');
+    console.log(
+      '\n🚀 Kafka consumer is running and ready to process messages...\n'
+    );
   } catch (error: any) {
     console.error('❌ Fatal error starting Kafka consumer:', error);
     process.exit(1);

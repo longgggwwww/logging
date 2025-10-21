@@ -1,5 +1,5 @@
 import { CONFIG } from './config';
-import { LogData, MessageMetadata } from './types';
+import { LogData } from './types';
 import { Client, TextChannel, ChannelType } from 'discord.js';
 
 let discordClient: Client;
@@ -9,21 +9,14 @@ export const setDiscordClient = (client: Client) => {
 };
 
 export const processMessage = async ({
-  topic,
-  partition,
+  topic: _topic,
+  partition: _partition,
   message,
 }: {
   topic: string;
   partition: number;
   message: any;
 }): Promise<void> => {
-  const metadata: MessageMetadata = {
-    topic,
-    partition,
-    offset: message.offset,
-    timestamp: message.timestamp,
-  };
-
   let logData: LogData = {};
   let attemptCount = 0;
 
@@ -59,14 +52,15 @@ export const processMessage = async ({
     await sendMessageToChannel(channel, logData);
 
     console.log(`✅ Message sent to channel: ${channel.name}`);
-
   } catch (error: any) {
     console.error('❌ Error processing message:', error);
     // For now, just log. In production, might want to send to DLQ
   }
 };
 
-const getOrCreateChannel = async (projectName: string): Promise<TextChannel | null> => {
+const getOrCreateChannel = async (
+  projectName: string
+): Promise<TextChannel | null> => {
   if (!discordClient || !CONFIG.discord.guildId) {
     console.error('❌ Discord client or guild ID not set');
     return null;
@@ -102,11 +96,15 @@ const getOrCreateChannel = async (projectName: string): Promise<TextChannel | nu
   }
 };
 
-const sendMessageToChannel = async (channel: TextChannel, logData: LogData): Promise<void> => {
+const sendMessageToChannel = async (
+  channel: TextChannel,
+  logData: LogData
+): Promise<void> => {
   // Format message similar to webhook
   const embed = {
     title: `${logData.type || 'LOG'} - ${logData.projectName}`,
-    description: logData.consoleLog || logData.response?.message || 'No message',
+    description:
+      logData.consoleLog || logData.response?.message || 'No message',
     color: getColorForType(logData.type),
     fields: [
       {
