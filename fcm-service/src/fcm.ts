@@ -111,6 +111,7 @@ export const sendFCMNotification = async (
     responseMessage: logData.response?.message || 'No message',
     kafkaPartition: String(metadata.partition || 'N/A'),
     kafkaOffset: String(metadata.offset || 'N/A'),
+    page: '/log',
   };
 
   // Add optional fields if available
