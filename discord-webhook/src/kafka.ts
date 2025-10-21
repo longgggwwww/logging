@@ -1,4 +1,4 @@
-import { Kafka } from 'kafkajs';
+import { Kafka, logLevel } from 'kafkajs';
 import { CONFIG } from './config.js';
 
 export const kafka = new Kafka({
@@ -10,6 +10,13 @@ export const kafka = new Kafka({
     initialRetryTime: 300,
     retries: 8,
   },
+  logCreator:
+    () =>
+    ({ level, log }) => {
+      if (level === logLevel.INFO || level === logLevel.ERROR) {
+        console.log(JSON.stringify(log, null, 2)); // Pretty-print JSON
+      }
+    },
 });
 
 export const consumer = kafka.consumer({

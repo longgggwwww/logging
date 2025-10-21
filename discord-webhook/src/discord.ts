@@ -2,6 +2,7 @@ import axios from 'axios';
 import { CONFIG } from './config.js';
 import { LogData } from './types.js';
 import { metrics } from './metrics.js';
+import { shouldSendNotification } from './filter.js';
 
 export const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -33,6 +34,11 @@ export const sendToDiscord = async (
   logData: LogData,
   metadata: { partition?: number; offset?: string } = {}
 ): Promise<boolean> => {
+  // Filter: Check if notification should be sent
+  if (!shouldSendNotification(logData)) {
+    metrics.filtered++;
+    return false;
+  }
   // Define color based on type
   const typeColors: Record<string, number> = {
     ERROR: 0xff0000, // Red

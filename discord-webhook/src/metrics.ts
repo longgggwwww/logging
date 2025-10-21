@@ -6,6 +6,7 @@ export const metrics: Metrics = {
   retriedSuccessfully: 0,
   sentToDLQ: 0,
   discordErrors: 0,
+  filtered: 0,
 };
 
 export const logMetrics = (): void => {
@@ -14,7 +15,8 @@ export const logMetrics = (): void => {
   console.log(`   ❌ Failed: ${metrics.failed}`);
   console.log(`   🔄 Retried Successfully: ${metrics.retriedSuccessfully}`);
   console.log(`   ⚰️  Sent to DLQ: ${metrics.sentToDLQ}`);
-  console.log(`   🚨 Discord Errors: ${metrics.discordErrors}\n`);
+  console.log(`   🚨 Discord Errors: ${metrics.discordErrors}`);
+  console.log(`   🔕 Filtered: ${metrics.filtered}\n`);
 };
 
 // Log metrics every 30 seconds

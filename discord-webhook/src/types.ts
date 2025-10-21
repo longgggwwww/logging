@@ -10,6 +10,11 @@ export interface Config {
     maxRetries: number;
     retryDelay: number;
     timeout: number;
+    filter: {
+      enabled: boolean;
+      minSeverityCode: number;
+      criticalTypes: string[];
+    };
   };
   processing: {
     maxRetries: number;
@@ -57,6 +62,7 @@ export interface Metrics {
   retriedSuccessfully: number;
   sentToDLQ: number;
   discordErrors: number;
+  filtered: number;
 }
 
 export interface MessageMetadata {
