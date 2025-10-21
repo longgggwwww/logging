@@ -26,6 +26,10 @@ FCM Service là microservice dùng để gửi thông báo (notification) qua Fi
 - `README.md`, `README-vi.md`: tài liệu
 - `docs/`: tài liệu chi tiết
 
+## Tài liệu chi tiết
+
+- [Quick Start Guide](docs/QUICK_START.md): Hướng dẫn nhanh để cài đặt và chạy service.
+
 ## Cài đặt & chạy thử
 
 ```bash
