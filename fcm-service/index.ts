@@ -1,11 +1,98 @@
-const { Kafka } = require('kafkajs');
-const admin = require('firebase-admin');
-const path = require('path');
+import { Kafka } from 'kafkajs';
+import * as admin from 'firebase-admin';
+import * as path from 'path';
+
+// ============================================
+// TYPE DEFINITIONS
+// ============================================
+interface KafkaConfig {
+  clientId: string;
+  brokers: string[];
+  connectionTimeout: number;
+  requestTimeout: number;
+}
+
+interface FCMConfig {
+  maxRetries: number;
+  retryDelay: number;
+  timeout: number;
+  topics: string[];
+  deviceTokens: string[];
+  filter: {
+    enabled: boolean;
+    minSeverityCode: number;
+    criticalTypes: string[];
+  };
+}
+
+interface ProcessingConfig {
+  maxRetries: number;
+  retryDelay: number;
+}
+
+interface TopicsConfig {
+  main: string;
+  deadLetter: string;
+  retry: string;
+}
+
+interface Config {
+  kafka: KafkaConfig;
+  fcm: FCMConfig;
+  processing: ProcessingConfig;
+  topics: TopicsConfig;
+}
+
+interface LogData {
+  projectName?: string;
+  function?: string;
+  method?: string;
+  type?: string;
+  createdAt?: string;
+  latency?: number;
+  response?: {
+    code?: number;
+    message?: string;
+  };
+  createdBy?: {
+    fullname?: string;
+  };
+  request?: {
+    url?: string;
+  };
+  consoleLog?: string;
+  additionalData?: any;
+  _retry?: {
+    attemptCount: number;
+    lastAttempt: string;
+    nextRetryAfter: number;
+  };
+}
+
+interface Metrics {
+  processed: number;
+  failed: number;
+  retriedSuccessfully: number;
+  sentToDLQ: number;
+  fcmErrors: number;
+  fcmSuccess: number;
+  filtered: number;
+}
+
+type FCMDataPayload = Record<string, string>;
+
+interface MessageMetadata {
+  topic: string;
+  partition: number;
+  offset: string;
+  timestamp?: string;
+  attemptCount?: number;
+}
 
 // ============================================
 // CONFIGURATION
 // ============================================
-const CONFIG = {
+const CONFIG: Config = {
   kafka: {
     clientId: 'fcm-error-logs-consumer',
     brokers: ['localhost:19092', 'localhost:29092', 'localhost:39092'],
@@ -52,7 +139,7 @@ const CONFIG = {
 // FIREBASE ADMIN SETUP
 // ============================================
 try {
-  const serviceAccount = require(path.join(__dirname, 'service-account.json'));
+  const serviceAccount = require(path.join(__dirname, '..', 'service-account.json'));
   
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -60,7 +147,7 @@ try {
   
   console.log('✅ Firebase Admin initialized successfully');
 } catch (error) {
-  console.error('❌ Failed to initialize Firebase Admin:', error.message);
+  console.error('❌ Failed to initialize Firebase Admin:', (error as Error).message);
   process.exit(1);
 }
 
@@ -93,7 +180,7 @@ const producer = kafka.producer({
 // ============================================
 // METRICS & MONITORING
 // ============================================
-const metrics = {
+const metrics: Metrics = {
   processed: 0,
   failed: 0,
   retriedSuccessfully: 0,
@@ -120,9 +207,9 @@ setInterval(logMetrics, 30000);
 // ============================================
 // RETRY MECHANISM
 // ============================================
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
-const retryWithBackoff = async (fn, maxRetries = CONFIG.fcm.maxRetries, baseDelay = CONFIG.fcm.retryDelay) => {
+const retryWithBackoff = async (fn: () => Promise<any>, maxRetries: number = CONFIG.fcm.maxRetries, baseDelay: number = CONFIG.fcm.retryDelay): Promise<any> => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
@@ -141,15 +228,15 @@ const retryWithBackoff = async (fn, maxRetries = CONFIG.fcm.maxRetries, baseDela
 // ============================================
 // SEVERITY FILTER
 // ============================================
-const shouldSendNotification = (logData) => {
+const shouldSendNotification = (logData: LogData): boolean => {
   // If filter is not enabled, send all
   if (!CONFIG.fcm.filter.enabled) {
     return true;
   }
 
   // Only send for ERROR type
-  if (!CONFIG.fcm.filter.criticalTypes.includes(logData.type)) {
-    console.log(`🔕 Filtered: Type '${logData.type}' is not critical`);
+  if (!logData.type || !CONFIG.fcm.filter.criticalTypes.includes(logData.type)) {
+    console.log(`🔕 Filtered: Type '${logData.type || 'undefined'}' is not critical`);
     return false;
   }
 
@@ -173,7 +260,7 @@ const shouldSendNotification = (logData) => {
 // ============================================
 // FCM NOTIFICATION WITH RETRY
 // ============================================
-const sendFCMNotification = async (logData, metadata = {}) => {
+const sendFCMNotification = async (logData: LogData, metadata: Partial<MessageMetadata> = {}): Promise<boolean> => {
   // Filter: Check if notification should be sent
   if (!shouldSendNotification(logData)) {
     metrics.filtered++;
@@ -206,8 +293,8 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     'DEBUG': 'normal'
   };
   
-  const emoji = typeEmojis[logData.type] || '🚨';
-  const priority = typePriority[logData.type] || 'high';
+  const emoji = (logData.type && typeEmojis[logData.type as keyof typeof typeEmojis]) || '🚨';
+  const priority = (logData.type && typePriority[logData.type as keyof typeof typePriority]) || 'high';
   
   // Create notification title according to new structure
   const title = `${emoji} ${logData.type || 'ERROR'} - ${logData.projectName || 'Unknown Project'}`;
@@ -250,7 +337,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
   }
   
   // Create data payload with detailed information according to new structure
-  const dataPayload = {
+  const dataPayload: FCMDataPayload = {
     projectName: logData.projectName || 'N/A',
     function: logData.function || 'N/A',
     method: logData.method || 'N/A',
@@ -286,10 +373,10 @@ const sendFCMNotification = async (logData, metadata = {}) => {
     },
     data: dataPayload,
     android: {
-      priority: priority,
+      priority: priority as "high" | "normal",
       notification: {
         channelId: 'error_logs',
-        priority: priority,
+        priority: (priority === 'high' ? 'high' : 'default') as "high" | "default" | "min" | "low" | "max",
         defaultSound: true,
         defaultVibrateTimings: true,
         color: logData.type === 'ERROR' ? '#FF0000' : 
@@ -310,7 +397,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
   const results = {
     success: 0,
     failure: 0,
-    errors: []
+    errors: [] as { target: string; error: string }[]
   };
 
   // Send notification to FCM topics (priority)
@@ -333,9 +420,9 @@ const sendFCMNotification = async (logData, metadata = {}) => {
         results.failure++;
         results.errors.push({
           target: `topic:${topic}`,
-          error: error.message
+          error: (error as Error).message
         });
-        console.error(`❌ Failed to send FCM to topic ${topic}:`, error.message);
+        console.error(`❌ Failed to send FCM to topic ${topic}:`, (error as Error).message);
       }
     }
   }
@@ -360,9 +447,9 @@ const sendFCMNotification = async (logData, metadata = {}) => {
         results.failure++;
         results.errors.push({
           target: `token:${token.slice(0, 20)}...`,
-          error: error.message
+          error: (error as Error).message
         });
-        console.error(`❌ Failed to send FCM to token ${token.slice(0, 20)}...:`, error.message);
+        console.error(`❌ Failed to send FCM to token ${token.slice(0, 20)}...:`, (error as Error).message);
       }
     }
   }
@@ -382,7 +469,7 @@ const sendFCMNotification = async (logData, metadata = {}) => {
 // ============================================
 // DEAD LETTER QUEUE (DLQ)
 // ============================================
-const sendToDLQ = async (originalMessage, error, metadata) => {
+const sendToDLQ = async (originalMessage: string, error: Error, metadata: MessageMetadata): Promise<boolean> => {
   try {
     const dlqMessage = {
       originalTopic: metadata.topic,
@@ -415,7 +502,7 @@ const sendToDLQ = async (originalMessage, error, metadata) => {
     console.log(`⚰️  Message sent to DLQ: ${CONFIG.topics.deadLetter}`);
     return true;
   } catch (dlqError) {
-    console.error('❌ CRITICAL: Failed to send to DLQ:', dlqError.message);
+    console.error('❌ CRITICAL: Failed to send to DLQ:', (dlqError as Error).message);
     return false;
   }
 };
@@ -423,7 +510,7 @@ const sendToDLQ = async (originalMessage, error, metadata) => {
 // ============================================
 // RETRY QUEUE
 // ============================================
-const sendToRetryQueue = async (originalMessage, metadata, attemptCount) => {
+const sendToRetryQueue = async (originalMessage: LogData, metadata: MessageMetadata, attemptCount: number): Promise<boolean> => {
   try {
     const retryMessage = {
       ...originalMessage,
@@ -449,7 +536,7 @@ const sendToRetryQueue = async (originalMessage, metadata, attemptCount) => {
     console.log(`🔄 Message sent to retry queue (attempt ${attemptCount + 1}/${CONFIG.processing.maxRetries})`);
     return true;
   } catch (retryError) {
-    console.error('❌ Failed to send to retry queue:', retryError.message);
+    console.error('❌ Failed to send to retry queue:', (retryError as Error).message);
     return false;
   }
 };
@@ -457,7 +544,7 @@ const sendToRetryQueue = async (originalMessage, metadata, attemptCount) => {
 // ============================================
 // MESSAGE PROCESSOR
 // ============================================
-const processMessage = async ({ topic, partition, message }) => {
+const processMessage = async ({ topic, partition, message }: { topic: string; partition: number; message: { offset: string; value: Buffer | null; timestamp?: string } }) => {
   const metadata = {
     topic,
     partition,
@@ -469,6 +556,12 @@ const processMessage = async ({ topic, partition, message }) => {
   let attemptCount = 0;
 
   try {
+    // Check if message value exists
+    if (!message.value) {
+      console.warn('⚠️  Received message with null value, skipping');
+      return;
+    }
+
     // Parse message
     const rawMessage = message.value.toString();
     logData = JSON.parse(rawMessage);
@@ -522,7 +615,7 @@ const processMessage = async ({ topic, partition, message }) => {
 
   } catch (error) {
     metrics.failed++;
-    console.error(`❌ Error processing message (attempt ${attemptCount + 1}):`, error.message);
+    console.error(`❌ Error processing message (attempt ${attemptCount + 1}):`, (error as Error).message);
 
     // Decide what to do based on error type and retry count
     if (attemptCount < CONFIG.processing.maxRetries) {
@@ -530,12 +623,12 @@ const processMessage = async ({ topic, partition, message }) => {
       const retrySent = await sendToRetryQueue(logData || {}, metadata, attemptCount);
       if (!retrySent) {
         // If retry queue fails, send to DLQ
-        await sendToDLQ(message.value.toString(), error, { ...metadata, attemptCount });
+        await sendToDLQ(message.value!.toString(), error as Error, { ...metadata, attemptCount });
       }
     } else {
       // Max retries reached, send to DLQ
       console.error(`❌ Max retries (${CONFIG.processing.maxRetries}) reached for message`);
-      await sendToDLQ(message.value.toString(), error, { ...metadata, attemptCount });
+      await sendToDLQ(message.value!.toString(), error as Error, { ...metadata, attemptCount });
     }
 
     // Don't throw error to prevent consumer from crashing
