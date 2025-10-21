@@ -204,6 +204,25 @@ services:
       - redis
     restart: unless-stopped
 
+  # Discord Webhook Service
+  discord-webhook:
+    build:
+      context: ./discord-webhook
+      dockerfile: Dockerfile
+    container_name: discord-webhook
+    environment:
+      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
+      DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/1425882193229643818/8nmQfxFdkFYsvcDuyAw0RtU6OSVbqJrITmxLJscQeo5Fxq9DS2TVaFscb3FLy64yZAhP"
+      NODE_ENV: "production"
+    networks:
+      - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+      - kafka-init
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

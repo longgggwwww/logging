@@ -7,12 +7,12 @@ const axios = require('axios');
 const CONFIG = {
   kafka: {
     clientId: 'error-logs-consumer',
-    brokers: ['localhost:19092', 'localhost:29092', 'localhost:39092'],
+    brokers: (process.env.KAFKA_BROKERS || 'localhost:19092,localhost:29092,localhost:39092').split(','),
     connectionTimeout: 30000,
     requestTimeout: 30000
   },
   discord: {
-    webhookUrl: 'https://discord.com/api/webhooks/1425882193229643818/8nmQfxFdkFYsvcDuyAw0RtU6OSVbqJrITmxLJscQeo5Fxq9DS2TVaFscb3FLy64yZAhP',
+    webhookUrl: process.env.DISCORD_WEBHOOK_URL || 'https://discord.com/api/webhooks/1425882193229643818/8nmQfxFdkFYsvcDuyAw0RtU6OSVbqJrITmxLJscQeo5Fxq9DS2TVaFscb3FLy64yZAhP',
     maxRetries: 3,
     retryDelay: 1000, // 1 second
     timeout: 5000
