@@ -1,12 +1,17 @@
 {
   "name": "log-processor",
   "version": "1.0.0",
-  "description": "Kafka consumer service to process error logs and store to PostgreSQL using Prisma",
-  "main": "index.js",
   "type": "module",
+  "description": "Kafka consumer service to process error logs and store to PostgreSQL using Prisma",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -23,10 +28,21 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "dotenv": "^16.4.5",
     "kafkajs": "^2.2.4"
   },
   "devDependencies": {
+    "@types/kafkajs": "^1.8.2",
+    "@types/node": "^24.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "nodemon": "^3.1.7",
-    "prisma": "^5.20.0"
+    "prettier": "^3.6.2",
+    "prisma": "^5.20.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
   }
 }
