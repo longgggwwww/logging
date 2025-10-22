@@ -1,15 +1,15 @@
-import { producer } from "./kafka.js";
-import { LogMessage } from "./types.js";
-import { message as msg0 } from "./0.js";
-import { message as msg1 } from "./1.js";
-import { message as msg2 } from "./2.js";
-import { message as msg3 } from "./3.js";
-import { message as msg4 } from "./4.js";
-import { message as msg5 } from "./5.js";
-import { message as msg6 } from "./6.js";
-import { message as msg7 } from "./7.js";
-import { message as msg8 } from "./8.js";
-import { message as msg9 } from "./9.js";
+import { producer } from "./kafka/kafka.js";
+import { LogMessage } from "./types/types.js";
+import { message as msg0 } from "./messages/0.js";
+import { message as msg1 } from "./messages/1.js";
+import { message as msg2 } from "./messages/2.js";
+import { message as msg3 } from "./messages/3.js";
+import { message as msg4 } from "./messages/4.js";
+import { message as msg5 } from "./messages/5.js";
+import { message as msg6 } from "./messages/6.js";
+import { message as msg7 } from "./messages/7.js";
+import { message as msg8 } from "./messages/8.js";
+import { message as msg9 } from "./messages/9.js";
 import * as readline from "readline";
 
 const messages: LogMessage[] = [msg0, msg1, msg2, msg3, msg4, msg5, msg6, msg7, msg8, msg9];

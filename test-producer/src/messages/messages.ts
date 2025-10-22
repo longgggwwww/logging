@@ -1,4 +1,4 @@
-import { LogMessage } from "./types.js";
+import { LogMessage } from "../types/types.js";
 
 export const testMessages: (LogMessage | Partial<LogMessage>)[] = [
   // 1. E-COMMERCE - Login failed

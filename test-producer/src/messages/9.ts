@@ -1,4 +1,4 @@
-import { LogMessage } from "./types.js";
+import { LogMessage } from "../types/types.js";
 
 export const message: LogMessage = {
   project: "hr-management",

@@ -1,5 +1,5 @@
 import { Kafka } from "kafkajs";
-import { CONFIG } from "./config.js";
+import { CONFIG } from "../config/config.js";
 
 const kafka = new Kafka(CONFIG.kafka);
 
