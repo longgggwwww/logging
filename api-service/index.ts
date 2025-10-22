@@ -1,21 +1,23 @@
-import { PrismaClient } from '@prisma/client';
-import compression from 'compression';
-import cors from 'cors';
-import express from 'express';
-import helmet from 'helmet';
-import { createClient } from 'redis';
+import { PrismaClient } from "@prisma/client";
+import compression from "compression";
+import cors from "cors";
+import express, { Request, Response } from "express";
+import helmet from "helmet";
+import { createClient } from "redis";
 
 const app = express();
 const prisma = new PrismaClient();
-const port = process.env.PORT || 3000;
+const port: number = parseInt(process.env.PORT || "3000", 10);
 
 // Redis client setup
 const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
+  url: process.env.REDIS_URL || "redis://localhost:6379",
 });
 
-redisClient.on('error', (err) => console.error('❌ Redis Client Error', err));
-redisClient.on('connect', () => console.log('✅ Redis Client Connected'));
+redisClient.on("error", (err: Error) =>
+  console.error("❌ Redis Client Error", err),
+);
+redisClient.on("connect", () => console.log("✅ Redis Client Connected"));
 
 await redisClient.connect();
 
@@ -30,48 +32,72 @@ const CACHE_TTL = 300; // 5 minutes
 const DEFAULT_TAKE = 50;
 const MAX_TAKE = 1000;
 
+// Types
+interface TimeFilter {
+  gte?: Date;
+  lte?: Date;
+}
+
+interface CacheParams {
+  projectIds: string;
+  functionIds: string;
+  method?: string;
+  level?: string;
+  timeRange?: string;
+  startTime?: string;
+  endTime?: string;
+  cursorId?: string;
+  page: number;
+  take: number;
+  paginationType: string;
+}
+
 // Helper function to generate cache key
-function generateCacheKey(prefix, params) {
+function generateCacheKey(prefix: string, params: Record<string, any>): string {
   const sorted = Object.keys(params)
     .sort()
-    .map(key => `${key}:${params[key]}`)
-    .join('|');
+    .map((key) => `${key}:${params[key]}`)
+    .join("|");
   return `${prefix}:${sorted}`;
 }
 
 // Helper function to parse time range
-function getTimeRangeFilter(timeRange, startTime, endTime) {
+function getTimeRangeFilter(
+  timeRange?: string,
+  startTime?: string,
+  endTime?: string,
+): TimeFilter | undefined {
   const now = new Date();
-  let filter = {};
+  const filter: TimeFilter = {};
 
   if (timeRange) {
-    let startDate;
+    let startDate: Date;
     switch (timeRange) {
-      case '15m':
+      case "15m":
         startDate = new Date(now.getTime() - 15 * 60 * 1000);
         break;
-      case '30m':
+      case "30m":
         startDate = new Date(now.getTime() - 30 * 60 * 1000);
         break;
-      case '1h':
+      case "1h":
         startDate = new Date(now.getTime() - 60 * 60 * 1000);
         break;
-      case '3h':
+      case "3h":
         startDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
         break;
-      case '6h':
+      case "6h":
         startDate = new Date(now.getTime() - 6 * 60 * 60 * 1000);
         break;
-      case '12h':
+      case "12h":
         startDate = new Date(now.getTime() - 12 * 60 * 60 * 1000);
         break;
-      case '24h':
+      case "24h":
         startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
-      case '7d':
+      case "7d":
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
-      case '30d':
+      case "30d":
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       default:
@@ -91,49 +117,55 @@ function getTimeRangeFilter(timeRange, startTime, endTime) {
 }
 
 // GET /v1/logs - List logs with filters and pagination
-app.get('/v1/logs', async (req, res) => {
+app.get("/v1/logs", async (req: Request, res: Response) => {
   try {
     const {
       projectIds,
       functionIds,
       method,
-      type: level, // type in database (DEBUG, SUCCESS, INFO, WARNING, ERROR)
+      type, // type in database (DEBUG, SUCCESS, INFO, WARNING, ERROR)
       timeRange,
       startTime,
       endTime,
       cursorId,
-      page = 1,
-      take = DEFAULT_TAKE,
-      paginationType = 'cursor' // 'cursor' or 'offset'
-    } = req.query;
+      page = "1",
+      take = DEFAULT_TAKE.toString(),
+      paginationType = "cursor", // 'cursor' or 'offset'
+    } = req.query as Record<string, string>;
 
     // Parse and validate projectIds
-    let projectIdArray = [];
+    let projectIdArray: string[] = [];
     if (projectIds) {
-      projectIdArray = Array.isArray(projectIds) ? projectIds : projectIds.split(',').map(id => id.trim());
+      projectIdArray = Array.isArray(projectIds)
+        ? projectIds
+        : projectIds.split(",").map((id) => id.trim());
       if (projectIdArray.length > 10) {
         return res.status(400).json({
-          error: 'Bad request',
-          message: 'Maximum 10 project IDs allowed'
+          error: "Bad request",
+          message: "Maximum 10 project IDs allowed",
         });
       }
     }
 
     // Parse and validate functionIds
-    let functionIdArray = [];
+    let functionIdArray: string[] = [];
     if (functionIds) {
-      functionIdArray = Array.isArray(functionIds) ? functionIds : functionIds.split(',').map(id => id.trim());
+      functionIdArray = Array.isArray(functionIds)
+        ? functionIds
+        : functionIds.split(",").map((id) => id.trim());
       if (functionIdArray.length > 10) {
         return res.status(400).json({
-          error: 'Bad request',
-          message: 'Maximum 10 function IDs allowed'
+          error: "Bad request",
+          message: "Maximum 10 function IDs allowed",
         });
       }
     }
 
     // Validate pagination type
-    const validPaginationTypes = ['cursor', 'offset'];
-    const selectedPaginationType = validPaginationTypes.includes(paginationType) ? paginationType : 'cursor';
+    const validPaginationTypes = ["cursor", "offset"];
+    const selectedPaginationType = validPaginationTypes.includes(paginationType)
+      ? paginationType
+      : "cursor";
 
     // Validate and parse take
     const limit = Math.min(parseInt(take) || DEFAULT_TAKE, MAX_TAKE);
@@ -143,47 +175,53 @@ app.get('/v1/logs', async (req, res) => {
     const skip = (pageNumber - 1) * limit;
 
     // Build cache key
-    const cacheParams = { 
-      projectIds: projectIdArray.join(','), 
-      functionIds: functionIdArray.join(','), 
-      method, 
-      level, 
-      timeRange, 
-      startTime, 
-      endTime, 
-      cursorId, 
+    const cacheParams: CacheParams = {
+      projectIds: projectIdArray.join(","),
+      functionIds: functionIdArray.join(","),
+      method,
+      level: type,
+      timeRange,
+      startTime,
+      endTime,
+      cursorId,
       page: pageNumber,
       take: limit,
-      paginationType: selectedPaginationType
+      paginationType: selectedPaginationType,
     };
-    const cacheKey = generateCacheKey('logs:list', cacheParams);
+    const cacheKey = generateCacheKey("logs:list", cacheParams);
 
     // Try to get from cache
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-      console.log('✅ Cache hit for:', cacheKey);
+      console.log("✅ Cache hit for:", cacheKey);
       return res.json(JSON.parse(cached));
     }
 
-    console.log('❌ Cache miss for:', cacheKey);
+    console.log("❌ Cache miss for:", cacheKey);
 
     // Build where clause
-    const where = {};
+    const where: any = {};
 
     if (projectIdArray.length > 0) {
-      where.projectId = projectIdArray.length === 1 ? projectIdArray[0] : { in: projectIdArray };
+      where.projectId =
+        projectIdArray.length === 1
+          ? projectIdArray[0]
+          : { in: projectIdArray };
     }
 
     if (functionIdArray.length > 0) {
-      where.functionId = functionIdArray.length === 1 ? functionIdArray[0] : { in: functionIdArray };
+      where.functionId =
+        functionIdArray.length === 1
+          ? functionIdArray[0]
+          : { in: functionIdArray };
     }
 
     if (method) {
       where.method = method.toUpperCase();
     }
 
-    if (level) {
-      where.type = level.toUpperCase();
+    if (type) {
+      where.type = type.toUpperCase();
     }
 
     // Handle time range
@@ -193,30 +231,30 @@ app.get('/v1/logs', async (req, res) => {
     }
 
     // Build query options
-    const queryOptions = {
+    const queryOptions: any = {
       where,
       orderBy: {
-        createdAt: 'desc'
+        createdAt: "desc",
       },
       include: {
         project: {
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         },
         function: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     };
 
-    let response;
+    let response: any;
 
-    if (selectedPaginationType === 'offset') {
+    if (selectedPaginationType === "offset") {
       // Offset-based pagination
       queryOptions.skip = skip;
       queryOptions.take = limit;
@@ -224,7 +262,7 @@ app.get('/v1/logs', async (req, res) => {
       // Get total count for offset pagination
       const [logs, totalCount] = await Promise.all([
         prisma.log.findMany(queryOptions),
-        prisma.log.count({ where })
+        prisma.log.count({ where }),
       ]);
 
       const totalPages = Math.ceil(totalCount / limit);
@@ -233,31 +271,31 @@ app.get('/v1/logs', async (req, res) => {
       response = {
         data: logs,
         pagination: {
-          type: 'offset',
+          type: "offset",
           page: pageNumber,
           pageSize: limit,
           total: totalCount,
           totalPages,
           hasMore,
           hasPrevious: pageNumber > 1,
-          count: logs.length
+          count: logs.length,
         },
         filters: {
           projectIds: projectIdArray.length > 0 ? projectIdArray : undefined,
           functionIds: functionIdArray.length > 0 ? functionIdArray : undefined,
           method,
-          level,
+          level: type,
           timeRange,
           startTime,
-          endTime
-        }
+          endTime,
+        },
       };
     } else {
       // Cursor-based pagination
       // Handle cursor
       if (cursorId) {
         queryOptions.where.id = {
-          lt: cursorId // Get logs before this cursor
+          lt: cursorId, // Get logs before this cursor
         };
       }
 
@@ -275,20 +313,20 @@ app.get('/v1/logs', async (req, res) => {
       response = {
         data: results,
         pagination: {
-          type: 'cursor',
+          type: "cursor",
           nextCursor,
           hasMore,
-          count: results.length
+          count: results.length,
         },
         filters: {
           projectIds: projectIdArray.length > 0 ? projectIdArray : undefined,
           functionIds: functionIdArray.length > 0 ? functionIdArray : undefined,
           method,
-          level,
+          level: type,
           timeRange,
           startTime,
-          endTime
-        }
+          endTime,
+        },
       };
     }
 
@@ -296,17 +334,17 @@ app.get('/v1/logs', async (req, res) => {
     await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify(response));
 
     res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching logs:', error);
+  } catch (error: any) {
+    console.error("❌ Error fetching logs:", error);
     res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+      error: "Internal server error",
+      message: error.message,
     });
   }
 });
 
 // GET /v1/logs/:log_id - Get log by ID
-app.get('/v1/logs/:log_id', async (req, res) => {
+app.get("/v1/logs/:log_id", async (req: Request, res: Response) => {
   try {
     const { log_id } = req.params;
 
@@ -316,105 +354,105 @@ app.get('/v1/logs/:log_id', async (req, res) => {
     // Try to get from cache
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-      console.log('✅ Cache hit for log:', log_id);
+      console.log("✅ Cache hit for log:", log_id);
       return res.json(JSON.parse(cached));
     }
 
-    console.log('❌ Cache miss for log:', log_id);
+    console.log("❌ Cache miss for log:", log_id);
 
     // Query log
     const log = await prisma.log.findUnique({
       where: {
-        id: log_id
+        id: log_id,
       },
       include: {
         project: {
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         },
         function: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     if (!log) {
       return res.status(404).json({
-        error: 'Not found',
-        message: 'Log not found'
+        error: "Not found",
+        message: "Log not found",
       });
     }
 
     const response = {
-      data: log
+      data: log,
     };
 
     // Cache the response for longer (15 minutes) since individual logs don't change
     await redisClient.setEx(cacheKey, 900, JSON.stringify(response));
 
     res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching log:', error);
+  } catch (error: any) {
+    console.error("❌ Error fetching log:", error);
     res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+      error: "Internal server error",
+      message: error.message,
     });
   }
 });
 
 // Health check endpoint
-app.get('/health', async (req, res) => {
+app.get("/health", async (req: Request, res: Response) => {
   try {
     // Check database connection
-    await prisma.$queryRaw`SELECT 1`;
-    
+    await (prisma as any).$queryRaw`SELECT 1`;
+
     // Check redis connection
     await redisClient.ping();
 
     res.json({
-      status: 'healthy',
+      status: "healthy",
       timestamp: new Date().toISOString(),
       services: {
-        database: 'up',
-        redis: 'up'
-      }
+        database: "up",
+        redis: "up",
+      },
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(503).json({
-      status: 'unhealthy',
+      status: "unhealthy",
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 // GET /v1/projects - List all projects
 // Query params: expand=functions (to include functions)
-app.get('/v1/projects', async (req, res) => {
+app.get("/v1/projects", async (req: Request, res: Response) => {
   try {
-    const { expand } = req.query;
-    const includeFunctions = expand === 'functions';
-    const cacheKey = `projects:list:${includeFunctions ? 'with-functions' : 'basic'}`;
-    
+    const { expand } = req.query as Record<string, string>;
+    const includeFunctions = expand === "functions";
+    const cacheKey = `projects:list:${includeFunctions ? "with-functions" : "basic"}`;
+
     // Try cache
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-      console.log('✅ Cache hit for projects list');
+      console.log("✅ Cache hit for projects list");
       return res.json(JSON.parse(cached));
     }
 
-    console.log('❌ Cache miss for projects list');
+    console.log("❌ Cache miss for projects list");
 
     // Build query options
-    const queryOptions = {
+    const queryOptions: any = {
       orderBy: {
-        name: 'asc'
-      }
+        name: "asc",
+      },
     };
 
     // Include functions if expand=functions
@@ -422,9 +460,9 @@ app.get('/v1/projects', async (req, res) => {
       queryOptions.include = {
         functions: {
           orderBy: {
-            name: 'asc'
-          }
-        }
+            name: "asc",
+          },
+        },
       };
     }
 
@@ -432,241 +470,247 @@ app.get('/v1/projects', async (req, res) => {
 
     const response = {
       data: projects,
-      total: projects.length
+      total: projects.length,
     };
 
     // Cache for 5 minutes
     await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
 
     res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching projects:', error);
+  } catch (error: any) {
+    console.error("❌ Error fetching projects:", error);
     res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+      error: "Internal server error",
+      message: error.message,
     });
   }
 });
 
 // GET /v1/projects/:project_id - Get project by ID
-app.get('/v1/projects/:project_id', async (req, res) => {
+app.get("/v1/projects/:project_id", async (req: Request, res: Response) => {
   try {
     const { project_id } = req.params;
     const cacheKey = `project:${project_id}`;
-    
+
     // Try cache
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-      console.log('✅ Cache hit for project:', project_id);
+      console.log("✅ Cache hit for project:", project_id);
       return res.json(JSON.parse(cached));
     }
 
-    console.log('❌ Cache miss for project:', project_id);
+    console.log("❌ Cache miss for project:", project_id);
 
     const project = await prisma.project.findUnique({
       where: {
-        id: project_id
-      }
+        id: project_id,
+      },
     });
 
     if (!project) {
       return res.status(404).json({
-        error: 'Not found',
-        message: 'Project not found'
+        error: "Not found",
+        message: "Project not found",
       });
     }
 
     const response = {
-      data: project
+      data: project,
     };
 
     // Cache for 5 minutes
     await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
 
     res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching project:', error);
+  } catch (error: any) {
+    console.error("❌ Error fetching project:", error);
     res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+      error: "Internal server error",
+      message: error.message,
     });
   }
 });
 
 // GET /v1/projects/:project_id/functions - Get functions of a project
-app.get('/v1/projects/:project_id/functions', async (req, res) => {
+app.get(
+  "/v1/projects/:project_id/functions",
+  async (req: Request, res: Response) => {
+    try {
+      const { project_id } = req.params;
+      const cacheKey = `project:${project_id}:functions`;
+
+      // Try cache
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        console.log("✅ Cache hit for project functions:", project_id);
+        return res.json(JSON.parse(cached));
+      }
+
+      console.log("❌ Cache miss for project functions:", project_id);
+
+      // Check if project exists
+      const project = await prisma.project.findUnique({
+        where: {
+          id: project_id,
+        },
+      });
+
+      if (!project) {
+        return res.status(404).json({
+          error: "Not found",
+          message: "Project not found",
+        });
+      }
+
+      // Get functions of the project
+      const functions = await prisma.function.findMany({
+        where: {
+          projectId: project_id,
+        },
+        orderBy: {
+          name: "asc",
+        },
+      });
+
+      const response = {
+        data: functions,
+        total: functions.length,
+        project: {
+          id: project.id,
+          name: project.name,
+        },
+      };
+
+      // Cache for 5 minutes
+      await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
+
+      res.json(response);
+    } catch (error: any) {
+      console.error("❌ Error fetching project functions:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        message: error.message,
+      });
+    }
+  },
+);
+
+// GET /v1/functions - List all functions
+app.get("/v1/functions", async (req: Request, res: Response) => {
   try {
-    const { project_id } = req.params;
-    const cacheKey = `project:${project_id}:functions`;
-    
+    const cacheKey = "functions:list";
+
     // Try cache
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-      console.log('✅ Cache hit for project functions:', project_id);
+      console.log("✅ Cache hit for functions list");
       return res.json(JSON.parse(cached));
     }
 
-    console.log('❌ Cache miss for project functions:', project_id);
+    console.log("❌ Cache miss for functions list");
 
-    // Check if project exists
-    const project = await prisma.project.findUnique({
-      where: {
-        id: project_id
-      }
-    });
-
-    if (!project) {
-      return res.status(404).json({
-        error: 'Not found',
-        message: 'Project not found'
-      });
-    }
-
-    // Get functions of the project
     const functions = await prisma.function.findMany({
-      where: {
-        projectId: project_id
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: "asc",
+      },
     });
 
     const response = {
       data: functions,
       total: functions.length,
-      project: {
-        id: project.id,
-        name: project.name
-      }
     };
 
     // Cache for 5 minutes
     await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
 
     res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching project functions:', error);
+  } catch (error: any) {
+    console.error("❌ Error fetching functions:", error);
     res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
-    });
-  }
-});
-
-// GET /v1/functions - List all functions
-app.get('/v1/functions', async (req, res) => {
-  try {
-    const cacheKey = 'functions:list';
-    
-    // Try cache
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      console.log('✅ Cache hit for functions list');
-      return res.json(JSON.parse(cached));
-    }
-
-    console.log('❌ Cache miss for functions list');
-
-    const functions = await prisma.function.findMany({
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    });
-
-    const response = {
-      data: functions,
-      total: functions.length
-    };
-
-    // Cache for 5 minutes
-    await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
-
-    res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching functions:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+      error: "Internal server error",
+      message: error.message,
     });
   }
 });
 
 // GET /v1/functions/:function_id - Get function by ID
-app.get('/v1/functions/:function_id', async (req, res) => {
+app.get("/v1/functions/:function_id", async (req: Request, res: Response) => {
   try {
     const { function_id } = req.params;
     const cacheKey = `function:${function_id}`;
-    
+
     // Try cache
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-      console.log('✅ Cache hit for function:', function_id);
+      console.log("✅ Cache hit for function:", function_id);
       return res.json(JSON.parse(cached));
     }
 
-    console.log('❌ Cache miss for function:', function_id);
+    console.log("❌ Cache miss for function:", function_id);
 
     const func = await prisma.function.findUnique({
       where: {
-        id: function_id
+        id: function_id,
       },
       include: {
         project: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     if (!func) {
       return res.status(404).json({
-        error: 'Not found',
-        message: 'Function not found'
+        error: "Not found",
+        message: "Function not found",
       });
     }
 
     const response = {
-      data: func
+      data: func,
     };
 
     // Cache for 5 minutes
     await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
 
     res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching function:', error);
+  } catch (error: any) {
+    console.error("❌ Error fetching function:", error);
     res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+      error: "Internal server error",
+      message: error.message,
     });
   }
 });
 
 // Statistics endpoint
-app.get('/v1/stats', async (req, res) => {
+app.get("/v1/stats", async (req: Request, res: Response) => {
   try {
-    const { projectId, timeRange = '24h' } = req.query;
+    const { projectId, timeRange = "24h" } = req.query as Record<
+      string,
+      string
+    >;
 
-    const cacheKey = `stats:${projectId || 'all'}:${timeRange}`;
-    
+    const cacheKey = `stats:${projectId || "all"}:${timeRange}`;
+
     // Try cache
     const cached = await redisClient.get(cacheKey);
     if (cached) {
       return res.json(JSON.parse(cached));
     }
 
-    const where = {};
+    const where: any = {};
     if (projectId) {
       where.projectId = projectId;
     }
@@ -680,89 +724,91 @@ app.get('/v1/stats', async (req, res) => {
     const [total, byType, byMethod, byProject] = await Promise.all([
       // Total logs
       prisma.log.count({ where }),
-      
+
       // Logs by type
       prisma.log.groupBy({
-        by: ['type'],
-        where,
-        _count: true
-      }),
-      
-      // Logs by method
-      prisma.log.groupBy({
-        by: ['method'],
-        where,
-        _count: true
-      }),
-      
-      // Logs by project (if not filtered by project)
-      projectId ? Promise.resolve([]) : prisma.log.groupBy({
-        by: ['projectId'],
+        by: ["type"],
         where,
         _count: true,
-        take: 10,
-        orderBy: {
-          _count: {
-            projectId: 'desc'
-          }
-        }
-      })
+      }),
+
+      // Logs by method
+      prisma.log.groupBy({
+        by: ["method"],
+        where,
+        _count: true,
+      }),
+
+      // Logs by project (if not filtered by project)
+      projectId
+        ? Promise.resolve([])
+        : prisma.log.groupBy({
+            by: ["projectId"],
+            where,
+            _count: true,
+            take: 10,
+            orderBy: {
+              _count: {
+                projectId: "desc",
+              },
+            },
+          }),
     ]);
 
     const response = {
       total,
-      byType: byType.reduce((acc, item) => {
+      byType: byType.reduce((acc: any, item: any) => {
         acc[item.type] = item._count;
         return acc;
       }, {}),
-      byMethod: byMethod.reduce((acc, item) => {
+      byMethod: byMethod.reduce((acc: any, item: any) => {
         acc[item.method] = item._count;
         return acc;
       }, {}),
-      byProject: byProject.reduce((acc, item) => {
+      byProject: byProject.reduce((acc: any, item: any) => {
         acc[item.projectId] = item._count;
         return acc;
       }, {}),
-      timeRange
+      timeRange,
     };
 
     // Cache for 1 minute
     await redisClient.setEx(cacheKey, 60, JSON.stringify(response));
 
     res.json(response);
-  } catch (error) {
-    console.error('❌ Error fetching stats:', error);
+  } catch (error: any) {
+    console.error("❌ Error fetching stats:", error);
     res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
+      error: "Internal server error",
+      message: error.message,
     });
   }
 });
 
 // Graceful shutdown
-async function shutdown() {
-  console.log('⏳ Shutting down gracefully...');
+async function shutdown(): Promise<void> {
+  console.log("⏳ Shutting down gracefully...");
   try {
     await redisClient.quit();
     await prisma.$disconnect();
-    console.log('✅ Redis client disconnected');
-    console.log('✅ Prisma client disconnected');
+    console.log("✅ Redis client disconnected");
+    console.log("✅ Prisma client disconnected");
     process.exit(0);
-  } catch (error) {
-    console.error('❌ Error during shutdown:', error);
+  } catch (error: any) {
+    console.error("❌ Error during shutdown:", error);
     process.exit(1);
   }
 }
 
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
 // Start server
 app.listen(port, () => {
   console.log(`🚀 API Server listening on port ${port}`);
   console.log(`📊 Health check: http://localhost:${port}/health`);
   console.log(`📝 Logs API: http://localhost:${port}/v1/logs`);
-  console.log(`� Projects API: http://localhost:${port}/v1/projects`);
+  console.log(`🏗️ Projects API: http://localhost:${port}/v1/projects`);
   console.log(`⚡ Functions API: http://localhost:${port}/v1/functions`);
   console.log(`📈 Stats API: http://localhost:${port}/v1/stats`);
 });

@@ -7,6 +7,7 @@ API service for querying logs with Redis caching.
 ### 1. GET /v1/logs - List logs with filters and pagination
 
 Query parameters:
+
 - `projectIds` (optional): Filter by project IDs (comma-separated, max 10 IDs)
 - `functionIds` (optional): Filter by function IDs (comma-separated, max 10 IDs)
 - `method` (optional): Filter by HTTP method (GET, POST, PUT, PATCH, DELETE)
@@ -18,6 +19,7 @@ Query parameters:
 - `take` (optional): Number of logs to return (default: 50, max: 1000)
 
 Example:
+
 ```bash
 # Get all ERROR logs from last 24 hours
 curl "http://localhost:3000/v1/logs?level=ERROR&timeRange=24h"
@@ -36,6 +38,7 @@ curl "http://localhost:3000/v1/logs?startTime=2025-01-01T00:00:00Z&endTime=2025-
 ```
 
 Response:
+
 ```json
 {
   "data": [
@@ -92,11 +95,13 @@ Response:
 ### 2. GET /v1/logs/:log_id - Get log by ID
 
 Example:
+
 ```bash
 curl "http://localhost:3000/v1/logs/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 Response:
+
 ```json
 {
   "data": {
@@ -137,15 +142,18 @@ Response:
 ### 3. GET /v1/stats - Get statistics
 
 Query parameters:
+
 - `projectId` (optional): Filter by project ID
 - `timeRange` (optional): Time range (default: 24h)
 
 Example:
+
 ```bash
 curl "http://localhost:3000/v1/stats?timeRange=24h"
 ```
 
 Response:
+
 ```json
 {
   "total": 12345,
@@ -175,11 +183,13 @@ Response:
 ### 4. GET /health - Health check
 
 Example:
+
 ```bash
 curl "http://localhost:3000/health"
 ```
 
 Response:
+
 ```json
 {
   "status": "healthy",
