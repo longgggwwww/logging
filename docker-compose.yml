@@ -15,6 +15,21 @@ services:
     networks:
       - kafka-network
 
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_user
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+      MONGO_INITDB_DATABASE: log_processor_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - kafka-network
+
   # Redis Cache
   redis:
     image: redis:7-alpine
@@ -161,14 +176,14 @@ services:
         echo '✅ Kafka topics initialization completed!'
     restart: "no"
 
-  # Log Processor Service (Prisma + PostgreSQL)
+  # Log Processor Service (Prisma + MongoDB)
   log-processor:
     build:
       context: ./log-processor
       dockerfile: Dockerfile
     container_name: log-processor
     environment:
-      DATABASE_URL: "postgresql://kafka_user:kafka_password@postgres:5432/kafka_db?schema=public"
+      DATABASE_URL: "mongodb://mongo_user:mongo_password@mongodb:27017/log_processor_db?authSource=admin"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
       KAFKA_GROUP_ID: "log-processor-group"
       KAFKA_CLIENT_ID: "log-processor"
@@ -177,7 +192,7 @@ services:
     networks:
       - kafka-network
     depends_on:
-      - postgres
+      - mongodb
       - kafka-controller-1
       - kafka-controller-2
       - kafka-controller-3
@@ -248,6 +263,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  mongodb_data:
 
 networks:
   kafka-network:
