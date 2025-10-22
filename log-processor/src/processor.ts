@@ -64,28 +64,19 @@ export const processLogMessage = async (message: any): Promise<void> => {
         method: log.method,
         type: log.type,
 
-        // Request data
-        requestHeaders: log.request.headers,
-        requestUserAgent: log.request.userAgent,
-        requestUrl: log.request.url,
-        requestParams: log.request.params,
-        requestBody: log.request.body || null,
+        // Request data as Json
+        request: log.request,
 
-        // Response data
-        responseCode: log.response.code,
-        responseSuccess: log.response.success,
-        responseMessage: log.response.message,
-        responseData: log.response.data,
+        // Response data as Json
+        response: log.response,
 
         // Additional data
         consoleLog: log.consoleLog,
         additionalData: log.additionalData,
-        latency: log.latency,
+        latency: Math.floor(log.latency), // Convert to Int
 
-        // User data
-        createdById: log.createdBy?.id || null,
-        createdByFullname: log.createdBy?.fullname || null,
-        createdByEmplCode: log.createdBy?.emplCode || null,
+        // User data as Json
+        createdBy: log.createdBy,
 
         // Timestamps
         createdAt: new Date(log.createdAt),
