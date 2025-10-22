@@ -40,24 +40,40 @@ export interface Config {
 }
 
 export interface LogData {
-  projectName?: string;
-  function?: string;
+  id?: string;
+  projectId?: string;
+  functionId?: string;
   method?: string;
   type?: string;
-  createdAt?: string;
+  requestHeaders?: any;
+  requestUserAgent?: string;
+  requestUrl?: string;
+  requestParams?: any;
+  requestBody?: any;
+  responseCode?: number;
+  responseSuccess?: boolean;
+  responseMessage?: string;
+  responseData?: any;
+  consoleLog?: string;
+  additionalData?: any;
   latency?: number;
+  createdById?: string;
+  createdByFullname?: string;
+  createdByEmplCode?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  projectName?: string; // From relation
+  function?: string; // From relation
   response?: {
     code?: number;
     message?: string;
-  };
+  }; // For backward compatibility
   createdBy?: {
     fullname?: string;
-  };
+  }; // For backward compatibility
   request?: {
     url?: string;
-  };
-  consoleLog?: string;
-  additionalData?: any;
+  }; // For backward compatibility
   _retry?: {
     attemptCount: number;
     lastAttempt: string;

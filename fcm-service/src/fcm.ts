@@ -99,38 +99,34 @@ export const sendFCMNotification = async (
     body = body.slice(0, 197) + '...';
   }
 
-  // Create data payload with detailed information according to new structure
+  // Create data payload with detailed information according to Log model structure
   const dataPayload: FCMDataPayload = {
-    projectName: logData.projectName || 'N/A',
-    function: logData.function || 'N/A',
-    method: logData.method || 'N/A',
+    id: logData.id || 'null',
+    projectId: logData.projectId || 'null',
+    functionId: logData.functionId || 'null',
+    method: logData.method || 'null',
     type: logData.type || 'ERROR',
-    createdAt: logData.createdAt || new Date().toISOString(),
-    latency: String(logData.latency || 0),
-    responseCode: String(logData.response?.code || 'N/A'),
-    responseMessage: logData.response?.message || 'No message',
-    kafkaPartition: String(metadata.partition || 'N/A'),
-    kafkaOffset: String(metadata.offset || 'N/A'),
+    requestHeaders: logData.requestHeaders ? JSON.stringify(logData.requestHeaders) : 'null',
+    requestUserAgent: logData.requestUserAgent || 'null',
+    requestUrl: logData.requestUrl || 'null',
+    requestParams: logData.requestParams ? JSON.stringify(logData.requestParams) : 'null',
+    requestBody: logData.requestBody ? JSON.stringify(logData.requestBody) : 'null',
+    responseCode: logData.responseCode !== undefined ? String(logData.responseCode) : 'null',
+    responseSuccess: logData.responseSuccess !== undefined ? String(logData.responseSuccess) : 'null',
+    responseMessage: logData.responseMessage || 'null',
+    responseData: logData.responseData ? JSON.stringify(logData.responseData) : 'null',
+    consoleLog: logData.consoleLog || 'null',
+    additionalData: logData.additionalData ? JSON.stringify(logData.additionalData) : 'null',
+    latency: logData.latency !== undefined ? String(logData.latency) : 'null',
+    createdById: logData.createdById || 'null',
+    createdByFullname: logData.createdByFullname || 'null',
+    createdByEmplCode: logData.createdByEmplCode || 'null',
+    createdAt: logData.createdAt || 'null',
+    updatedAt: logData.updatedAt || 'null',
+    kafkaPartition: String(metadata.partition || 'null'),
+    kafkaOffset: String(metadata.offset || 'null'),
     page: '/log',
   };
-
-  // Add optional fields if available
-  if (logData.createdBy) {
-    dataPayload.createdBy = JSON.stringify(logData.createdBy);
-  }
-  if (logData.request?.url) {
-    dataPayload.url = logData.request.url;
-  }
-  if (logData.consoleLog) {
-    // Limit consoleLog because FCM has size limits
-    dataPayload.consoleLog = logData.consoleLog.slice(0, 500);
-  }
-  if (logData.additionalData) {
-    dataPayload.additionalData = JSON.stringify(logData.additionalData).slice(
-      0,
-      500
-    );
-  }
 
   // Create FCM message (base message without token/topic)
   const baseMessage = {
