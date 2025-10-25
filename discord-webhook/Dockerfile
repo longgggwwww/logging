@@ -11,11 +11,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
-
 # Expose port (not needed for this service, but good practice)
 # EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "index.js"]

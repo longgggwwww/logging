@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: kafka_db
       POSTGRES_USER: kafka_user
       POSTGRES_PASSWORD: kafka_password
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -19,8 +17,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    ports:
-      - "6379:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -45,8 +41,6 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
       CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
-    ports:
-      - "19092:19092"
     networks:
       - kafka-network
     depends_on:
@@ -69,8 +63,6 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
       CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
-    ports:
-      - "29092:29092"
     networks:
       - kafka-network
 
@@ -91,8 +83,6 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
       CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
-    ports:
-      - "39092:39092"
     networks:
       - kafka-network
 
@@ -100,8 +90,6 @@ services:
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
-    ports:
-      - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kraft-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092
@@ -243,6 +231,19 @@ services:
       - kafka-controller-2
       - kafka-controller-3
       - kafka-init
+    restart: unless-stopped
+
+  # Web App Service
+  web-app:
+    build:
+      context: ./web-app
+    container_name: web-app
+    ports:
+      - 8000:8000
+    networks:
+      - kafka-network
+    depends_on:
+      - api-service
     restart: unless-stopped
 
 volumes:

@@ -19,4 +19,4 @@ COPY . .
 EXPOSE 5555
 
 # Start application
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node index.js"]
+CMD ["node", "index.js"]
