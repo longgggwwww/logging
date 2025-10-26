@@ -156,7 +156,7 @@ services:
       dockerfile: Dockerfile
     container_name: log-processor
     environment:
-      DATABASE_URL: "postgresql://kafka_user:kafka_password@postgres:5432/kafka_db?schema=public"
+      DATABASE_URL: "postgresql://postgres.kuhpzmgfczywgcyelime:H83yV538rVdZwola@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
       KAFKA_GROUP_ID: "log-processor-group"
       KAFKA_CLIENT_ID: "log-processor"
@@ -179,7 +179,7 @@ services:
       dockerfile: Dockerfile
     container_name: api-service
     environment:
-      DATABASE_URL: "postgresql://kafka_user:kafka_password@postgres:5432/kafka_db?schema=public"
+      DATABASE_URL: "postgresql://postgres.kuhpzmgfczywgcyelime:H83yV538rVdZwola@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres"
       REDIS_URL: "redis://redis:6379"
       PORT: "3000"
       NODE_ENV: "production"
@@ -239,7 +239,7 @@ services:
       context: ./web-app
     container_name: web-app
     ports:
-      - 8000:8000
+      - 8000:80
     networks:
       - kafka-network
     depends_on:

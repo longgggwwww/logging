@@ -9,6 +9,9 @@ COPY prisma ./prisma/
 # Install dependencies
 RUN npm install
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Generate Prisma Client
 RUN npx prisma generate
 

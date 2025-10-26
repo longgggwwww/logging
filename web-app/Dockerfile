@@ -1,5 +1,5 @@
-# Use Node.js official image
-FROM node:20-alpine
+# Build stage
+FROM node:20-alpine as build
 
 # Set working directory
 WORKDIR /app
@@ -13,8 +13,17 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Expose port nếu cần (ví dụ: 3000 cho web)
-EXPOSE 3000
+# Build the application
+RUN npm run build
 
-# Start app (có thể cần chỉnh lại cho phù hợp framework)
-CMD ["npm", "start"]
+# Serve stage
+FROM nginx:alpine
+
+# Copy built files from build stage
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
