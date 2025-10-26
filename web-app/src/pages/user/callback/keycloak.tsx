@@ -1,7 +1,7 @@
+import { formatUserForDashboard, handleKeycloakCallback, loadKeycloakUserProfile } from '@/services/keycloak';
+import { history, useModel } from '@umijs/max';
 import { Spin } from 'antd';
 import { useEffect } from 'react';
-import { history, useModel } from '@umijs/max';
-import { handleKeycloakCallback, formatUserForDashboard, loadKeycloakUserProfile } from '@/services/keycloak';
 import { flushSync } from 'react-dom';
 
 const KeycloakCallback: React.FC = () => {
@@ -44,7 +44,7 @@ const KeycloakCallback: React.FC = () => {
 
           // Redirect về trang chính hoặc trang được yêu cầu
           const urlParams = new URL(window.location.href).searchParams;
-          const redirect = urlParams.get('redirect') || '/welcome';
+          const redirect = urlParams.get('redirect') || '/list';
           history.push(redirect);
         } else {
           // Nếu không có token, redirect về trang login
