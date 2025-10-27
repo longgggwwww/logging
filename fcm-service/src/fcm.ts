@@ -106,17 +106,33 @@ export const sendFCMNotification = async (
     functionId: logData.functionId || 'null',
     method: logData.method || 'null',
     type: logData.type || 'ERROR',
-    requestHeaders: logData.requestHeaders ? JSON.stringify(logData.requestHeaders) : 'null',
+    requestHeaders: logData.requestHeaders
+      ? JSON.stringify(logData.requestHeaders)
+      : 'null',
     requestUserAgent: logData.requestUserAgent || 'null',
     requestUrl: logData.requestUrl || 'null',
-    requestParams: logData.requestParams ? JSON.stringify(logData.requestParams) : 'null',
-    requestBody: logData.requestBody ? JSON.stringify(logData.requestBody) : 'null',
-    responseCode: logData.responseCode !== undefined ? String(logData.responseCode) : 'null',
-    responseSuccess: logData.responseSuccess !== undefined ? String(logData.responseSuccess) : 'null',
+    requestParams: logData.requestParams
+      ? JSON.stringify(logData.requestParams)
+      : 'null',
+    requestBody: logData.requestBody
+      ? JSON.stringify(logData.requestBody)
+      : 'null',
+    responseCode:
+      logData.responseCode !== undefined
+        ? String(logData.responseCode)
+        : 'null',
+    responseSuccess:
+      logData.responseSuccess !== undefined
+        ? String(logData.responseSuccess)
+        : 'null',
     responseMessage: logData.responseMessage || 'null',
-    responseData: logData.responseData ? JSON.stringify(logData.responseData) : 'null',
+    responseData: logData.responseData
+      ? JSON.stringify(logData.responseData)
+      : 'null',
     consoleLog: logData.consoleLog || 'null',
-    additionalData: logData.additionalData ? JSON.stringify(logData.additionalData) : 'null',
+    additionalData: logData.additionalData
+      ? JSON.stringify(logData.additionalData)
+      : 'null',
     latency: logData.latency !== undefined ? String(logData.latency) : 'null',
     createdById: logData.createdById || 'null',
     createdByFullname: logData.createdByFullname || 'null',

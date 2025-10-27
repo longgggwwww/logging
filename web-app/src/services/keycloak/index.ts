@@ -42,7 +42,7 @@ export const initKeycloakWithSession = async (): Promise<boolean> => {
       token: token || undefined,
       refreshToken: refreshToken || undefined,
       // Silent SSO disabled due to CSP issues
-      // silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+      silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
     });
 
     if (authenticated) {

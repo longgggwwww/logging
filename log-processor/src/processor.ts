@@ -97,7 +97,7 @@ export const processLogMessage = async (message: any): Promise<void> => {
 // ============================================
 export const connectDatabase = async (): Promise<void> => {
   await prisma.$connect();
-  console.log("✅ Connected to PostgreSQL");
+  console.log("✅ Connected to MongoDB");
 };
 
 export const disconnectDatabase = async (): Promise<void> => {

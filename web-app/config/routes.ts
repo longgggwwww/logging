@@ -58,7 +58,7 @@ export default [
   },
   {
     path: '/',
-    redirect: '/welcome',
+    component: './table-list',
   },
   {
     component: '404',

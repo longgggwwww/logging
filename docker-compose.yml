@@ -1,5 +1,4 @@
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15
     container_name: postgres
@@ -15,22 +14,18 @@ services:
     networks:
       - kafka-network
 
-  # MongoDB Database
   mongodb:
     image: mongo:7.0
     container_name: mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo_user
-      MONGO_INITDB_ROOT_PASSWORD: mongo_password
-      MONGO_INITDB_DATABASE: log_processor_db
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+      - ./init-scripts/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
+    command: --replSet rs0 --bind_ip_all
     networks:
       - kafka-network
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -42,7 +37,6 @@ services:
     networks:
       - kafka-network
 
-  # Kafka Cluster with KRaft Mode (3 brokers)
   kafka-controller-1:
     image: apache/kafka:3.7.0
     container_name: kafka-controller-1
@@ -111,7 +105,6 @@ services:
     networks:
       - kafka-network
 
-  # Kafka UI
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -129,7 +122,6 @@ services:
       - kafka-controller-2
       - kafka-controller-3
 
-  # Kafka Topics Initialization
   kafka-init:
     image: apache/kafka:3.7.0
     container_name: kafka-init
@@ -142,48 +134,19 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        echo '⏳ Waiting for Kafka brokers to be ready...'
         sleep 20
-        
-        echo '🚀 Creating Kafka topics...'
-        
-        # Create topic error-logs (main topic)
-        echo '📝 Creating main topic: error-logs'
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
-        
-        # Create topic retry queue
-        echo '📝 Creating retry topic: error-logs-retry'
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-retry --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
-        
-        # Create Dead Letter Queue
-        echo '📝 Creating dead letter queue: error-logs-dlq'
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
-        
-        echo '✅ Topics creation completed!'
-        echo ''
-        echo '📋 Current topics list:'
-        /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server kafka-controller-1:9092
-        
-        echo ''
-        echo '📊 Topics details:'
-        /opt/kafka/bin/kafka-topics.sh --describe --topic error-logs --bootstrap-server kafka-controller-1:9092
-        
-        /opt/kafka/bin/kafka-topics.sh --describe --topic error-logs-retry --bootstrap-server kafka-controller-1:9092
-        
-        /opt/kafka/bin/kafka-topics.sh --describe --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092
-        
-        echo ''
-        echo '✅ Kafka topics initialization completed!'
     restart: "no"
 
-  # Log Processor Service (Prisma + MongoDB)
   log-processor:
     build:
       context: ./log-processor
       dockerfile: Dockerfile
     container_name: log-processor
     environment:
-      DATABASE_URL: "mongodb://mongo_user:mongo_password@mongodb:27017/log_processor_db?authSource=admin"
+      DATABASE_URL: "mongodb://mongo_user:mongo_password@mongodb:27017/log_processor_db?authSource=admin&replicaSet=rs0"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
       KAFKA_GROUP_ID: "log-processor-group"
       KAFKA_CLIENT_ID: "log-processor"
@@ -199,14 +162,13 @@ services:
       - kafka-init
     restart: unless-stopped
 
-  # API Service
   api-service:
     build:
       context: ./api-service
       dockerfile: Dockerfile
     container_name: api-service
     environment:
-      DATABASE_URL: "postgresql://kafka_user:kafka_password@postgres:5432/kafka_db?schema=public"
+      DATABASE_URL: "mongodb://mongo_user:mongo_password@mongodb:27017/log_processor_db?authSource=admin&replicaSet=rs0"
       REDIS_URL: "redis://redis:6379"
       PORT: "3000"
       NODE_ENV: "production"
@@ -215,11 +177,10 @@ services:
     networks:
       - kafka-network
     depends_on:
-      - postgres
+      - mongodb
       - redis
     restart: unless-stopped
 
-  # Discord Webhook Service
   discord-webhook:
     build:
       context: ./discord-webhook
@@ -238,7 +199,6 @@ services:
       - kafka-init
     restart: unless-stopped
 
-  # FCM Service
   fcm-service:
     build:
       context: ./fcm-service

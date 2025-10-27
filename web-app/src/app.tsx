@@ -17,11 +17,13 @@ import {
   formatUserForDashboard, 
   loadKeycloakUserProfile,
   getAccessToken,
-  initKeycloakWithSession 
+  initKeycloakWithSession,
+  isKeycloakAuthenticated 
 } from '@/services/keycloak';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 import '@ant-design/v5-patch-for-react-19';
+import AuthCheck from '@/components/AuthCheck';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isDevOrTest = isDev || process.env.CI;
@@ -106,8 +108,8 @@ export const layout: RunTimeLayoutConfig = ({
     footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
-      // 如果没有登录，重定向到 login
-      if (!initialState?.currentUser && location.pathname !== loginPath) {
+      // Nếu không đăng nhập, redirect đến login
+      if (!isKeycloakAuthenticated() && location.pathname !== loginPath) {
         history.push(loginPath);
       }
     },
@@ -144,24 +146,10 @@ export const layout: RunTimeLayoutConfig = ({
     // unAccessible: <div>unAccessible</div>,
     // 增加一个 loading 的状态
     childrenRender: (children) => {
-      // if (initialState?.loading) return <PageLoading />;
       return (
-        <>
+        <AuthCheck>
           {children}
-          {isDevOrTest && (
-            <SettingDrawer
-              disableUrlParams
-              enableDarkTheme
-              settings={initialState?.settings}
-              onSettingChange={(settings) => {
-                setInitialState((preInitialState) => ({
-                  ...preInitialState,
-                  settings,
-                }));
-              }}
-            />
-          )}
-        </>
+        </AuthCheck>
       );
     },
     ...initialState?.settings,
