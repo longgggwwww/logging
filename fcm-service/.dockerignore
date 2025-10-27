@@ -20,6 +20,5 @@ dist/
 .prettierignore
 .prettierrc
 eslint.config.js
-tsconfig.json
 docs/
 *.log
