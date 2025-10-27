@@ -4,19 +4,15 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY prisma ./prisma/
 
 # Install dependencies
-RUN npm ci --only=production
-
-# Generate Prisma Client
-RUN npx prisma generate
+RUN npm ci
 
 # Copy application code
 COPY . .
 
-# Expose port for Prisma Studio (optional)
-EXPOSE 5555
+# Build the application
+RUN npm run build
 
 # Start application
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node index.js"]
+CMD ["npm", "start"]

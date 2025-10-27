@@ -5,11 +5,8 @@ import {
   disconnectConsumer,
 } from "./kafka.js";
 import { CONFIG } from "./config.js";
-import {
-  processLogMessage,
-  connectDatabase,
-  disconnectDatabase,
-} from "./processor.js";
+import { processLogMessage } from "./processor.js";
+import { connectDatabase, disconnectDatabase } from "./db.js";
 
 // ============================================
 // GRACEFUL SHUTDOWN
