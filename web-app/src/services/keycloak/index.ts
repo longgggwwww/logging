@@ -3,7 +3,7 @@ import type { KeycloakConfig, KeycloakAuthData } from './types';
 
 // Cấu hình Keycloak - điều chỉnh theo môi trường của bạn
 const keycloakConfig: any = {
-  url: 'https://keycloak.iit.vn/',
+  url: process.env.KEYCLOAK_URL || 'https://keycloak.iit.vn',
   realm: process.env.KEYCLOAK_REALM || 'master',
   clientId: process.env.KEYCLOAK_CLIENT_ID || 'test-syslog',
   // CẢNH BÁO: Chỉ uncomment dòng dưới nếu client là Confidential
