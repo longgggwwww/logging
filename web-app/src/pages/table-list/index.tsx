@@ -381,8 +381,26 @@ const TableList: React.FC = () => {
               filters: response.filters,
             });
 
+            // Normalize API items to shape expected by the table.
+            // The backend returns nested `request.url` and `response.code`,
+            // but the table/typings expect flat `requestUrl` and `responseCode`.
+            const mapped = (response.data || []).map((item: any) => ({
+              ...item,
+              // request.* -> flattened fields used by columns / drawer
+              requestUrl: item.request?.url ?? item.requestUrl ?? '',
+              requestHeaders: item.request?.headers ?? item.requestHeaders,
+              requestUserAgent: item.request?.userAgent ?? item.requestUserAgent,
+              requestParams: item.request?.params ?? item.requestParams,
+              requestBody: item.request?.body ?? item.requestBody,
+              // response.* -> flattened fields
+              responseCode: item.response?.code ?? item.responseCode ?? 0,
+              responseSuccess: item.response?.success ?? item.responseSuccess,
+              responseMessage: item.response?.message ?? item.responseMessage,
+              responseData: item.response?.data ?? item.responseData,
+            }));
+
             return {
-              data: response.data,
+              data: mapped,
               success: true,
               total: response.pagination.total || 0,
             };
