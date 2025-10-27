@@ -6,31 +6,26 @@ services:
       POSTGRES_DB: kafka_db
       POSTGRES_USER: kafka_user
       POSTGRES_PASSWORD: kafka_password
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
+      - ./init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql
     networks:
       - kafka-network
 
   mongodb:
     image: mongo:7.0
     container_name: mongodb
-    ports:
-      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - mongodb_data:/data/db
-      - ./init-scripts/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
-    command: --replSet rs0 --bind_ip_all
     networks:
       - kafka-network
 
   redis:
     image: redis:7-alpine
     container_name: redis
-    ports:
-      - "6379:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -146,7 +141,7 @@ services:
       dockerfile: Dockerfile
     container_name: log-processor
     environment:
-      DATABASE_URL: "mongodb://mongo_user:mongo_password@mongodb:27017/log_processor_db?authSource=admin&replicaSet=rs0"
+      DATABASE_URL: "mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
       KAFKA_GROUP_ID: "log-processor-group"
       KAFKA_CLIENT_ID: "log-processor"
@@ -168,7 +163,7 @@ services:
       dockerfile: Dockerfile
     container_name: api-service
     environment:
-      DATABASE_URL: "mongodb://mongo_user:mongo_password@mongodb:27017/log_processor_db?authSource=admin&replicaSet=rs0"
+      DATABASE_URL: "mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin"
       REDIS_URL: "redis://redis:6379"
       PORT: "3000"
       NODE_ENV: "production"
@@ -179,6 +174,17 @@ services:
     depends_on:
       - mongodb
       - redis
+    restart: unless-stopped
+
+  web-app:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+    container_name: web-app
+    ports:
+      - "8000:80"
+    networks:
+      - kafka-network
     restart: unless-stopped
 
   discord-webhook:
