@@ -187,14 +187,15 @@ services:
       - kafka-network
     restart: unless-stopped
 
-  discord-webhook:
+  discord-bot:
     build:
-      context: ./discord-webhook
+      context: ./discord-bot
       dockerfile: Dockerfile
-    container_name: discord-webhook
+    container_name: discord-bot
     environment:
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
-      DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/1425882193229643818/8nmQfxFdkFYsvcDuyAw0RtU6OSVbqJrITmxLJscQeo5Fxq9DS2TVaFscb3FLy64yZAhP"
+      DISCORD_TOKEN: "${DISCORD_BOT_TOKEN}"
+      DISCORD_GUILD_ID: "${DISCORD_GUILD_ID}"
       NODE_ENV: "production"
     networks:
       - kafka-network
