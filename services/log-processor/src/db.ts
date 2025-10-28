@@ -1,12 +1,11 @@
 import mongoose from "mongoose";
 
 export const connectDatabase = async (): Promise<void> => {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL not set");
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL not set");
+  }
 
-  await mongoose.connect(url, {
-    // keep default options
-  } as any);
+  await mongoose.connect(process.env.DATABASE_URL); // keep default options
   console.log("✅ Connected to MongoDB via Mongoose");
 };
 
