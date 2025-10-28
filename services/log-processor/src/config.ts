@@ -1,15 +1,11 @@
-import * as dotenv from "dotenv";
 import { Config } from "./types.js";
-
-// Load environment variables
-dotenv.config();
 
 // ============================================
 // CONFIGURATION
 // ============================================
 export const CONFIG: Config = {
   kafka: {
-    clientId: process.env.KAFKA_CLIENT_ID || "log-processor",
+    clientId: "log-processor",
     brokers: (
       process.env.KAFKA_BROKERS ||
       "localhost:19092,localhost:29092,localhost:39092"
@@ -22,7 +18,7 @@ export const CONFIG: Config = {
     },
   },
   consumer: {
-    groupId: process.env.KAFKA_GROUP_ID || "log-processor-group",
+    groupId: "log-processor-group",
     sessionTimeout: 30000,
     heartbeatInterval: 3000,
     maxWaitTimeInMs: 5000,
