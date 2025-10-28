@@ -27,5 +27,10 @@ export const CONFIG: Config = {
     heartbeatInterval: 3000,
     maxWaitTimeInMs: 5000,
   },
-  topic: process.env.KAFKA_TOPIC || "error-logs",
+  topics: {
+    main: process.env.KAFKA_MAIN_TOPIC || "error-logs",
+    deadLetter: process.env.KAFKA_DLQ_TOPIC || "error-logs-dlq",
+    retry: process.env.KAFKA_RETRY_TOPIC || "error-logs-retry",
+  },
+  maxRetries: 3,
 };

@@ -1,5 +1,6 @@
 import {
   consumer,
+  producer,
   connectConsumer,
   subscribeToTopic,
   disconnectConsumer,
@@ -15,6 +16,7 @@ export const shutdown = async (): Promise<void> => {
   console.log("⏳ Shutting down gracefully...");
   try {
     await disconnectConsumer();
+    await producer.disconnect();
     await disconnectDatabase();
     process.exit(0);
   } catch (error) {
@@ -36,6 +38,8 @@ export const run = async (): Promise<void> => {
 
     // Connect to Kafka
     await connectConsumer();
+    await producer.connect();
+    console.log("✅ Producer connected");
 
     // Wait a bit for metadata to sync
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -61,28 +65,73 @@ export const run = async (): Promise<void> => {
           const err = error as Error;
           console.error("Error details:", err.message);
           console.error("Error stack:", err.stack);
-          // Could implement retry logic or send to another DLQ here
+
+          // Implement retry logic
+          try {
+            if (!message.value) {
+              console.error("❌ Message value is null");
+              return;
+            }
+            const rawMessage = message.value.toString();
+            let logData = JSON.parse(rawMessage);
+            let attemptCount = logData._retry?.attemptCount || 0;
+
+            attemptCount += 1;
+
+            if (attemptCount <= CONFIG.maxRetries) {
+              // Send to retry topic
+              logData._retry = { attemptCount };
+              await producer.send({
+                topic: CONFIG.topics.retry,
+                messages: [{ value: JSON.stringify(logData) }],
+              });
+              console.log(
+                `🔄 Sent message to retry topic (attempt ${attemptCount})`,
+              );
+            } else {
+              // Send to DLQ
+              await producer.send({
+                topic: CONFIG.topics.deadLetter,
+                messages: [{ value: JSON.stringify(logData) }],
+              });
+              console.log(
+                `🗑️ Sent message to DLQ after ${attemptCount} attempts`,
+              );
+            }
+          } catch (retryError) {
+            console.error("❌ Failed to send to retry/DLQ:", retryError);
+          }
         }
       },
     });
 
     console.log("🚀 Log processor service is running...");
-    console.log(`👂 Listening for messages on topic: ${CONFIG.topic}`);
+    console.log(
+      `👂 Listening for messages on topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`,
+    );
   } catch (error: any) {
     console.error("❌ Error starting consumer:", error);
     console.error("Error details:", error.message);
 
     if (error.type === "UNKNOWN_TOPIC_OR_PARTITION") {
       console.error(
-        `\n💡 Topic "${CONFIG.topic}" might not exist or is not ready.`,
+        `\n💡 Topics "${CONFIG.topics.main}", "${CONFIG.topics.retry}" might not exist or are not ready.`,
       );
-      console.error("Please ensure the topic exists by running:");
+      console.error("Please ensure the topics exist by running:");
       console.error(
         `docker exec kafka-controller-1 /opt/kafka/bin/kafka-topics.sh \\`,
       );
       console.error(`  --bootstrap-server localhost:9092 \\`);
       console.error(`  --create --if-not-exists \\`);
-      console.error(`  --topic ${CONFIG.topic} \\`);
+      console.error(`  --topic ${CONFIG.topics.main} \\`);
+      console.error(`  --partitions 3 \\`);
+      console.error(`  --replication-factor 3`);
+      console.error(
+        `  && docker exec kafka-controller-1 /opt/kafka/bin/kafka-topics.sh \\`,
+      );
+      console.error(`  --bootstrap-server localhost:9092 \\`);
+      console.error(`  --create --if-not-exists \\`);
+      console.error(`  --topic ${CONFIG.topics.retry} \\`);
       console.error(`  --partitions 3 \\`);
       console.error(`  --replication-factor 3`);
     }

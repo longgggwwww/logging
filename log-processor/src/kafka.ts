@@ -26,6 +26,11 @@ export const consumer = kafka.consumer({
   maxWaitTimeInMs: CONFIG.consumer.maxWaitTimeInMs,
 });
 
+export const producer = kafka.producer({
+  allowAutoTopicCreation: true,
+  transactionTimeout: 30000,
+});
+
 // ============================================
 // KAFKA OPERATIONS
 // ============================================
@@ -36,13 +41,16 @@ export const connectConsumer = async (): Promise<void> => {
 };
 
 export const subscribeToTopic = async (): Promise<void> => {
-  console.log(`📝 Subscribing to topic: ${CONFIG.topic}...`);
+  console.log(
+    `📝 Subscribing to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}...`,
+  );
   await consumer.subscribe({
-    topic: CONFIG.topic,
-    fromBeginning: true,
+    topics: [CONFIG.topics.main, CONFIG.topics.retry],
+    fromBeginning: false,
   });
-  console.log(`✅ Subscribed to topic: ${CONFIG.topic}`);
-  console.log(`🔍 Topic value confirmed: ${CONFIG.topic}`);
+  console.log(
+    `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`,
+  );
 };
 
 export const disconnectConsumer = async (): Promise<void> => {

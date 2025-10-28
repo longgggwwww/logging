@@ -16,8 +16,18 @@ export interface ILogModel extends Document {
 
 const logSchema = new Schema<ILogModel>(
   {
-    projectId: { type: Schema.Types.ObjectId, ref: "Project", required: true, index: true },
-    functionId: { type: Schema.Types.ObjectId, ref: "Function", required: true, index: true },
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: "Project",
+      required: true,
+      index: true,
+    },
+    functionId: {
+      type: Schema.Types.ObjectId,
+      ref: "Function",
+      required: true,
+      index: true,
+    },
     method: { type: String, required: true },
     type: { type: String, required: true },
     request: { type: Schema.Types.Mixed },
@@ -37,6 +47,7 @@ logSchema.index({ method: 1 });
 logSchema.index({ type: 1 });
 logSchema.index({ createdAt: 1 });
 
-export const LogModel = mongoose.models.Log || mongoose.model<ILogModel>("Log", logSchema);
+export const LogModel =
+  mongoose.models.Log || mongoose.model<ILogModel>("Log", logSchema);
 
 export default LogModel;

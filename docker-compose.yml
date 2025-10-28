@@ -146,6 +146,9 @@ services:
       KAFKA_GROUP_ID: "log-processor-group"
       KAFKA_CLIENT_ID: "log-processor"
       KAFKA_TOPIC: "logs.error.dlq"
+      KAFKA_MAIN_TOPIC: "error-logs"
+      KAFKA_DLQ_TOPIC: "error-logs-dlq"
+      KAFKA_RETRY_TOPIC: "error-logs-retry"
       NODE_ENV: "production"
     networks:
       - kafka-network
@@ -181,6 +184,11 @@ services:
       context: ./web-app
       dockerfile: Dockerfile
     container_name: web-app
+    environment:
+      KEYCLOAK_URL: "https://keycloak.iit.vn"
+      KEYCLOAK_REALM: "system"
+      KEYCLOAK_CLIENT_ID: "log-monitoring"
+      REACT_APP_API_BASE_URL: "http://api-service:3000"
     ports:
       - "8000:80"
     networks:
@@ -193,10 +201,15 @@ services:
       dockerfile: Dockerfile
     container_name: discord-bot
     environment:
+      NODE_ENV: "production"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
+      KAFKA_MAIN_TOPIC: "error-logs"
+      KAFKA_RETRY_TOPIC: "error-logs-retry"
+      KAFKA_DLQ_TOPIC: "error-logs-dlq"
       DISCORD_TOKEN: "${DISCORD_BOT_TOKEN}"
       DISCORD_GUILD_ID: "${DISCORD_GUILD_ID}"
-      NODE_ENV: "production"
+      DISCORD_CRITICAL_TYPES: "ERROR"
+      DISCORD_MIN_SEVERITY_CODE: "500"
     networks:
       - kafka-network
     depends_on:
@@ -217,6 +230,8 @@ services:
       KAFKA_DLQ_TOPIC: "error-logs-dlq"
       KAFKA_RETRY_TOPIC: "error-logs-retry"
       FCM_TOPICS: "all_users,error_alerts"
+      FCM_MIN_SEVERITY_CODE: "500"
+      FCM_CRITICAL_TYPES: "ERROR"
       NODE_ENV: "production"
     networks:
       - kafka-network

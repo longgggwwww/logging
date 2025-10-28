@@ -9,7 +9,13 @@ export const processLogMessage = async (message: any): Promise<void> => {
     const log: LogMessage = JSON.parse(message.value.toString());
 
     // Validate required fields
-    if (!log.project || !log.function || !log.method || !log.type || !log.createdAt) {
+    if (
+      !log.project ||
+      !log.function ||
+      !log.method ||
+      !log.type ||
+      !log.createdAt
+    ) {
       console.error("❌ Invalid log message - missing required fields:", log);
       return;
     }
@@ -22,10 +28,18 @@ export const processLogMessage = async (message: any): Promise<void> => {
     }
 
     // Find or create function
-    let func = await FunctionModel.findOne({ projectId: project._id, name: log.function }).exec();
+    let func = await FunctionModel.findOne({
+      projectId: project._id,
+      name: log.function,
+    }).exec();
     if (!func) {
-      func = await FunctionModel.create({ name: log.function, projectId: project._id });
-      console.log(`✅ Created new function: ${log.function} for project: ${log.project}`);
+      func = await FunctionModel.create({
+        name: log.function,
+        projectId: project._id,
+      });
+      console.log(
+        `✅ Created new function: ${log.function} for project: ${log.project}`,
+      );
     }
 
     // Create log entry
@@ -43,10 +57,11 @@ export const processLogMessage = async (message: any): Promise<void> => {
       createdAt: new Date(log.createdAt),
     });
 
-    console.log(`✅ Processed log: ${log.type} - ${log.project}/${log.function} - ${log.method}`);
+    console.log(
+      `✅ Processed log: ${log.type} - ${log.project}/${log.function} - ${log.method}`,
+    );
   } catch (error) {
     console.error("❌ Error processing message:", error);
     throw error;
   }
 };
-

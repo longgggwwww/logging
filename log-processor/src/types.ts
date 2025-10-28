@@ -51,5 +51,10 @@ export interface ConsumerConfig {
 export interface Config {
   kafka: KafkaConfig;
   consumer: ConsumerConfig;
-  topic: string;
+  topics: {
+    main: string;
+    deadLetter: string;
+    retry: string;
+  };
+  maxRetries: number;
 }
