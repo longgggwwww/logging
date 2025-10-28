@@ -73,7 +73,7 @@ export const run = async (): Promise<void> => {
               return;
             }
             const rawMessage = message.value.toString();
-            let logData = JSON.parse(rawMessage);
+            const logData = JSON.parse(rawMessage);
             let attemptCount = logData._retry?.attemptCount || 0;
 
             attemptCount += 1;
