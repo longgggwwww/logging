@@ -1,4 +1,4 @@
-import { LogMessage } from "../types/types.js";
+import { LogMessage } from "../types.js";
 
 export const message: LogMessage = {
   project: "storage-service",
@@ -17,9 +17,14 @@ export const message: LogMessage = {
     message: "File not found",
     data: [],
   },
-  consoleLog: "Error: ENOENT: no such file or directory, open '/data/config.yaml'",
+  consoleLog:
+    "Error: ENOENT: no such file or directory, open '/data/config.yaml'",
   createdAt: new Date().toISOString(),
-  createdBy: { id: "svc-storage", fullname: "Storage Service", emplCode: "STG001" },
+  createdBy: {
+    id: "svc-storage",
+    fullname: "Storage Service",
+    emplCode: "STG001",
+  },
   additionalData: { path: "/data/config.yaml" },
   latency: 15,
 };

@@ -1,4 +1,4 @@
-import { LogMessage } from "../types/types.js";
+import { LogMessage } from "../types.js";
 
 export const message: LogMessage = {
   project: "notification-service",
@@ -20,7 +20,11 @@ export const message: LogMessage = {
   },
   consoleLog: "Error: ProviderError: 500 Internal Server Error",
   createdAt: new Date().toISOString(),
-  createdBy: { id: "svc-notify", fullname: "Notification Service", emplCode: "NOT001" },
+  createdBy: {
+    id: "svc-notify",
+    fullname: "Notification Service",
+    emplCode: "NOT001",
+  },
   additionalData: { provider: "fcm", deviceId: "dev-123" },
   latency: 980,
 };
