@@ -1,4 +1,4 @@
-import { LogMessage } from "../types/types.js";
+import { LogMessage } from "../types.js";
 
 export const message: LogMessage = {
   project: "report-service",
@@ -18,9 +18,14 @@ export const message: LogMessage = {
     message: "OutOfMemoryError while generating PDF",
     data: [],
   },
-  consoleLog: "Error: JavaScript heap out of memory\n    at generatePdf (renderer.js:102:12)",
+  consoleLog:
+    "Error: JavaScript heap out of memory\n    at generatePdf (renderer.js:102:12)",
   createdAt: new Date().toISOString(),
-  createdBy: { id: "svc-report", fullname: "Report Service", emplCode: "RPT001" },
+  createdBy: {
+    id: "svc-report",
+    fullname: "Report Service",
+    emplCode: "RPT001",
+  },
   additionalData: { renderer: "puppeteer", attempts: 2 },
   latency: 90000,
 };

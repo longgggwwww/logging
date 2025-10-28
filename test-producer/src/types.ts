@@ -26,17 +26,3 @@ export interface LogMessage {
   additionalData: Record<string, any>;
   latency: number;
 }
-
-export interface Config {
-  kafka: {
-    clientId: string;
-    brokers: string[];
-    connectionTimeout: number;
-    requestTimeout: number;
-  };
-  topics: {
-    main: string;
-    allUsers: string;
-  };
-  logCreator: () => ({ level, log }: { level: string; log: any }) => void;
-}
