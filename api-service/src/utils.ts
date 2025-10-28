@@ -54,13 +54,13 @@ export function getTimeRangeFilter(
       default:
         startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // default 24h
     }
-    filter.gte = startDate;
+    filter.$gte = startDate;
   } else if (startTime || endTime) {
     if (startTime) {
-      filter.gte = new Date(startTime);
+      filter.$gte = new Date(startTime);
     }
     if (endTime) {
-      filter.lte = new Date(endTime);
+      filter.$lte = new Date(endTime);
     }
   }
 

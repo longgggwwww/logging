@@ -1,8 +1,8 @@
 // Type definitions for the API service
 
 export interface TimeFilter {
-  gte?: Date;
-  lte?: Date;
+  $gte?: Date;
+  $lte?: Date;
 }
 
 export interface CacheParams {
