@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { LogData } from './types.js';
+import { LogMessage } from './types.js';
 import { Client, TextChannel, ChannelType } from 'discord.js';
 
 let discordClient: Client;
@@ -17,7 +17,7 @@ export const processMessage = async ({
   partition: number;
   message: any;
 }): Promise<void> => {
-  let logData: LogData = {};
+  let logData: LogMessage;
   let attemptCount = 0;
 
   try {
@@ -32,19 +32,19 @@ export const processMessage = async ({
     }
 
     // Validate message structure
-    if (!logData.projectName) {
+    if (!logData.project) {
       console.warn('⚠️  Warning: Message missing "projectName" field');
       return;
     }
 
-    const projectName = logData.projectName;
-    console.log(`📨 Processing message for project: ${projectName}`);
+    const project = logData.project;
+    console.log(`📨 Processing message for project: ${project}`);
 
     // Get or create channel
-    const channel = await getOrCreateChannel(projectName);
+    const channel = await getOrCreateChannel(project);
 
     if (!channel) {
-      console.error(`❌ Failed to get or create channel for ${projectName}`);
+      console.error(`❌ Failed to get or create channel for ${project}`);
       return;
     }
 
@@ -98,11 +98,11 @@ const getOrCreateChannel = async (
 
 const sendMessageToChannel = async (
   channel: TextChannel,
-  logData: LogData
+  logData: LogMessage
 ): Promise<void> => {
   // Format message similar to webhook
   const embed = {
-    title: `${logData.type || 'LOG'} - ${logData.projectName}`,
+    title: `${logData.type || 'LOG'} - ${logData.project}`,
     description:
       logData.consoleLog || logData.response?.message || 'No message',
     color: getColorForType(logData.type),

@@ -1,7 +1,6 @@
 import { request } from '@umijs/max';
 
-const API_BASE_URL = 'http://localhost:3000';
-// const API_BASE_URL = 'https://didactic-dollop-6646j6xjxrg354gq-3000.app.github.dev';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
 
 export async function getLogs(params: LOG.LogListParams) {
   return request<LOG.LogListResponse>(`${API_BASE_URL}/v1/logs`, {
