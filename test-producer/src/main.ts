@@ -22,11 +22,10 @@ import { message as msg18 } from "./messages/18.js";
 import { message as msg19 } from "./messages/19.js";
 import * as readline from "readline";
 
-enum TOPICS {
-  error_logs = "error-logs", // Main topic for error logs
-  fcm_boardcast = "fcm:boardcast", // Topic for boardcast messages (fcm)
-  fcm_system = "fcm:system", // Topic for system messages (fcm)
-}
+// ============================================
+// CONSTANTS
+// ============================================
+const topics = process.env.TOPICS ? process.env.TOPICS.split(",") : [];
 
 const messages: LogMessage[][] = [
   [
@@ -53,6 +52,9 @@ const messages: LogMessage[][] = [
   ],
 ];
 
+// ============================================
+// MAIN RUN FUNCTION
+// ============================================
 export const run = async (): Promise<void> => {
   await producer.connect();
   console.log("✅ Producer connected\n");
@@ -90,41 +92,18 @@ export const run = async (): Promise<void> => {
 
       // Send to topic error-logs
       await Promise.all([
-        producer.send({
-          // Send to topic error-logs
-          topic: TOPICS.error_logs,
-          messages: [
-            {
-              value: messageValue,
-            },
-          ],
-        }),
-        producer.send({
-          // Send to topic fcm_boardcast
-          topic: TOPICS.fcm_boardcast,
-          messages: [
-            {
-              value: messageValue,
-            },
-          ],
-        }),
-        producer.send({
-          // Send to topic fcm_system
-          topic: TOPICS.fcm_system,
-          messages: [
-            {
-              value: messageValue,
-            },
-          ],
+        topics.forEach(async (topic) => {
+          await producer.send({
+            topic: topic,
+            messages: [{ value: messageValue }],
+          });
         }),
       ]);
 
       console.log(
-        `📨 [${i + 1}/${selectedMessages.length}] Sent ${currentMessage.type || "INVALID"} message to 2 topics:`,
+        `✅ Sent message ${i + 1}/${selectedMessages.length} to topics:`,
       );
-      console.log(
-        `   Topics: ${TOPICS.fcm_boardcast}, ${TOPICS.error_logs}, ${TOPICS.fcm_system}`,
-      );
+      console.log(`Topics: ${topics.join(", ")}`);
       console.log(`   Project: ${currentMessage.project || "N/A"}`);
       console.log(`   Function: ${currentMessage.function || "[MISSING]"}`);
       console.log(`   Method: ${currentMessage.method || "[MISSING]"}`);
@@ -147,9 +126,7 @@ export const run = async (): Promise<void> => {
   console.log("📋 Summary:");
   console.log(`   - Sample: ${selectedSample}`);
   console.log(`   - Total messages: ${selectedMessages.length}`);
-  console.log(
-    `   - Topics: ${TOPICS.fcm_boardcast}, ${TOPICS.error_logs}, ${TOPICS.fcm_system}`,
-  );
+  console.log(`   - Topics: ${topics.join(", ")}`);
   console.log("\n💡 Check consumer logs to see processing in action!");
 
   await producer.disconnect();
