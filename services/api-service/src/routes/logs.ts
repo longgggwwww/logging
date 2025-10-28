@@ -99,14 +99,14 @@ router.get("/v1/logs", async (req: Request, res: Response) => {
     const where: any = {};
 
     if (projectIdArray.length > 0) {
-      where.projectId =
+      where.project =
         projectIdArray.length === 1
           ? projectIdArray[0]
           : { in: projectIdArray };
     }
 
     if (functionIdArray.length > 0) {
-      where.functionId =
+      where.function =
         functionIdArray.length === 1
           ? functionIdArray[0]
           : { in: functionIdArray };

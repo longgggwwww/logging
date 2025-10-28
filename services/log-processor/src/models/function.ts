@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IFunctionModel extends Document {
   name: string;
-  projectId: mongoose.Types.ObjectId;
+  project: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -10,7 +10,7 @@ export interface IFunctionModel extends Document {
 const functionSchema = new Schema<IFunctionModel>(
   {
     name: { type: String, required: true },
-    projectId: {
+    project: {
       type: Schema.Types.ObjectId,
       ref: "Project",
       required: true,
@@ -22,7 +22,7 @@ const functionSchema = new Schema<IFunctionModel>(
   { collection: "functions" },
 );
 
-functionSchema.index({ projectId: 1, name: 1 }, { unique: true });
+functionSchema.index({ project: 1, name: 1 }, { unique: true });
 functionSchema.pre(
   "save",
   function (this: IFunctionModel, next: (err?: any) => void) {

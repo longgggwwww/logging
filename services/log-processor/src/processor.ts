@@ -29,13 +29,13 @@ export const processLogMessage = async (message: any): Promise<void> => {
 
     // Find or create function
     let func = await FunctionModel.findOne({
-      projectId: project._id,
+      project: project._id,
       name: log.function,
     }).exec();
     if (!func) {
       func = await FunctionModel.create({
         name: log.function,
-        projectId: project._id,
+        project: project._id,
       });
       console.log(
         `✅ Created new function: ${log.function} for project: ${log.project}`,
@@ -44,8 +44,8 @@ export const processLogMessage = async (message: any): Promise<void> => {
 
     // Create log entry
     await LogModel.create({
-      projectId: project._id,
-      functionId: func._id,
+      project: project._id,
+      function: func._id,
       method: log.method,
       type: log.type,
       request: log.request,

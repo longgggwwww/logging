@@ -1,36 +1,69 @@
 services:
-  postgres:
-    image: postgres:15
-    container_name: postgres
+  api-service:
+    build:
+      context: ./services/api-service
+      dockerfile: Dockerfile
+    container_name: api-service
     environment:
-      POSTGRES_DB: kafka_db
-      POSTGRES_USER: kafka_user
-      POSTGRES_PASSWORD: kafka_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql
+      DATABASE_URL: "mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin"
+      REDIS_URL: "redis://redis:6379"
+      PORT: "3000"
+      NODE_ENV: "production"
+    ports:
+      - "3000:3000"
     networks:
       - kafka-network
+    depends_on:
+      - mongodb
+      - redis
+    restart: unless-stopped
 
-  mongodb:
-    image: mongo:7.0
-    container_name: mongodb
+  discord-bot:
+    build:
+      context: ./services/discord-bot
+      dockerfile: Dockerfile
+    container_name: discord-bot
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - mongodb_data:/data/db
+      NODE_ENV: "production"
+      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
+      KAFKA_MAIN_TOPIC: "error-logs"
+      KAFKA_RETRY_TOPIC: "error-logs-retry"
+      KAFKA_DLQ_TOPIC: "error-logs-dlq"
+      DISCORD_TOKEN: "${DISCORD_BOT_TOKEN}"
+      DISCORD_GUILD_ID: "${DISCORD_GUILD_ID}"
+      DISCORD_CRITICAL_TYPES: "ERROR"
+      DISCORD_MIN_SEVERITY_CODE: "500"
     networks:
       - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+      - kafka-init
+    restart: unless-stopped
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
+  fcm-service:
+    build:
+      context: ./services/fcm-service
+      dockerfile: Dockerfile
+    container_name: fcm-service
+    environment:
+      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
+      KAFKA_MAIN_TOPIC: "error-logs"
+      KAFKA_DLQ_TOPIC: "error-logs-dlq"
+      KAFKA_RETRY_TOPIC: "error-logs-retry"
+      FCM_TOPICS: "all_users,error_alerts"
+      FCM_MIN_SEVERITY_CODE: "500"
+      FCM_CRITICAL_TYPES: "ERROR"
+      NODE_ENV: "production"
     networks:
       - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+      - kafka-init
+    restart: unless-stopped
 
   kafka-controller-1:
     image: apache/kafka:3.7.0
@@ -100,23 +133,6 @@ services:
     networks:
       - kafka-network
 
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    ports:
-      - "8080:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local-kraft-cluster
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: ""
-      KAFKA_CLUSTERS_0_KRAFT: "true"
-    networks:
-      - kafka-network
-    depends_on:
-      - kafka-controller-1
-      - kafka-controller-2
-      - kafka-controller-3
-
   kafka-init:
     image: apache/kafka:3.7.0
     container_name: kafka-init
@@ -135,9 +151,26 @@ services:
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
     restart: "no"
 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kraft-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: ""
+      KAFKA_CLUSTERS_0_KRAFT: "true"
+    networks:
+      - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+
   log-processor:
     build:
-      context: ./log-processor
+      context: ./services/log-processor
       dockerfile: Dockerfile
     container_name: log-processor
     environment:
@@ -160,24 +193,38 @@ services:
       - kafka-init
     restart: unless-stopped
 
-  api-service:
-    build:
-      context: ./api-service
-      dockerfile: Dockerfile
-    container_name: api-service
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
     environment:
-      DATABASE_URL: "mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin"
-      REDIS_URL: "redis://redis:6379"
-      PORT: "3000"
-      NODE_ENV: "production"
-    ports:
-      - "3000:3000"
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
     networks:
       - kafka-network
-    depends_on:
-      - mongodb
-      - redis
-    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: kafka_db
+      POSTGRES_USER: kafka_user
+      POSTGRES_PASSWORD: kafka_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql
+    networks:
+      - kafka-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - kafka-network
 
   web-app:
     build:
@@ -193,53 +240,6 @@ services:
       - "8000:80"
     networks:
       - kafka-network
-    restart: unless-stopped
-
-  discord-bot:
-    build:
-      context: ./discord-bot
-      dockerfile: Dockerfile
-    container_name: discord-bot
-    environment:
-      NODE_ENV: "production"
-      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
-      KAFKA_MAIN_TOPIC: "error-logs"
-      KAFKA_RETRY_TOPIC: "error-logs-retry"
-      KAFKA_DLQ_TOPIC: "error-logs-dlq"
-      DISCORD_TOKEN: "${DISCORD_BOT_TOKEN}"
-      DISCORD_GUILD_ID: "${DISCORD_GUILD_ID}"
-      DISCORD_CRITICAL_TYPES: "ERROR"
-      DISCORD_MIN_SEVERITY_CODE: "500"
-    networks:
-      - kafka-network
-    depends_on:
-      - kafka-controller-1
-      - kafka-controller-2
-      - kafka-controller-3
-      - kafka-init
-    restart: unless-stopped
-
-  fcm-service:
-    build:
-      context: ./fcm-service
-      dockerfile: Dockerfile
-    container_name: fcm-service
-    environment:
-      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
-      KAFKA_MAIN_TOPIC: "error-logs"
-      KAFKA_DLQ_TOPIC: "error-logs-dlq"
-      KAFKA_RETRY_TOPIC: "error-logs-retry"
-      FCM_TOPICS: "all_users,error_alerts"
-      FCM_MIN_SEVERITY_CODE: "500"
-      FCM_CRITICAL_TYPES: "ERROR"
-      NODE_ENV: "production"
-    networks:
-      - kafka-network
-    depends_on:
-      - kafka-controller-1
-      - kafka-controller-2
-      - kafka-controller-3
-      - kafka-init
     restart: unless-stopped
 
 volumes:

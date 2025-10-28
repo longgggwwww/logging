@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ILogModel extends Document {
-  projectId: mongoose.Types.ObjectId;
-  functionId: mongoose.Types.ObjectId;
+  project: mongoose.Types.ObjectId;
+  function: mongoose.Types.ObjectId;
   method: string;
   type: string;
   request?: any;
@@ -16,13 +16,13 @@ export interface ILogModel extends Document {
 
 const logSchema = new Schema<ILogModel>(
   {
-    projectId: {
+    project: {
       type: Schema.Types.ObjectId,
       ref: "Project",
       required: true,
       index: true,
     },
-    functionId: {
+    function: {
       type: Schema.Types.ObjectId,
       ref: "Function",
       required: true,
@@ -41,8 +41,8 @@ const logSchema = new Schema<ILogModel>(
   { collection: "logs" },
 );
 
-logSchema.index({ projectId: 1 });
-logSchema.index({ functionId: 1 });
+logSchema.index({ project: 1 });
+logSchema.index({ function: 1 });
 logSchema.index({ method: 1 });
 logSchema.index({ type: 1 });
 logSchema.index({ createdAt: 1 });
