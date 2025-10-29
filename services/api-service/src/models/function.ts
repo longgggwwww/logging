@@ -9,20 +9,27 @@ export interface IFunctionModel extends Document {
 
 const functionSchema = new Schema<IFunctionModel>(
   {
-    name: { type: String, required: true },
+    name: {
+      type: String,
+      required: true,
+    },
     project: {
       type: Schema.Types.ObjectId,
       ref: "Project",
       required: true,
-      index: true,
     },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { collection: "functions" },
 );
 
-functionSchema.index({ project: 1, name: 1 }, { unique: true });
 functionSchema.pre(
   "save",
   function (this: IFunctionModel, next: (err?: any) => void) {
@@ -31,8 +38,9 @@ functionSchema.pre(
   },
 );
 
-export const FunctionModel =
-  mongoose.models.Function ||
-  mongoose.model<IFunctionModel>("Function", functionSchema);
+export const FunctionModel = mongoose.model<IFunctionModel>(
+  "Function",
+  functionSchema,
+);
 
 export default FunctionModel;
