@@ -56,7 +56,7 @@ declare namespace LOG {
     projectIds?: string;
     functionIds?: string;
     method?: string;
-    level?: string;
+    type?: string;
     timeRange?: string;
     startTime?: string;
     endTime?: string;
