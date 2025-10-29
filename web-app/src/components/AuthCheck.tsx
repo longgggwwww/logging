@@ -17,7 +17,7 @@ const AuthCheck: React.FC<AuthCheckProps> = ({ children }) => {
   }, [isAuth, isLoginPath]);
 
   if (!isAuth && !isLoginPath) {
-    return <div>Đang kiểm tra đăng nhập...</div>;
+    return null;
   }
 
   return <>{children}</>;

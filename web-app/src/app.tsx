@@ -134,9 +134,9 @@ export const layout: RunTimeLayoutConfig = ({
     // 增加一个 loading 的状态
     childrenRender: (children) => {
       return (
-        <AuthCheck>
+        <>
           {children}
-        </AuthCheck>
+        </>
       );
     },
     ...initialState?.settings,

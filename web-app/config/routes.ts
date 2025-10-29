@@ -36,6 +36,7 @@ export default [
   {
     path: '/',
     component: './RedirectHome',
+    layout: false,
   },
   {
     path: '/404',
