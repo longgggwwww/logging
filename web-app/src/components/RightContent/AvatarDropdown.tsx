@@ -10,7 +10,7 @@ import { createStyles } from 'antd-style';
 import React from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
-import { logoutKeycloakFull, isKeycloakAuthenticated } from '@/services/keycloak';
+import { logoutKeycloakLocal, isKeycloakAuthenticated } from '@/services/keycloak';
 import HeaderDropdown from '../HeaderDropdown';
 
 export type GlobalHeaderRightProps = {
@@ -54,26 +54,34 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     const isKeycloak = isKeycloakAuthenticated();
     
     if (isKeycloak) {
-      // Full logout - logout khỏi Keycloak hoàn toàn
-      logoutKeycloakFull(); // Không cần redirect manual vì logoutKeycloakFull đã redirect
-      return; // Không cần code dưới vì đã redirect
+      // Local logout: chỉ xóa session trong app, KHÔNG logout khỏi Keycloak SSO
+      // Không gọi backend outLogin để tránh "Cannot POST /api/login/outLogin" khi
+      // backend không cung cấp endpoint (ví dụ mock tắt hoặc production backend).
+      logoutKeycloakLocal();
     } else {
-      // Logout thông thường
-      await outLogin();
-      const { search, pathname } = window.location;
-      const urlParams = new URL(window.location.href).searchParams;
-      const searchParams = new URLSearchParams({
-        redirect: pathname + search,
-      });
-      /** 此方法会跳转到 redirect 参数所在的位置 */
-      const redirect = urlParams.get('redirect');
-      // Note: There may be security issues, please note
-      if (window.location.pathname !== '/user/login' && !redirect) {
-        history.replace({
-          pathname: '/user/login',
-          search: searchParams.toString(),
-        });
+      // Logout thông thường - gọi backend nếu cần
+      try {
+        await outLogin();
+      } catch (error) {
+        // Ignore the error to avoid blocking UI when backend endpoint is missing
+        // eslint-disable-next-line no-console
+        console.warn('outLogin failed (ignored):', error);
       }
+    }
+
+    const { search, pathname } = window.location;
+    const urlParams = new URL(window.location.href).searchParams;
+    const searchParams = new URLSearchParams({
+      redirect: pathname + search,
+    });
+    /** 此方法会跳转到 redirect 参数所在的位置 */
+    const redirect = urlParams.get('redirect');
+    // Note: There may be security issues, please note
+    if (window.location.pathname !== '/user/login' && !redirect) {
+      history.replace({
+        pathname: '/user/login',
+        search: searchParams.toString(),
+      });
     }
   };
   const { styles } = useStyles();
