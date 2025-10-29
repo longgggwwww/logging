@@ -345,7 +345,7 @@ const TableList: React.FC = () => {
           }
 
           if (params.level) {
-            requestParams.level = params.level;
+            requestParams.type = params.level;
           }
 
           // Handle custom date range or time range
