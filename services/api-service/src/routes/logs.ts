@@ -102,14 +102,14 @@ router.get("/v1/logs", async (req: Request, res: Response) => {
       where.project =
         projectIdArray.length === 1
           ? projectIdArray[0]
-          : { in: projectIdArray };
+          : { $in: projectIdArray };
     }
 
     if (functionIdArray.length > 0) {
       where.function =
         functionIdArray.length === 1
           ? functionIdArray[0]
-          : { in: functionIdArray };
+          : { $in: functionIdArray };
     }
 
     if (method) {
