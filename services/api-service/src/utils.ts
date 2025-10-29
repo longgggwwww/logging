@@ -66,3 +66,22 @@ export function getTimeRangeFilter(
 
   return Object.keys(filter).length > 0 ? filter : undefined;
 }
+
+// Function to invalidate cache keys related to logs
+export async function invalidateLogsCache(redisClient: any, projectId: string, functionId: string): Promise<void> {
+  // Delete all logs:list cache keys since new logs may affect any query
+  const keysToDelete: string[] = [];
+
+  // Use SCAN to iterate over keys matching "logs:list:*"
+  let cursor = 0;
+  do {
+    const result = await redisClient.scan(cursor, { MATCH: "logs:list:*", COUNT: 100 });
+    cursor = result.cursor;
+    keysToDelete.push(...result.keys);
+  } while (cursor !== 0);
+
+  if (keysToDelete.length > 0) {
+    await redisClient.del(keysToDelete);
+    console.log(`🗑️ Invalidated ${keysToDelete.length} cache keys for project ${projectId}, function ${functionId}`);
+  }
+}

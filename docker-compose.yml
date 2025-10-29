@@ -175,6 +175,7 @@ services:
     container_name: log-processor
     environment:
       DATABASE_URL: "mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin"
+      REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
       KAFKA_GROUP_ID: "log-processor-group"
       KAFKA_CLIENT_ID: "log-processor"
