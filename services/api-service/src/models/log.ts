@@ -62,6 +62,14 @@ const logSchema = new Schema<ILogModel>(
   { collection: "logs" },
 );
 
+logSchema.set('toJSON', {
+  transform: function (doc, ret) {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+  }
+});
+
 logSchema.index({ project: 1 });
 logSchema.index({ function: 1 });
 logSchema.index({ method: 1 });
