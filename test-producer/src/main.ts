@@ -56,6 +56,7 @@ const messages: LogMessage[][] = [
 // MAIN RUN FUNCTION
 // ============================================
 export const run = async (): Promise<void> => {
+  console.log(`Topics to send to: ${topics.join(", ") || "[NONE]"}`);
   await producer.connect();
   console.log("✅ Producer connected\n");
 
@@ -81,7 +82,7 @@ export const run = async (): Promise<void> => {
   const selectedMessages = messages[selectedSample];
 
   console.log(
-    `Sending ${selectedMessages.length} messages of sample ${selectedSample}...\n`,
+    `Sending ${selectedMessages.length} messages of sample ${selectedSample}...\n`
   );
 
   // Send each message in the selected sample
@@ -101,7 +102,7 @@ export const run = async (): Promise<void> => {
       ]);
 
       console.log(
-        `✅ Sent message ${i + 1}/${selectedMessages.length} to topics:`,
+        `✅ Sent message ${i + 1}/${selectedMessages.length} to topics:`
       );
       console.log(`Topics: ${topics.join(", ")}`);
       console.log(`   Project: ${currentMessage.project || "N/A"}`);
@@ -117,7 +118,7 @@ export const run = async (): Promise<void> => {
     } catch (error) {
       console.error(
         `❌ Error sending message ${i + 1}:`,
-        (error as Error).message,
+        (error as Error).message
       );
     }
   }
