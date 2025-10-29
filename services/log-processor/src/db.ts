@@ -5,7 +5,7 @@ export const connectDatabase = async (): Promise<void> => {
     throw new Error("DATABASE_URL not set");
   }
 
-  await mongoose.connect(process.env.DATABASE_URL); // keep default options
+  await mongoose.connect(process.env.DATABASE_URL);
   console.log("✅ Connected to MongoDB via Mongoose");
 };
 

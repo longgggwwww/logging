@@ -10,11 +10,11 @@ export const kafka = new Kafka({
     initialRetryTime: 300,
     retries: 8,
   },
-  logCreator:
+  logCreator: // Beautify logs
     () =>
     ({ level, log }) => {
       if (level === logLevel.INFO || level === logLevel.ERROR) {
-        console.log(JSON.stringify(log, null, 2)); // Pretty-print JSON
+        console.log(JSON.stringify(log, null, 2));
       }
     },
 });

@@ -37,10 +37,14 @@ export const processLogMessage = async (message: any): Promise<void> => {
         name: log.function,
         project: project._id,
       });
+      project.functions.push(func._id);
+      await project.save();
       console.log(
         `✅ Created new function: ${log.function} for project: ${log.project}`,
       );
     }
+
+    console.log('djakd', project.functions)
 
     // Create log entry
     await LogModel.create({
