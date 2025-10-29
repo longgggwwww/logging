@@ -10,7 +10,15 @@ RUN if [ -f package-lock.json ]; then npm ci --production=false --legacy-peer-de
 
 # copy rest of sources and build
 COPY . .
+ARG REACT_APP_API_BASE_URL
+ARG KEYCLOAK_URL
+ARG KEYCLOAK_REALM
+ARG KEYCLOAK_CLIENT_ID
 ENV NODE_ENV=production
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
+ENV KEYCLOAK_URL=$KEYCLOAK_URL
+ENV KEYCLOAK_REALM=$KEYCLOAK_REALM
+ENV KEYCLOAK_CLIENT_ID=$KEYCLOAK_CLIENT_ID
 RUN npm run build
 
 FROM nginx:stable-alpine

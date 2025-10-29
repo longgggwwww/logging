@@ -231,6 +231,11 @@ services:
     build:
       context: ./web-app
       dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: "http://api-service:3000"
+        KEYCLOAK_URL: "https://keycloak.iit.vn"
+        KEYCLOAK_REALM: "master"
+        KEYCLOAK_CLIENT_ID: "log-monitoring"
     container_name: web-app
     environment:
       KEYCLOAK_URL: "https://keycloak.iit.vn"
