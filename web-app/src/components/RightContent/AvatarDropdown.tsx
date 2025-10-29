@@ -10,7 +10,7 @@ import { createStyles } from 'antd-style';
 import React from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
-import { logoutKeycloak, isKeycloakAuthenticated } from '@/services/keycloak';
+import { logoutKeycloakFull, isKeycloakAuthenticated } from '@/services/keycloak';
 import HeaderDropdown from '../HeaderDropdown';
 
 export type GlobalHeaderRightProps = {
@@ -54,14 +54,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     const isKeycloak = isKeycloakAuthenticated();
     
     if (isKeycloak) {
-      // Local logout - chỉ xóa session trong app, không logout khỏi Keycloak
-      logoutKeycloak(); // Xóa tokens trong localStorage
-      
-      // Redirect về trang login
-      history.replace({
-        pathname: '/user/login',
-        search: '',
-      });
+      // Full logout - logout khỏi Keycloak hoàn toàn
+      logoutKeycloakFull(); // Không cần redirect manual vì logoutKeycloakFull đã redirect
+      return; // Không cần code dưới vì đã redirect
     } else {
       // Logout thông thường
       await outLogin();

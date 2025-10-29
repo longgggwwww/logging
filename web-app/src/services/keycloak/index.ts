@@ -34,16 +34,26 @@ export const initKeycloakWithSession = async (): Promise<boolean> => {
     // Lấy token từ localStorage
     const token = localStorage.getItem('keycloak_token');
     const refreshToken = localStorage.getItem('keycloak_refresh_token');
-    
-    const authenticated = await keycloak.init({
-      onLoad: 'check-sso',
-      checkLoginIframe: false,
-      // Restore token từ localStorage
-      token: token || undefined,
-      refreshToken: refreshToken || undefined,
-      // Silent SSO disabled due to CSP issues
-      silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
-    });
+
+    // Avoid performing a full redirect to Keycloak during init. If we have stored
+    // tokens, initialize Keycloak with those tokens (no onLoad) so the library sets
+    // the tokens and does not attempt check-sso which may redirect the browser.
+    // If we don't have tokens, do not call check-sso here to avoid automatic
+    // redirects; return false and let the app show the login page or trigger
+    // explicit login when needed.
+    let authenticated = false;
+
+    if (token && refreshToken) {
+      authenticated = await keycloak.init({
+        checkLoginIframe: false,
+        token: token,
+        refreshToken: refreshToken,
+      });
+    } else {
+      // Do not try check-sso here since silent iframe is disabled by CSP on many
+      // Keycloak configurations and the fallback is to perform a full redirect.
+      authenticated = false;
+    }
 
     if (authenticated) {
       console.log('Keycloak session restored successfully');
