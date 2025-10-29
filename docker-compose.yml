@@ -234,7 +234,7 @@ services:
     container_name: web-app
     environment:
       KEYCLOAK_URL: "https://keycloak.iit.vn"
-      KEYCLOAK_REALM: "system"
+      KEYCLOAK_REALM: "master"
       KEYCLOAK_CLIENT_ID: "log-monitoring"
       REACT_APP_API_BASE_URL: "http://api-service:3000"
     ports:

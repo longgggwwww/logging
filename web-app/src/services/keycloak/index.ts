@@ -13,6 +13,8 @@ const keycloakConfig: any = {
   // clientSecret: 'YOUR_CLIENT_SECRET_HERE', // Lấy từ Keycloak Clients > test-syslog > Credentials
 };
 
+console.log('vlxx', window.location.origin);
+
 let keycloakInstance: Keycloak | null = null;
 
 /**

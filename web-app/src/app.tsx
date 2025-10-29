@@ -9,7 +9,6 @@ import {
   AvatarName,
   Footer,
 } from '@/components';
-import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { 
   getKeycloak, 
   formatUserForDashboard, 
@@ -52,11 +51,10 @@ export async function getInitialState(): Promise<{
         }
       }
 
-      // Nếu không có Keycloak, thử lấy từ API thông thường
-      const msg = await queryCurrentUser({
-        skipErrorHandler: true,
-      });
-      return msg.data;
+      // Nếu không có Keycloak (không thể restore session), không gọi API ngoài
+      // vì việc lấy user hiện được thực hiện qua Keycloak.
+      console.log('No Keycloak session restored; skipping external currentUser fetch');
+      return undefined;
     } catch (_error) {
       // Nếu có lỗi và không phải trang login, redirect
       if (history.location.pathname !== loginPath) {
