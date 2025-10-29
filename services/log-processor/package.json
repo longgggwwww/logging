@@ -22,8 +22,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/redis": "^4.0.10",
     "kafkajs": "^2.2.4",
-    "mongoose": "^7.4.8"
+    "mongoose": "^7.4.8",
+    "redis": "^5.9.0"
   },
   "devDependencies": {
     "@types/kafkajs": "^1.8.2",

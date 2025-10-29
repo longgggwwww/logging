@@ -8,6 +8,7 @@ import {
 import { CONFIG } from "./config.js";
 import { processLogMessage } from "./processor.js";
 import { connectDatabase, disconnectDatabase } from "./db.js";
+import { connectRedis, disconnectRedis } from "./redis.js";
 
 // ============================================
 // GRACEFUL SHUTDOWN
@@ -18,6 +19,7 @@ export const shutdown = async (): Promise<void> => {
     await disconnectConsumer();
     await producer.disconnect();
     await disconnectDatabase();
+    await disconnectRedis();
     process.exit(0);
   } catch (error) {
     console.error("❌ Error during shutdown:", error);
@@ -35,6 +37,9 @@ export const run = async (): Promise<void> => {
   try {
     // Connect to database first
     await connectDatabase();
+
+    // Connect to Redis
+    await connectRedis();
 
     // Connect to Kafka
     await connectConsumer();

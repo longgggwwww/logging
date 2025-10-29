@@ -1,5 +1,6 @@
 import { ProjectModel, FunctionModel, LogModel } from "./models/index.js";
 import { LogMessage } from "./types.js";
+import { publishInvalidateLogs } from "./redis.js";
 
 // ============================================
 // MESSAGE PROCESSOR (Mongoose implementation)
@@ -44,10 +45,8 @@ export const processLogMessage = async (message: any): Promise<void> => {
       );
     }
 
-    console.log('djakd', project.functions)
-
     // Create log entry
-    await LogModel.create({
+    const newLog = await LogModel.create({
       project: project._id,
       function: func._id,
       method: log.method,
@@ -60,6 +59,9 @@ export const processLogMessage = async (message: any): Promise<void> => {
       createdBy: log.createdBy,
       createdAt: new Date(log.createdAt),
     });
+
+    // Invalidate cache for this project and function
+    await publishInvalidateLogs(project._id.toString(), func._id.toString());
 
     console.log(
       `✅ Processed log: ${log.type} - ${log.project}/${log.function} - ${log.method}`,
