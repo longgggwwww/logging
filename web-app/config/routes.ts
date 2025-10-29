@@ -38,8 +38,13 @@ export default [
     component: './table-list',
   },
   {
+    path: '/404',
     component: '404',
     layout: false,
+  },
+  {
+    component: '404',
+    layout: true,
     path: './*',
   },
 ];
