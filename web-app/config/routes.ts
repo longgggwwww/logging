@@ -40,12 +40,14 @@ export default [
   },
   {
     path: '/404',
-    component: '404',
+    component: './404',
     layout: false,
   },
   {
-    component: '404',
+    // Catch-all route: render 404 for any unmatched path.
+    // Use a proper wildcard path and explicit relative component path.
+    path: '*',
+    component: './404',
     layout: true,
-    path: './*',
   },
 ];
