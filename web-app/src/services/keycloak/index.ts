@@ -1,11 +1,12 @@
 import Keycloak from 'keycloak-js';
 import type { KeycloakConfig, KeycloakAuthData } from './types';
 
+
 // Cấu hình Keycloak - điều chỉnh theo môi trường của bạn
 const keycloakConfig: any = {
   url: process.env.KEYCLOAK_URL || 'https://keycloak.iit.vn',
   realm: process.env.KEYCLOAK_REALM || 'master',
-  clientId: process.env.KEYCLOAK_CLIENT_ID || 'test-syslog',
+  clientId: process.env.KEYCLOAK_CLIENT_ID || 'log-monitoring',
   // CẢNH BÁO: Chỉ uncomment dòng dưới nếu client là Confidential
   // KHÔNG AN TOÀN cho production vì secret sẽ bị lộ trong browser
   // Nên đổi client thành Public Client trong Keycloak Admin Console

@@ -2,7 +2,6 @@ import { KeyOutlined } from '@ant-design/icons';
 import {
   FormattedMessage,
   Helmet,
-  SelectLang,
   useIntl,
 } from '@umijs/max';
 import { App, Button, Card } from 'antd';
@@ -50,15 +49,6 @@ const useStyles = createStyles(({ token }) => {
   };
 });
 
-const Lang = () => {
-  const { styles } = useStyles();
-
-  return (
-    <div className={styles.lang} data-lang>
-      {SelectLang && <SelectLang />}
-    </div>
-  );
-};
 
 const Login: React.FC = () => {
   const { styles } = useStyles();
@@ -90,7 +80,7 @@ const Login: React.FC = () => {
           {Settings.title && ` - ${Settings.title}`}
         </title>
       </Helmet>
-      <Lang />
+  {/* Language selector removed from login screen */}
       <div className={styles.content}>
         <Card className={styles.card}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
