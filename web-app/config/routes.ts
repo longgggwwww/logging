@@ -35,7 +35,7 @@ export default [
   },
   {
     path: '/',
-    component: './table-list',
+    component: './RedirectHome',
   },
   {
     path: '/404',
