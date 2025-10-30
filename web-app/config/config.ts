@@ -180,5 +180,11 @@ export default defineConfig({
   exportStatic: {},
   define: {
     'process.env.CI': process.env.CI,
+    'process.env.API_BASE_URL': process.env.API_BASE_URL,
+    'process.env.KEYCLOAK_SERVER_URL': process.env.KEYCLOAK_SERVER_URL,
+    'process.env.KEYCLOAK_REALM': process.env.KEYCLOAK_REALM,
+    'process.env.KEYCLOAK_API_CLIENT_ID': process.env.KEYCLOAK_API_CLIENT_ID,
+    'process.env.KEYCLOAK_PUBLIC_CLIENT_ID': process.env.KEYCLOAK_PUBLIC_CLIENT_ID,
+    'process.env.KEYCLOAK_CLIENT_SECRET': process.env.KEYCLOAK_CLIENT_SECRET,
   },
 });

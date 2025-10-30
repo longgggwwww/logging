@@ -1,8 +1,7 @@
-// Keycloak configuration shared between services
 export const keycloakConfig = {
-  url: process.env.KEYCLOAK_URL || process.env.REACT_APP_KEYCLOAK_URL || 'https://keycloak.iit.vn',
-  realm: process.env.KEYCLOAK_REALM || process.env.REACT_APP_KEYCLOAK_REALM || 'master',
-  clientId: process.env.KEYCLOAK_CLIENT_ID || process.env.REACT_APP_KEYCLOAK_CLIENT_ID || 'api-log-monitoring',
-  clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || process.env.REACT_APP_KEYCLOAK_CLIENT_SECRET || 'KExgFbvftbzjJKkytIVaZiyf9fDjNw9w',
-  frontendClientId: process.env.KEYCLOAK_FRONTEND_CLIENT_ID || process.env.REACT_APP_KEYCLOAK_FRONTEND_CLIENT_ID || 'api-log-monitoring',
+  url: process.env.KEYCLOAK_SERVER_URL  || 'keycloak-server-url',
+  realm: process.env.KEYCLOAK_REALM || 'master',
+  apiClientId: process.env.KEYCLOAK_API_CLIENT_ID || 'api-service',
+  publicClientId: process.env.KEYCLOAK_PUBLIC_CLIENT_ID || 'web-app-client',
+  clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || 'keycloak-client-secret',
 };

@@ -4,6 +4,7 @@ export interface KeycloakConfig {
   url: string;
   realm: string;
   clientId: string;
+  clientSecret?: string;
 }
 
 export interface KeycloakUserInfo {

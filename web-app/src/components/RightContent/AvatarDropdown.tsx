@@ -9,7 +9,6 @@ import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import React from 'react';
 import { flushSync } from 'react-dom';
-import { outLogin } from '@/services/ant-design-pro/api';
 import { logoutKeycloakLocal, isKeycloakAuthenticated } from '@/services/keycloak';
 import HeaderDropdown from '../HeaderDropdown';
 
@@ -61,7 +60,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     } else {
       // Logout thông thường - gọi backend nếu cần
       try {
-        await outLogin();
       } catch (error) {
         // Ignore the error to avoid blocking UI when backend endpoint is missing
         // eslint-disable-next-line no-console
