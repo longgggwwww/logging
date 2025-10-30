@@ -5,7 +5,7 @@ import { handleKeycloakCallback, formatUserForDashboard, loadKeycloakUserProfile
 import { flushSync } from 'react-dom';
 
 const KeycloakCallback: React.FC = () => {
-  const { initialState, setInitialState } = useModel('@@initialState');
+  const { setInitialState } = useModel('@@initialState');
 
   useEffect(() => {
     const processCallback = async () => {

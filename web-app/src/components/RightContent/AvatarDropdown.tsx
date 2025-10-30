@@ -59,12 +59,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       logoutKeycloakLocal();
     } else {
       // Logout thông thường - gọi backend nếu cần
-      try {
-      } catch (error) {
-        // Ignore the error to avoid blocking UI when backend endpoint is missing
-        // eslint-disable-next-line no-console
-        console.warn('outLogin failed (ignored):', error);
-      }
+      // (No backend call implemented)
     }
 
     const { search, pathname } = window.location;

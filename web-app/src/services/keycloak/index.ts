@@ -27,10 +27,9 @@ let keycloakInstance: Keycloak | null = null;
 let tokenRefreshInterval: NodeJS.Timeout | null = null;
 
 /**
- * Khởi tạo Keycloak instance
+ * Initialize Keycloak instance
  */
 export const initKeycloak = (): Keycloak => {
-    console.log('Initializing Keycloak with config:', kcConfig);
   if (!keycloakInstance) {
     keycloakInstance = new Keycloak(kcConfig);
   }
@@ -38,22 +37,16 @@ export const initKeycloak = (): Keycloak => {
 };
 
 /**
- * Khởi tạo và restore session từ localStorage nếu có
+ * Initialize and restore session from localStorage if available
  */
 export const initKeycloakWithSession = async (): Promise<boolean> => {
   const keycloak = initKeycloak();
 
   try {
-    // Lấy token từ localStorage
+    // Get tokens from localStorage
     const token = localStorage.getItem("keycloak_token");
     const refreshToken = localStorage.getItem("keycloak_refresh_token");
 
-    // Avoid performing a full redirect to Keycloak during init. If we have stored
-    // tokens, initialize Keycloak with those tokens (no onLoad) so the library sets
-    // the tokens and does not attempt check-sso which may redirect the browser.
-    // If we don't have tokens, do not call check-sso here to avoid automatic
-    // redirects; return false and let the app show the login page or trigger
-    // explicit login when needed.
     let authenticated = false;
 
     if (token && refreshToken) {
@@ -64,14 +57,11 @@ export const initKeycloakWithSession = async (): Promise<boolean> => {
         scope: "openid profile email",
       });
     } else {
-      // Do not try check-sso here since silent iframe is disabled by CSP on many
-      // Keycloak configurations and the fallback is to perform a full redirect.
       authenticated = false;
     }
 
     if (authenticated) {
-      console.log("Keycloak session restored successfully");
-      // Cập nhật lại token trong localStorage (có thể đã được refresh)
+      // Update localStorage with possibly refreshed tokens
       if (keycloak.token) {
         localStorage.setItem("keycloak_token", keycloak.token);
       }
@@ -91,7 +81,7 @@ export const initKeycloakWithSession = async (): Promise<boolean> => {
 };
 
 /**
- * Setup auto refresh token trước khi expire
+ * Setup auto refresh token before expiration
  */
 const setupTokenRefresh = (keycloak: Keycloak) => {
   // Clear any existing interval
@@ -99,14 +89,13 @@ const setupTokenRefresh = (keycloak: Keycloak) => {
     clearInterval(tokenRefreshInterval);
   }
 
-  // Refresh token mỗi 60 giây nếu còn dưới 70 giây
+  // Refresh token every 60 seconds if less than 70 seconds remaining
   tokenRefreshInterval = setInterval(() => {
     keycloak
       .updateToken(70)
       .then((refreshed) => {
         if (refreshed) {
-          console.log("Token refreshed");
-          // Cập nhật localStorage
+          // Update localStorage
           if (keycloak.token) {
             localStorage.setItem("keycloak_token", keycloak.token);
           }
@@ -120,13 +109,13 @@ const setupTokenRefresh = (keycloak: Keycloak) => {
       })
       .catch(() => {
         console.error("Failed to refresh token");
-        // Token refresh thất bại, có thể đã hết hạn
-        // Clear storage và redirect về login
+        // Token refresh failed, possibly expired
+        // Clear storage and redirect to login
         localStorage.removeItem("keycloak_token");
         localStorage.removeItem("keycloak_refresh_token");
         localStorage.removeItem("keycloak_id_token");
       });
-  }, 60000); // Check mỗi 60 giây
+  }, 60000); // Check every 60 seconds
 };
 
 /**
@@ -192,7 +181,7 @@ export const handleKeycloakCallback =
   };
 
 /**
- * Đăng xuất local (chỉ xóa session trong app, không logout khỏi Keycloak server)
+ * Logout locally (clears session in app, not from Keycloak server)
  */
 export const logoutKeycloakLocal = () => {
   // Clear localStorage
@@ -211,10 +200,6 @@ export const logoutKeycloakLocal = () => {
     clearInterval(tokenRefreshInterval);
     tokenRefreshInterval = null;
   }
-
-  console.log(
-    "Local session and Keycloak instance cleared. Keycloak SSO session still active."
-  );
 };
 
 /**

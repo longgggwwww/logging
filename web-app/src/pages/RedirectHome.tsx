@@ -41,7 +41,7 @@ export default () => {
       const go = (to: string) => {
         try {
           history.push(to);
-        } catch (err) {
+        } catch (_err) {
           // Fallback to full page redirect nếu history không hoạt động
           window.location.href = to;
         }

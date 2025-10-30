@@ -9,7 +9,6 @@ import {
     ProDescriptions,
     ProTable,
 } from '@ant-design/pro-components';
-import { useIntl } from '@umijs/max';
 import { Badge, Cascader, DatePicker, Drawer, Tag } from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useRef, useState } from 'react';
@@ -34,18 +33,12 @@ const TableList: React.FC = () => {
   const [cascaderOptions, setCascaderOptions] = useState<CascaderOption[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<any[]>([]);
 
-  /**
-   * @en-US International configuration
-   * @zh-CN 国际化配置
-   * */
-  const intl = useIntl();
-
   // Load projects with functions for cascader
   useEffect(() => {
     const loadProjectsAndFunctions = async () => {
       try {
         const response = await getProjects({ expand: 'functions' });
-        const projects = response.data;
+        const projects = response.data.data;
         
         // Convert to cascader structure
         const options: CascaderOption[] = projects.map((project: LOG.Project) => ({
@@ -287,8 +280,8 @@ const TableList: React.FC = () => {
           
           // Use selectedFilters state instead of params.filter
           const filter = selectedFilters;
-          let projectIds: string[] = [];
-          let functionIds: string[] = [];
+          const projectIds: string[] = [];
+          const functionIds: string[] = [];
 
           if (filter && Array.isArray(filter) && filter.length > 0) {
             console.log('🔍 Filter array:', filter);
@@ -376,15 +369,15 @@ const TableList: React.FC = () => {
           try {
             const response = await getLogs(requestParams);
             console.log('✅ API response:', {
-              count: response.data.length,
-              hasMore: response.pagination.hasMore,
-              filters: response.filters,
+              count: response.data.data.length,
+              hasMore: response.data.pagination.hasMore,
+              filters: response.data.filters,
             });
 
             // Normalize API items to shape expected by the table.
             // The backend returns nested `request.url` and `response.code`,
             // but the table/typings expect flat `requestUrl` and `responseCode`.
-            const mapped = (response.data || []).map((item: any) => ({
+            const mapped = (response.data.data || []).map((item: any) => ({
               ...item,
               // request.* -> flattened fields used by columns / drawer
               requestUrl: item.request?.url ?? item.requestUrl ?? '',
@@ -402,7 +395,7 @@ const TableList: React.FC = () => {
             return {
               data: mapped,
               success: true,
-              total: response.pagination.total || 0,
+              total: response.data.pagination.total || 0,
             };
           } catch (error) {
             console.error('❌ Failed to fetch logs:', error);

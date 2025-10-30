@@ -8,10 +8,8 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:300
 // frontend bundle is insecure. Prefer a server-side proxy when possible.
 const KC_URL = keycloakConfig.url;
 const KC_REALM = keycloakConfig.realm;
-const KC_CLIENT_ID = keycloakConfig.clientId;
+const KC_CLIENT_ID = keycloakConfig.apiClientId;
 const KC_CLIENT_SECRET = keycloakConfig.clientSecret;
-
-console.log('config', keycloakConfig)
 
 // In-module cache for client credentials token
 let clientToken: { token: string; expiresAt: number } | null = null;
@@ -68,8 +66,6 @@ async function apiRequest<T = any>(endpoint: string, options: any = {}) {
   if (!token) {
     token = await fetchClientCredentialsToken() || undefined;
   }
-
-  console.log(token)
 
   const headers = {
     'Content-Type': 'application/json',
