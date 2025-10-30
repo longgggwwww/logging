@@ -6,11 +6,29 @@ WORKDIR /app
 COPY package*.json ./
 
 # Prefer npm ci when lockfile is available, fall back to npm install
-RUN if [ -f package-lock.json ]; then npm ci --production=false --legacy-peer-deps; else npm install --legacy-peer-deps; fi
+RUN --mount=type=cache,target=/root/.npm \
+    if [ -f package-lock.json ]; then npm ci --production=false --legacy-peer-deps; else npm install --legacy-peer-deps; fi
 
 # copy rest of sources and build
 COPY . .
+
+# Set build arguments
+ARG REACT_APP_API_BASE_URL
+ARG KEYCLOAK_SERVER_URL
+ARG KEYCLOAK_REALM
+ARG KEYCLOAK_API_CLIENT_ID
+ARG KEYCLOAK_PUBLIC_CLIENT_ID
+ARG KEYCLOAK_CLIENT_SECRET
+
+# Set environment variables for build
 ENV NODE_ENV=production
+ENV REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL:-http://localhost:3000}
+ENV KEYCLOAK_SERVER_URL=${KEYCLOAK_SERVER_URL}
+ENV KEYCLOAK_REALM=${KEYCLOAK_REALM:-master}
+ENV KEYCLOAK_API_CLIENT_ID=${KEYCLOAK_API_CLIENT_ID:-api-service}
+ENV KEYCLOAK_PUBLIC_CLIENT_ID=${KEYCLOAK_PUBLIC_CLIENT_ID:-web-app-client}
+ENV KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+
 RUN npm run build
 
 FROM nginx:stable-alpine
