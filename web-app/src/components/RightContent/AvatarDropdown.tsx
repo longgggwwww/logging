@@ -46,7 +46,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   children,
 }) => {
   /**
-   * 退出登录，并且将当前的 url 保存
+   * Logout and save current url
    */
   const loginOut = async () => {
     // Kiểm tra xem có đăng nhập qua Keycloak không

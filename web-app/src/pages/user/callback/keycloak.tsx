@@ -12,8 +12,8 @@ const KeycloakCallback: React.FC = () => {
       try {
         const authData = await handleKeycloakCallback();
 
-        if (authData && authData.token) {
-          // Lưu token vào localStorage
+        if (authData?.token) {
+          // Save token to localStorage
           localStorage.setItem('keycloak_token', authData.token);
           if (authData.refreshToken) {
             localStorage.setItem('keycloak_refresh_token', authData.refreshToken);
@@ -22,16 +22,16 @@ const KeycloakCallback: React.FC = () => {
             localStorage.setItem('keycloak_id_token', authData.idToken);
           }
 
-          // Lấy thông tin user chi tiết
+          // Get detailed user info
           const userInfo = authData.userInfo;
           if (userInfo) {
-            // Load thêm profile từ Keycloak (nếu cần)
+            // Load additional profile from Keycloak (if needed)
             const profile = await loadKeycloakUserProfile();
             
-            // Format user info cho dashboard
+            // Format user info for dashboard
             const currentUser = formatUserForDashboard(userInfo, profile);
 
-            // Cập nhật state
+            // Update state
             flushSync(() => {
               setInitialState((s) => ({
                 ...s,
@@ -42,12 +42,12 @@ const KeycloakCallback: React.FC = () => {
             console.log('Keycloak user logged in:', currentUser);
           }
 
-          // Redirect về trang chính hoặc trang được yêu cầu
+          // Redirect to main page or requested page
           const urlParams = new URL(window.location.href).searchParams;
           const redirect = urlParams.get('redirect') || '/list';
           history.push(redirect);
         } else {
-          // Nếu không có token, redirect về trang login
+          // If no token, redirect to login page
           history.push('/user/login');
         }
       } catch (error) {

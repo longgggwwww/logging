@@ -63,7 +63,7 @@ const Login: React.FC = () => {
       message.error(
         intl.formatMessage({
           id: 'pages.login.keycloak.failure',
-          defaultMessage: 'Đăng nhập Keycloak thất bại!',
+          defaultMessage: 'Keycloak login failed!',
         })
       );
     }
@@ -98,7 +98,7 @@ const Login: React.FC = () => {
             <p style={{ color: 'rgba(0, 0, 0, 0.45)' }}>
               {intl.formatMessage({
                 id: 'pages.layouts.userLayout.title',
-                defaultMessage: 'Ant Design 是西湖区最具影响力的 Web 设计规范',
+                defaultMessage: 'Only for System Group members',
               })}
             </p>
           </div>
@@ -115,7 +115,7 @@ const Login: React.FC = () => {
           >
             <FormattedMessage
               id="pages.login.keycloak"
-              defaultMessage="使用 Keycloak 登录"
+              defaultMessage="Login with Keycloak"
             />
           </Button>
         </Card>

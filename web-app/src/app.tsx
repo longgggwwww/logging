@@ -31,13 +31,13 @@ export async function getInitialState(): Promise<{
 }> {
   const fetchUserInfo = async () => {
     try {
-      // Thử restore Keycloak session từ localStorage
+      // Try to restore Keycloak session from localStorage
       const authenticated = await initKeycloakWithSession();
       
       if (authenticated) {
         const keycloak = getKeycloak();
-        if (keycloak && keycloak.tokenParsed) {
-          // Lấy thông tin user từ Keycloak
+        if (keycloak?.tokenParsed) {
+          // Get user info from Keycloak
           const profile = await loadKeycloakUserProfile();
           const currentUser = formatUserForDashboard(keycloak.tokenParsed, profile);
           console.log('User from Keycloak (restored):', currentUser);
@@ -45,12 +45,12 @@ export async function getInitialState(): Promise<{
         }
       }
 
-      // Nếu không có Keycloak (không thể restore session), không gọi API ngoài
-      // vì việc lấy user hiện được thực hiện qua Keycloak.
+      // If no Keycloak (cannot restore session), do not call external API
+      // because user fetching is done via Keycloak.
       console.log('No Keycloak session restored; skipping external currentUser fetch');
       return undefined;
     } catch (_error) {
-      // Nếu có lỗi và không phải trang login, redirect
+      // If error and not login page, redirect
       if (history.location.pathname !== loginPath) {
         history.push(loginPath);
       }
@@ -58,7 +58,7 @@ export async function getInitialState(): Promise<{
     return undefined;
   };
   
-  // 如果不是登录页面，执行
+  // If not login page, execute
   const { location } = history;
   if (
     ![loginPath, '/callback/keycloak'].includes(
@@ -94,7 +94,7 @@ export const layout: RunTimeLayoutConfig = ({
     footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
-      // Nếu không đăng nhập, redirect đến login
+      // If not logged in, redirect to login
       if (!isKeycloakAuthenticated() && location.pathname !== loginPath) {
         history.push(loginPath);
       }
@@ -104,10 +104,10 @@ export const layout: RunTimeLayoutConfig = ({
 };
 
 export const request: RequestConfig = {
-  // Request interceptor - tự động thêm Keycloak token
+  // Request interceptor - automatically add Keycloak token
   requestInterceptors: [
     (config: any) => {
-      // Lấy token từ Keycloak nếu có
+      // Get token from Keycloak if available
       const token = getAccessToken();
       if (token) {
         config.headers = {

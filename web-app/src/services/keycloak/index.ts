@@ -16,7 +16,7 @@ interface CurrentUser {
   notifyCount: number;
 }
 
-// Cấu hình Keycloak - điều chỉnh theo môi trường của bạn
+// Keycloak configuration - adjust according to your environment
 const kcConfig: KeycloakConfig = {
   url: keycloakConfig.url,
   realm: keycloakConfig.realm,
@@ -126,7 +126,7 @@ export const getKeycloak = (): Keycloak | null => {
 };
 
 /**
- * Đăng nhập với Keycloak OAuth2
+ * Login with Keycloak OAuth2
  */
 export const loginWithKeycloak = async () => {
   const keycloak = initKeycloak();
@@ -203,7 +203,7 @@ export const logoutKeycloakLocal = () => {
 };
 
 /**
- * Đăng xuất hoàn toàn khỏi Keycloak (logout cả SSO session)
+ * Fully logout from Keycloak (logout SSO session)
  */
 export const logoutKeycloakFull = () => {
   const keycloak = getKeycloak();
@@ -232,7 +232,7 @@ export const logoutKeycloakFull = () => {
 export const logoutKeycloak = logoutKeycloakLocal;
 
 /**
- * Lấy thông tin user từ Keycloak token
+ * Get user info from Keycloak token
  */
 export const getKeycloakUserInfo = () => {
   const keycloak = getKeycloak();
@@ -269,7 +269,7 @@ export const loadKeycloakUserProfile = async () => {
 };
 
 /**
- * Format thông tin user cho dashboard
+ * Format user info for dashboard
  */
 export const formatUserForDashboard = (
   tokenParsed: Keycloak.KeycloakTokenParsed | undefined,
@@ -305,7 +305,7 @@ export const formatUserForDashboard = (
 };
 
 /**
- * Kiểm tra xem user đã đăng nhập qua Keycloak chưa
+ * Check if user is logged in via Keycloak
  */
 export const isKeycloakAuthenticated = (): boolean => {
   const keycloak = getKeycloak();
@@ -321,7 +321,7 @@ export const getAccessToken = (): string | undefined => {
 };
 
 /**
- * Làm mới token
+ * Refresh token
  */
 export const refreshKeycloakToken = async (minValidity: number = 30) => {
   const keycloak = getKeycloak();

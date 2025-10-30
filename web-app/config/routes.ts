@@ -28,7 +28,7 @@ export default [
     component: './user/callback/keycloak',
   },
   {
-    name: 'list.table-list',
+    name: 'Table List',
     icon: 'table',
     path: '/list',
     component: './table-list',
