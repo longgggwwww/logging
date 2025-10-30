@@ -1,19 +1,20 @@
 import Keycloak from 'keycloak-js';
 import type { KeycloakConfig, KeycloakAuthData } from './types';
+import { keycloakConfig } from '@/services/keycloak-config';
 
 
 // Cấu hình Keycloak - điều chỉnh theo môi trường của bạn
-const keycloakConfig: any = {
-  url: process.env.KEYCLOAK_URL || 'https://keycloak.iit.vn',
-  realm: process.env.KEYCLOAK_REALM || 'master',
-  clientId: process.env.KEYCLOAK_CLIENT_ID || 'log-monitoring',
+const kcConfig: any = {
+  url: keycloakConfig.url,
+  realm: keycloakConfig.realm,
+  clientId: keycloakConfig.frontendClientId,
   // CẢNH BÁO: Chỉ uncomment dòng dưới nếu client là Confidential
   // KHÔNG AN TOÀN cho production vì secret sẽ bị lộ trong browser
   // Nên đổi client thành Public Client trong Keycloak Admin Console
-  // clientSecret: 'YOUR_CLIENT_SECRET_HERE', // Lấy từ Keycloak Clients > test-syslog > Credentials
+  // clientSecret: keycloakConfig.clientSecret, // Lấy từ Keycloak Clients > test-syslog > Credentials
 };
 
-console.log('vlxx', window.location.origin);
+console.log('Keycloak config used:', kcConfig);
 
 let keycloakInstance: Keycloak | null = null;
 
@@ -22,7 +23,7 @@ let keycloakInstance: Keycloak | null = null;
  */
 export const initKeycloak = (): Keycloak => {
   if (!keycloakInstance) {
-    keycloakInstance = new Keycloak(keycloakConfig);
+    keycloakInstance = new Keycloak(kcConfig);
   }
   return keycloakInstance;
 };
@@ -197,7 +198,7 @@ export const logoutKeycloakFull = () => {
     localStorage.removeItem('keycloak_id_token');
     
     // Logout từ Keycloak với redirect URI hợp lệ
-    const logoutUrl = `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/logout`;
+    const logoutUrl = `${kcConfig.url}/realms/${kcConfig.realm}/protocol/openid-connect/logout`;
     const params = new URLSearchParams({
       post_logout_redirect_uri: window.location.origin + '/user/login',
       id_token_hint: keycloak.idToken || '',
