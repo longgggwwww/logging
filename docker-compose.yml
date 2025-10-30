@@ -227,21 +227,6 @@ services:
     networks:
       - kafka-network
 
-  web-app:
-    build:
-      context: ./web-app
-      dockerfile: Dockerfile
-    container_name: web-app
-    environment:
-      KEYCLOAK_URL: "https://keycloak.iit.vn"
-      KEYCLOAK_REALM: "master"
-      KEYCLOAK_CLIENT_ID: "log-monitoring"
-      REACT_APP_API_BASE_URL: "http://api-service:3000"
-    ports:
-      - "8000:80"
-    networks:
-      - kafka-network
-    restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -9,11 +9,15 @@ import { projectsRouter } from "./routes/projects.js";
 import { statsRouter } from "./routes/stats.js";
 import { connectRedis, disconnectRedis, redisSubscriber, redisClient } from "./redis.js";
 import { invalidateLogsCache } from "./utils.js";
+import { keycloak } from "./keycloak.js";
 
 const app = express();
 
 // Setup middleware
 setupMiddleware(app);
+
+// Protect all /v1 routes with Keycloak (bearer-only tokens)
+app.use("/v1", keycloak.protect());
 
 // Setup routes
 app.use(logsRouter);
