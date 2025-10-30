@@ -1,14 +1,14 @@
 import { app, initializeServer, shutdown } from "./server.js";
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-
+// ============================================
+// STARTUP
+// ============================================
 async function startServer() {
   try {
     await initializeServer();
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+    app.listen(3000, () => {
+      console.log("🚀 Server running on port 3000");
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);

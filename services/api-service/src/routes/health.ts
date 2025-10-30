@@ -5,6 +5,10 @@ import { redisClient } from "../redis.js";
 
 const router = express.Router();
 
+// ============================================
+// ROUTES: HEALTH
+// ============================================
+
 // Health check endpoint
 router.get("/health", async (req: Request, res: Response) => {
   try {

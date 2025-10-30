@@ -2,6 +2,9 @@ import { createClient } from "redis";
 
 import { CONFIG } from "./config.js";
 
+// ============================================
+// REDIS CLIENTS
+// ============================================
 export const redisClient = createClient({
   url: CONFIG.redisUrl,
 });
@@ -16,6 +19,9 @@ redisClient.on("end", () => {
   setTimeout(() => redisClient.connect().catch(console.error), 5000);
 });
 
+// ============================================
+// REDIS SUBSCRIBER
+// ============================================
 export const redisSubscriber = createClient({
   url: CONFIG.redisUrl,
 });
@@ -23,13 +29,18 @@ export const redisSubscriber = createClient({
 redisSubscriber.on("error", (err: Error) =>
   console.error("❌ Redis Subscriber Error", err),
 );
-redisSubscriber.on("connect", () => console.log("✅ Redis Subscriber Connected"));
+redisSubscriber.on("connect", () =>
+  console.log("✅ Redis Subscriber Connected"),
+);
 redisSubscriber.on("ready", () => console.log("✅ Redis Subscriber Ready"));
 redisSubscriber.on("end", () => {
   console.log("⚠️ Redis Subscriber disconnected, attempting reconnect...");
   setTimeout(() => redisSubscriber.connect().catch(console.error), 5000);
 });
 
+// ============================================
+// CONNECT / DISCONNECT HELPERS
+// ============================================
 export async function connectRedis(): Promise<void> {
   await redisClient.connect();
   await redisSubscriber.connect();

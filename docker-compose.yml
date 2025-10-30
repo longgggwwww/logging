@@ -5,10 +5,13 @@ services:
       dockerfile: Dockerfile
     container_name: api-service
     environment:
-      DATABASE_URL: "mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin"
-      REDIS_URL: "redis://redis:6379"
-      PORT: "3000"
       NODE_ENV: "production"
+      DATABASE_URL: "${DATABASE_URL:-mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin}"
+      REDIS_URL: "${REDIS_URL:-redis://redis:6379}"
+      KEYCLOAK_AUTH_URL: "${KEYCLOAK_AUTH_URL:-http://localhost:8080}"
+      KEYCLOAK_CLIENT_ID: "${KEYCLOAK_CLIENT_ID:-api-service}"
+      KEYCLOAK_REALM: "${KEYCLOAK_REALM:-master}"
+      SESSION_SECRET: "${SESSION_SECRET:-your-session-secret}"
     ports:
       - "3000:3000"
     networks:
@@ -136,12 +139,6 @@ services:
   kafka-init:
     image: apache/kafka:3.7.0
     container_name: kafka-init
-    networks:
-      - kafka-network
-    depends_on:
-      - kafka-controller-1
-      - kafka-controller-2
-      - kafka-controller-3
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -149,18 +146,24 @@ services:
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-retry --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+    networks:
+      - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
     restart: "no"
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
-    ports:
-      - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kraft-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: ""
       KAFKA_CLUSTERS_0_KRAFT: "true"
+    ports:
+      - "8080:8080"
     networks:
       - kafka-network
     depends_on:

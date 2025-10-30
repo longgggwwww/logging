@@ -7,6 +7,10 @@ import { redisClient } from "../redis.js";
 
 const router = express.Router();
 
+// ============================================
+// ROUTES: STATS
+// ============================================
+
 // Statistics endpoint
 router.get("/v1/stats", async (req: Request, res: Response) => {
   try {

@@ -1,5 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+// ============================================
+// FUNCTION MODEL
+// ============================================
 export interface IFunctionModel extends Document {
   name: string;
   project: mongoose.Types.ObjectId;
@@ -30,12 +33,12 @@ const functionSchema = new Schema<IFunctionModel>(
   { collection: "functions" },
 );
 
-functionSchema.set('toJSON', {
+functionSchema.set("toJSON", {
   transform: function (doc, ret) {
     ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
-  }
+  },
 });
 
 functionSchema.pre(

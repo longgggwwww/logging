@@ -1,13 +1,20 @@
 import Keycloak from "keycloak-connect";
 
+// ============================================
+// KEYCLOAK CONFIG
+// ============================================
 // Keycloak configuration derived from environment variables
 export const KEYCLOAK_CONFIG = {
   realm: process.env.KEYCLOAK_REALM || "master",
-  "auth-server-url": process.env.KEYCLOAK_AUTH_URL || "http://localhost:8080/auth",
+  "auth-server-url":
+    process.env.KEYCLOAK_AUTH_URL || "http://localhost:8080/auth",
   resource: process.env.KEYCLOAK_CLIENT_ID || "api-service",
   "bearer-only": true,
 } as const;
 
+// ============================================
+// KEYCLOAK INSTANCE
+// ============================================
 // Create Keycloak instance
 // For bearer-only APIs we don't require an express session store; keycloak-connect can be
 // used to validate bearer tokens without persisting sessions.

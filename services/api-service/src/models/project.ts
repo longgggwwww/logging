@@ -1,5 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+// ============================================
+// PROJECT MODEL
+// ============================================
 export interface IProject extends Document {
   name: string;
   functions: mongoose.Types.ObjectId[];
@@ -33,12 +36,12 @@ const projectSchema = new Schema<IProject>(
   { collection: "projects" },
 );
 
-projectSchema.set('toJSON', {
+projectSchema.set("toJSON", {
   transform: function (doc, ret) {
     ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
-  }
+  },
 });
 
 projectSchema.pre("save", function (this: IProject, next: (err?: any) => void) {

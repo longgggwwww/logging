@@ -1,5 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+// ============================================
+// LOG MODEL
+// ============================================
 export interface ILogModel extends Document {
   project: mongoose.Types.ObjectId;
   function: mongoose.Types.ObjectId;
@@ -62,12 +65,12 @@ const logSchema = new Schema<ILogModel>(
   { collection: "logs" },
 );
 
-logSchema.set('toJSON', {
+logSchema.set("toJSON", {
   transform: function (doc, ret) {
     ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
-  }
+  },
 });
 
 logSchema.index({ project: 1 });

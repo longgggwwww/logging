@@ -5,6 +5,10 @@ import { redisClient } from "../redis.js";
 
 const router = express.Router();
 
+// ============================================
+// ROUTES: FUNCTIONS
+// ============================================
+
 // GET /v1/functions - List all functions
 router.get("/v1/functions", async (req: Request, res: Response) => {
   try {

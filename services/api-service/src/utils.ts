@@ -1,5 +1,9 @@
 import type { TimeFilter } from "./types.js";
 
+// ============================================
+// UTILITIES
+// ============================================
+
 // Helper function to generate cache key
 export function generateCacheKey(
   prefix: string,
@@ -12,6 +16,9 @@ export function generateCacheKey(
   return `${prefix}:${sorted}`;
 }
 
+// ============================================
+// TIME RANGE PARSING
+// ============================================
 // Helper function to parse time range
 export function getTimeRangeFilter(
   timeRange?: string,
@@ -28,7 +35,7 @@ export function getTimeRangeFilter(
         startDate = new Date(now.getTime() - 15 * 60 * 1000);
         break;
       case "30m":
-        startDate = new Date(now.getTime() - 30 * 60 * 1000);
+        startDate = new Date(now.getTime() - 30 * 60 * 60 * 1000);
         break;
       case "1h":
         startDate = new Date(now.getTime() - 60 * 60 * 1000);
@@ -67,21 +74,33 @@ export function getTimeRangeFilter(
   return Object.keys(filter).length > 0 ? filter : undefined;
 }
 
+// ============================================
+// CACHE INVALIDATION
+// ============================================
 // Function to invalidate cache keys related to logs
-export async function invalidateLogsCache(redisClient: any, projectId: string, functionId: string): Promise<void> {
+export async function invalidateLogsCache(
+  redisClient: any,
+  projectId: string,
+  functionId: string,
+): Promise<void> {
   // Delete all logs:list cache keys since new logs may affect any query
   const keysToDelete: string[] = [];
 
   // Use SCAN to iterate over keys matching "logs:list:*"
   let cursor = 0;
   do {
-    const result = await redisClient.scan(cursor, { MATCH: "logs:list:*", COUNT: 100 });
+    const result = await redisClient.scan(cursor, {
+      MATCH: "logs:list:*",
+      COUNT: 100,
+    });
     cursor = result.cursor;
     keysToDelete.push(...result.keys);
   } while (cursor !== 0);
 
   if (keysToDelete.length > 0) {
     await redisClient.del(keysToDelete);
-    console.log(`🗑️ Invalidated ${keysToDelete.length} cache keys for project ${projectId}, function ${functionId}`);
+    console.log(
+      `🗑️ Invalidated ${keysToDelete.length} cache keys for project ${projectId}, function ${functionId}`,
+    );
   }
 }

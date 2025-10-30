@@ -8,6 +8,9 @@ import { generateCacheKey, getTimeRangeFilter } from "../utils.js";
 import { redisClient } from "../redis.js";
 
 const router = express.Router();
+// ============================================
+// ROUTES: LOGS
+// ============================================
 
 // GET /v1/logs - List logs with filters and pagination
 router.get("/v1/logs", async (req: Request, res: Response) => {

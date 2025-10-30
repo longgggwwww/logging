@@ -5,6 +5,10 @@ import { redisClient } from "../redis.js";
 
 const router = express.Router();
 
+// ============================================
+// ROUTES: PROJECTS
+// ============================================
+
 // Handler for listing projects
 const listProjectsHandler = async (req: Request, res: Response) => {
   try {

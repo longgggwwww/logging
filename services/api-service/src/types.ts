@@ -1,5 +1,8 @@
-// Type definitions for the API service
+// ============================================
+// TYPES
+// ============================================
 
+// Type definitions for the API service
 export interface TimeFilter {
   $gte?: Date;
   $lte?: Date;
