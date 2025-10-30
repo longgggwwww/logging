@@ -12,8 +12,8 @@ services:
       KEYCLOAK_CLIENT_ID: "${KEYCLOAK_CLIENT_ID:-api-service}"
       KEYCLOAK_REALM: "${KEYCLOAK_REALM:-master}"
       SESSION_SECRET: "${SESSION_SECRET:-your-session-secret}"
-    # ports:
-    #   - "3000:3000"
+    ports:
+      - "3000:3000"
     networks:
       - kafka-network
     depends_on:

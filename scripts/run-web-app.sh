@@ -6,7 +6,7 @@ set -e
 
 IMAGE_NAME="syslog-web-app"
 CONTAINER_NAME="syslog-web-app-container"
-PORT=8080  # Adjust if needed
+PORT=8000  # Adjust if needed
 
 # Environment variables for build
 REACT_APP_API_BASE_URL="${REACT_APP_API_BASE_URL:-http://localhost:3000}"
