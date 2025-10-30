@@ -230,7 +230,6 @@ services:
     networks:
       - kafka-network
 
-
 volumes:
   postgres_data:
   redis_data:
