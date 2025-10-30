@@ -49,16 +49,16 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
    * Logout and save current url
    */
   const loginOut = async () => {
-    // Kiểm tra xem có đăng nhập qua Keycloak không
+    // Check if logged in via Keycloak
     const isKeycloak = isKeycloakAuthenticated();
     
     if (isKeycloak) {
-      // Local logout: chỉ xóa session trong app, KHÔNG logout khỏi Keycloak SSO
-      // Không gọi backend outLogin để tránh "Cannot POST /api/login/outLogin" khi
-      // backend không cung cấp endpoint (ví dụ mock tắt hoặc production backend).
+      // Local logout: only clear session in app, DO NOT logout from Keycloak SSO
+      // Do not call backend outLogin to avoid "Cannot POST /api/login/outLogin" when
+      // backend does not provide endpoint (e.g., mock off or production backend).
       logoutKeycloakLocal();
     } else {
-      // Logout thông thường - gọi backend nếu cần
+      // Normal logout - call backend if needed
       // (No backend call implemented)
     }
 

@@ -7,7 +7,7 @@ export default () => {
   const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    // Thực hiện một lần: nếu có fetchUserInfo thì gọi để restore session trước
+    // Execute once: if fetchUserInfo exists, call to restore session first
     const doRedirect = async () => {
       if (hasRedirected) return;
 
@@ -21,8 +21,8 @@ export default () => {
           console.log('RedirectHome: calling initialState.fetchUserInfo()');
           await (initialState as any).fetchUserInfo();
         } else {
-          // Nếu runtime không cung cấp fetchUserInfo (route với layout:false có thể không khởi tạo),
-          // cố gắng restore Keycloak session trực tiếp
+          // If runtime does not provide fetchUserInfo (routes with layout:false may not initialize),
+          // try to restore Keycloak session directly
           console.log('RedirectHome: no fetchUserInfo, calling initKeycloakWithSession() fallback');
           try {
             await initKeycloakWithSession();
@@ -31,7 +31,7 @@ export default () => {
           }
         }
       } catch (e) {
-        // fetchUserInfo có thể tự redirect hoặc throw — chỉ log và tiếp tục
+        // fetchUserInfo may redirect or throw — just log and continue
         console.warn('RedirectHome: fetchUserInfo threw', e);
       }
 
@@ -42,7 +42,7 @@ export default () => {
         try {
           history.push(to);
         } catch (_err) {
-          // Fallback to full page redirect nếu history không hoạt động
+          // Fallback to full page redirect if history does not work
           window.location.href = to;
         }
       };
@@ -58,7 +58,7 @@ export default () => {
       go('/user/login');
       setHasRedirected(true);
 
-      // Safety fallback: nếu sau 2s vẫn chưa redirect (edge case), force full redirect
+      // Safety fallback: if not redirected after 2s (edge case), force full redirect
       setTimeout(() => {
         if (!hasRedirected) {
           const fallback = isKeycloakAuthenticated() ? '/list' : '/user/login';
@@ -69,10 +69,10 @@ export default () => {
     };
 
     doRedirect();
-    // chỉ chạy khi component mount hoặc khi initialState đổi
+    // only run when component mounts or initialState changes
   }, [initialState, hasRedirected]);
 
-  // Nếu đã redirect, hiển thị loading
+  // If already redirected, show loading
   if (hasRedirected) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -81,7 +81,7 @@ export default () => {
     );
   }
 
-  // Trong khi chờ fetch/restore session, hiển thị một placeholder (không redirect ngay lập tức)
+  // While waiting for fetch/restore session, show a placeholder (do not redirect immediately)
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       Loading...

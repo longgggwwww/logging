@@ -119,7 +119,7 @@ const setupTokenRefresh = (keycloak: Keycloak) => {
 };
 
 /**
- * Lấy Keycloak instance hiện tại
+ * Get current Keycloak instance
  */
 export const getKeycloak = (): Keycloak | null => {
   return keycloakInstance;
@@ -147,7 +147,7 @@ export const loginWithKeycloak = async () => {
 };
 
 /**
- * Xử lý callback từ Keycloak
+ * Handle callback from Keycloak
  */
 export const handleKeycloakCallback =
   async (): Promise<KeycloakAuthData | null> => {
@@ -209,25 +209,25 @@ export const logoutKeycloakFull = () => {
   const keycloak = getKeycloak();
 
   if (keycloak && keycloak.authenticated) {
-    // Clear localStorage trước khi logout
+    // Clear localStorage before logout
     localStorage.removeItem("keycloak_token");
     localStorage.removeItem("keycloak_refresh_token");
     localStorage.removeItem("keycloak_id_token");
 
-    // Logout từ Keycloak với redirect URI hợp lệ
+    // Logout from Keycloak with valid redirect URI
     const logoutUrl = `${kcConfig.url}/realms/${kcConfig.realm}/protocol/openid-connect/logout`;
     const params = new URLSearchParams({
       post_logout_redirect_uri: window.location.origin + "/user/login",
       id_token_hint: keycloak.idToken || "",
     });
 
-    // Redirect đến logout endpoint
+    // Redirect to logout endpoint
     window.location.href = `${logoutUrl}?${params.toString()}`;
   }
 };
 
 /**
- * Alias cho local logout (mặc định)
+ * Alias for local logout (default)
  */
 export const logoutKeycloak = logoutKeycloakLocal;
 
@@ -250,7 +250,7 @@ export const getKeycloakUserInfo = () => {
 };
 
 /**
- * Load user profile từ Keycloak server
+ * Load user profile from Keycloak server
  */
 export const loadKeycloakUserProfile = async () => {
   const keycloak = getKeycloak();
@@ -313,7 +313,7 @@ export const isKeycloakAuthenticated = (): boolean => {
 };
 
 /**
- * Lấy access token hiện tại
+ * Get current access token
  */
 export const getAccessToken = (): string | undefined => {
   const keycloak = getKeycloak();

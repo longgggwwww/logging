@@ -68,7 +68,7 @@ const KeycloakCallback: React.FC = () => {
         height: '100vh',
       }}
     >
-      <Spin size="large" tip="Đang xử lý đăng nhập..." />
+      <Spin size="large" tip="Processing login..." />
     </div>
   );
 };
