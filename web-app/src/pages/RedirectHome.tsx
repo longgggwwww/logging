@@ -11,19 +11,15 @@ export default () => {
     const doRedirect = async () => {
       if (hasRedirected) return;
 
-      console.log('RedirectHome: start redirect flow', {
-        initialStateExists: !!initialState,
-        hasFetch: !!(initialState && (initialState as any).fetchUserInfo),
-      });
+      // start redirect flow
 
       try {
         if (initialState && typeof (initialState as any).fetchUserInfo === 'function') {
-          console.log('RedirectHome: calling initialState.fetchUserInfo()');
           await (initialState as any).fetchUserInfo();
         } else {
           // If runtime does not provide fetchUserInfo (routes with layout:false may not initialize),
           // try to restore Keycloak session directly
-          console.log('RedirectHome: no fetchUserInfo, calling initKeycloakWithSession() fallback');
+          // no fetchUserInfo, try restoring Keycloak session directly
           try {
             await initKeycloakWithSession();
           } catch (err) {
@@ -36,7 +32,7 @@ export default () => {
       }
 
       const isAuth = isKeycloakAuthenticated();
-      console.log('RedirectHome: isKeycloakAuthenticated ->', isAuth);
+  // isAuth evaluated
 
       const go = (to: string) => {
         try {
@@ -48,13 +44,10 @@ export default () => {
       };
 
       if (isAuth) {
-        console.log('RedirectHome: User authenticated, redirecting to /list');
         go('/list');
         setHasRedirected(true);
         return;
       }
-
-      console.log('RedirectHome: No authentication, redirecting to /user/login');
       go('/user/login');
       setHasRedirected(true);
 

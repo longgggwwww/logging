@@ -40,14 +40,12 @@ export async function getInitialState(): Promise<{
           // Get user info from Keycloak
           const profile = await loadKeycloakUserProfile();
           const currentUser = formatUserForDashboard(keycloak.tokenParsed, profile);
-          console.log('User from Keycloak (restored):', currentUser);
           return currentUser;
         }
       }
 
       // If no Keycloak (cannot restore session), do not call external API
       // because user fetching is done via Keycloak.
-      console.log('No Keycloak session restored; skipping external currentUser fetch');
       return undefined;
     } catch (_error) {
       // If error and not login page, redirect

@@ -113,7 +113,6 @@ const TableList: React.FC = () => {
             options={cascaderOptions}
             value={selectedFilters}
             onChange={(selectedValues) => {
-              console.log('✏️ Cascader onChange:', selectedValues);
               setSelectedFilters(selectedValues);
             }}
             multiple
@@ -275,8 +274,6 @@ const TableList: React.FC = () => {
           pageSizeOptions: ['10', '20', '50', '100'],
         }}
         request={async (params: any) => {
-          console.log('📊 Filter params received:', params);
-          console.log('🎯 Selected filters from state:', selectedFilters);
           
           // Use selectedFilters state instead of params.filter
           const filter = selectedFilters;
@@ -284,7 +281,6 @@ const TableList: React.FC = () => {
           const functionIds: string[] = [];
 
           if (filter && Array.isArray(filter) && filter.length > 0) {
-            console.log('🔍 Filter array:', filter);
             
             // Cascader with multiple returns array of arrays like [["project-1"], ["project-2", "function-2"]]
             filter.forEach((path: any) => {
@@ -321,8 +317,7 @@ const TableList: React.FC = () => {
               }
             });
             
-            console.log('📋 Parsed projectIds:', projectIds);
-            console.log('📋 Parsed functionIds:', functionIds);
+            // parsed project/function ids available in projectIds and functionIds
           }
 
           // Build request parameters
@@ -364,15 +359,10 @@ const TableList: React.FC = () => {
             requestParams.functionIds = functionIds.join(',');
           }
 
-          console.log('🔍 API request params:', requestParams);
+          // API request params prepared in requestParams
 
           try {
             const response = await getLogs(requestParams);
-            console.log('✅ API response:', {
-              count: response.data.data.length,
-              hasMore: response.data.pagination.hasMore,
-              filters: response.data.filters,
-            });
 
             // Normalize API items to shape expected by the table.
             // The backend returns nested `request.url` and `response.code`,
