@@ -1,8 +1,8 @@
-import { request } from '@umijs/max';
-import { getAccessToken } from '@/services/keycloak';
-import { keycloakConfig } from '@/services/keycloak-config';
+import { getAccessToken } from "@/services/keycloak";
+import { keycloakConfig } from "@/services/keycloak-config";
+import { request } from "@umijs/max";
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
 // Client credentials config (read from env). WARNING: placing client secret in
 // frontend bundle is insecure. Prefer a server-side proxy when possible.
@@ -26,18 +26,21 @@ async function fetchClientCredentialsToken(): Promise<string | null> {
   try {
     const tokenUrl = `${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/token`;
     const body = new URLSearchParams();
-    body.append('grant_type', 'client_credentials');
-    body.append('client_id', KC_CLIENT_ID);
-    body.append('client_secret', KC_CLIENT_SECRET);
+    body.append("grant_type", "client_credentials");
+    body.append("client_id", KC_CLIENT_ID);
+    body.append("client_secret", KC_CLIENT_SECRET);
 
     const res = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
     });
 
     if (!res.ok) {
-      console.error('Failed to fetch client credentials token', await res.text());
+      console.error(
+        "Failed to fetch client credentials token",
+        await res.text()
+      );
       return null;
     }
 
@@ -51,7 +54,7 @@ async function fetchClientCredentialsToken(): Promise<string | null> {
       return clientToken.token;
     }
   } catch (err) {
-    console.error('Error obtaining client credentials token', err);
+    console.error("Error obtaining client credentials token", err);
   }
 
   return null;
@@ -64,11 +67,11 @@ async function apiRequest<T = any>(endpoint: string, options: any = {}) {
   // are configured, use client credentials token.
   let token = getAccessToken();
   if (!token) {
-    token = await fetchClientCredentialsToken() || undefined;
+    token = (await fetchClientCredentialsToken()) || undefined;
   }
 
   const headers = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(options.headers || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
@@ -76,31 +79,24 @@ async function apiRequest<T = any>(endpoint: string, options: any = {}) {
   return request<T>(endpoint, {
     ...options,
     headers,
+    getResponse: true, // Fuck
   });
 }
 
 export async function getLogs(params: LOG.LogListParams) {
   return apiRequest<LOG.LogListResponse>(`${API_BASE_URL}/v1/logs`, {
-    method: 'GET',
+    method: "GET",
     params,
   });
 }
 
 export async function getProjects(params?: { expand?: string }) {
-  return apiRequest<LOG.ProjectListResponse>(`${API_BASE_URL}/v1/projects`, {
-    method: 'GET',
-    params,
-  });
-}
-
-export async function getProjectFunctions(projectId: string) {
-  return apiRequest<LOG.FunctionListResponse>(`${API_BASE_URL}/v1/projects/${projectId}/functions`, {
-    method: 'GET',
-  });
-}
-
-export async function getFunctions() {
-  return apiRequest<LOG.FunctionListResponse>(`${API_BASE_URL}/v1/functions`, {
-    method: 'GET',
-  });
+  const res = await apiRequest<LOG.ProjectListResponse>(
+    `${API_BASE_URL}/v1/projects`,
+    {
+      method: "GET",
+      params,
+    }
+  );
+  return res;
 }

@@ -185,7 +185,7 @@ const TableList: React.FC = () => {
       dataIndex: 'responseCode',
       hideInSearch: true,
       render: (_, record) => {
-        const code = record.responseCode;
+        const code = record.response.code;
         let color = 'default';
         if (code >= 200 && code < 300) color = 'success';
         else if (code >= 300 && code < 400) color = 'processing';
@@ -418,10 +418,10 @@ const TableList: React.FC = () => {
         }}
         closable={false}
       >
-        {currentRow?.requestUrl && (
+        {currentRow?.request.url && (
           <ProDescriptions<LOG.Log>
             column={1}
-            title={currentRow?.requestUrl}
+            title={currentRow.request.url}
             request={async () => ({
               data: currentRow || {},
             })}

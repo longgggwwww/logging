@@ -1,27 +1,6 @@
 declare namespace LOG {
   type Log = {
     id: string;
-    projectId: string;
-    functionId: string;
-    method: string;
-    type: 'DEBUG' | 'SUCCESS' | 'INFO' | 'WARNING' | 'ERROR';
-    requestHeaders?: any;
-    requestUserAgent?: string;
-    requestUrl: string;
-    requestParams?: any;
-    requestBody?: any;
-    responseCode: number;
-    responseSuccess: boolean;
-    responseMessage?: string;
-    responseData?: any;
-    consoleLog?: string;
-    additionalData?: any;
-    latency?: number;
-    createdById?: string;
-    createdByFullname?: string;
-    createdByEmplCode?: string;
-    createdAt: string;
-    updatedAt: string;
     project: {
       id: string;
       name: string;
@@ -30,6 +9,30 @@ declare namespace LOG {
       id: string;
       name: string;
     };
+    method: string;
+    type: 'DEBUG' | 'SUCCESS' | 'INFO' | 'WARNING' | 'ERROR';
+    request: {
+      userAgent?: string;
+      url: string;
+      body?: any;
+      params?: any;
+      headers?: any;
+    };
+    response: {
+      code: number;
+      success: boolean;
+      message?: string;
+      data?: any;
+    };
+    consoleLog?: string;
+    additionalData?: any;
+    latency?: number;
+    createdBy: {
+      id: string;
+      fullname: string;
+      emplCode: string;
+    };
+    createdAt: string;
   };
 
   type Project = {
@@ -43,13 +46,9 @@ declare namespace LOG {
   type Function = {
     id: string;
     name: string;
-    projectId: string;
+    project: string;
     createdAt: string;
     updatedAt: string;
-    project?: {
-      id: string;
-      name: string;
-    };
   };
 
   type LogListParams = {
@@ -85,7 +84,7 @@ declare namespace LOG {
       projectIds?: string;
       functionIds?: string;
       method?: string;
-      level?: string;
+      type?: string;
       timeRange?: string;
       startTime?: string;
       endTime?: string;
