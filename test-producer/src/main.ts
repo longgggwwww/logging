@@ -60,6 +60,13 @@ export const run = async (): Promise<void> => {
   await producer.connect();
   console.log("✅ Producer connected\n");
 
+  // Log connected brokers
+  const brokers = (
+    process.env.KAFKA_BROKERS ||
+    "localhost:19092,localhost:29092,localhost:39092"
+  ).split(",");
+  console.log(`📍 Connected to brokers: ${brokers.join(", ")}\n`);
+
   // Prompt for sample selection
   const rl = readline.createInterface({
     input: process.stdin,
