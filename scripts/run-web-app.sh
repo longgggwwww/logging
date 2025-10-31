@@ -9,7 +9,7 @@ CONTAINER_NAME="syslog-web-app-container"
 PORT=8000  # Adjust if needed
 
 # Environment variables for build
-REACT_APP_API_BASE_URL="${REACT_APP_API_BASE_URL:-http://localhost:3000}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:3000}"
 KEYCLOAK_SERVER_URL="${KEYCLOAK_SERVER_URL:-http://localhost:8080}"
 KEYCLOAK_REALM="${KEYCLOAK_REALM:-master}"
 KEYCLOAK_API_CLIENT_ID="${KEYCLOAK_API_CLIENT_ID:-api-service}"
@@ -18,7 +18,7 @@ KEYCLOAK_CLIENT_SECRET="${KEYCLOAK_CLIENT_SECRET:-keycloak-client-secret}"
 
 echo "Building Docker image for web-app..."
 docker build \
-  --build-arg REACT_APP_API_BASE_URL="$REACT_APP_API_BASE_URL" \
+  --build-arg API_BASE_URL="$API_BASE_URL" \
   --build-arg KEYCLOAK_SERVER_URL="$KEYCLOAK_SERVER_URL" \
   --build-arg KEYCLOAK_REALM="$KEYCLOAK_REALM" \
   --build-arg KEYCLOAK_API_CLIENT_ID="$KEYCLOAK_API_CLIENT_ID" \

@@ -2,7 +2,7 @@ import { request } from '@umijs/max';
 import { getAccessToken } from '@/services/keycloak';
 import { keycloakConfig } from '@/services/keycloak-config';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
 
 // Client credentials config (read from env). WARNING: placing client secret in
 // frontend bundle is insecure. Prefer a server-side proxy when possible.
