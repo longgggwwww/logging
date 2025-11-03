@@ -1,4 +1,4 @@
-import { getLogs, getProjects } from '@/services/log';
+import { getProjects } from '@/services/log';
 import type {
     ActionType,
     ProColumns,
@@ -28,13 +28,14 @@ const Realtime: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const formRef = useRef<any>(null);
   const socketRef = useRef<Socket | null>(null);
+  const isSubscribedRef = useRef<boolean>(false);
 
   const [showDetail, setShowDetail] = useState<boolean>(false);
-  const [currentRow, setCurrentRow] = useState<LOG.Log>();
+  const [currentRow, setCurrentRow] = useState<LOG.RealtimeLog>();
   const [cascaderOptions, setCascaderOptions] = useState<CascaderOption[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<any[]>([]);
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
-  const [logs, setLogs] = useState<LOG.Log[]>([]);
+  const [logs, setLogs] = useState<LOG.RealtimeLog[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [methodFilter, setMethodFilter] = useState<string | undefined>(undefined);
   const [levelFilter, setLevelFilter] = useState<string | undefined>(undefined);
@@ -42,6 +43,12 @@ const Realtime: React.FC = () => {
 
   // Socket.IO Connection
   useEffect(() => {
+    // Prevent duplicate connections
+    if (socketRef.current?.connected) {
+      console.log('⚠️ Socket already connected, skipping...');
+      return;
+    }
+
     console.log('🔌 Connecting to Socket.IO server...');
     
     // Connect to realtime-service
@@ -58,9 +65,12 @@ const Realtime: React.FC = () => {
       console.log('✅ Socket.IO connected! Socket ID:', socket.id);
       setSocketConnected(true);
       
-      // Subscribe to logs
-      socket.emit('subscribe');
-      console.log('📡 Subscribed to log updates');
+      // Subscribe only once
+      if (!isSubscribedRef.current) {
+        socket.emit('subscribe');
+        isSubscribedRef.current = true;
+        console.log('📡 Subscribed to log updates');
+      }
     });
 
     socket.on('connected', (data) => {
@@ -161,40 +171,7 @@ const Realtime: React.FC = () => {
     loadProjectsAndFunctions();
   }, []);
 
-  // Load initial logs
-  useEffect(() => {
-    const loadInitialLogs = async () => {
-      setLoading(true);
-      try {
-        const response = await getLogs({
-          paginationType: 'offset',
-          page: 1,
-          take: 50,
-        });
 
-        const mapped = (response.data.data || []).map((item: any) => ({
-          ...item,
-          requestUrl: item.request?.url ?? item.requestUrl ?? '',
-          requestHeaders: item.request?.headers ?? item.requestHeaders,
-          requestUserAgent: item.request?.userAgent ?? item.requestUserAgent,
-          requestParams: item.request?.params ?? item.requestParams,
-          requestBody: item.request?.body ?? item.requestBody,
-          responseCode: item.response?.code ?? item.responseCode ?? 0,
-          responseSuccess: item.response?.success ?? item.responseSuccess,
-          responseMessage: item.response?.message ?? item.responseMessage,
-          responseData: item.response?.data ?? item.responseData,
-        }));
-
-        setLogs(mapped);
-      } catch (error) {
-        console.error('Failed to load initial logs:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInitialLogs();
-  }, []);
 
   // Convert log type to badge status
   const getTypeBadgeStatus = (type: string) => {
@@ -208,43 +185,23 @@ const Realtime: React.FC = () => {
     return statusMap[type] || 'default';
   };
 
-  const columns: ProColumns<LOG.Log>[] = [
+  const columns: ProColumns<LOG.RealtimeLog>[] = [
     {
       title: 'Project',
-      dataIndex: ['project', 'name'],
+      dataIndex: 'projectName',
       hideInSearch: true,
       render: (_, record) => {
-        return <Tag color="blue">{record.project.name}</Tag>;
+        const projectName = record.project || '-';
+        return <Tag color="blue">{projectName}</Tag>;
       },
     },
     {
       title: 'Function',
-      dataIndex: ['function', 'name'],
+      dataIndex: 'functionName',
       hideInSearch: true,
       render: (_, record) => {
-        return <Tag color="cyan">{record.function.name}</Tag>;
-      },
-    },
-    {
-      title: 'Project Filter',
-      dataIndex: 'filter',
-      hideInTable: true,
-      renderFormItem: () => {
-        return (
-          <Cascader
-            style={{ width: '100%' }}
-            options={cascaderOptions}
-            value={selectedFilters}
-            onChange={(selectedValues) => {
-              setSelectedFilters(selectedValues);
-            }}
-            multiple
-            maxTagCount="responsive"
-            showCheckedStrategy={SHOW_CHILD}
-            placeholder="Select project or function"
-            changeOnSelect
-          />
-        );
+        const functionName = record.function || '-';
+        return <Tag color="cyan">{functionName}</Tag>;
       },
     },
     {
@@ -320,9 +277,18 @@ const Realtime: React.FC = () => {
     {
       title: 'Created At',
       dataIndex: 'createdAt',
-      valueType: 'dateTime',
       hideInSearch: true,
       sorter: true,
+      render: (_, record, index) => {
+        const formattedDate = dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss');
+        return (
+          <Space>
+            <span>{formattedDate}</span>
+            {index === 0 && <Badge count="newest" style={{ backgroundColor: '#ff4d4f' }} />}
+            {index > 0 && index < 5 && <Badge status="error" />}
+          </Space>
+        );
+      },
     },
     {
       title: 'Actions',
@@ -353,32 +319,6 @@ const Realtime: React.FC = () => {
     // Apply level filter
     if (levelFilter && log.type !== levelFilter) {
       return false;
-    }
-
-    // Apply cascader filter
-    if (selectedFilters && selectedFilters.length > 0) {
-      let matchesFilter = false;
-      
-      selectedFilters.forEach((path: any) => {
-        if (Array.isArray(path)) {
-          const projectMatch = path.find((item: string) => 
-            item.startsWith('project-') && item === `project-${log.project.id}`
-          );
-          const functionMatch = path.find((item: string) => 
-            item.startsWith('function-') && item === `function-${log.function.id}`
-          );
-          
-          if (functionMatch) {
-            matchesFilter = true;
-          } else if (projectMatch && path.length === 1) {
-            matchesFilter = true;
-          }
-        }
-      });
-      
-      if (!matchesFilter) {
-        return false;
-      }
     }
 
     return true;
@@ -414,19 +354,6 @@ const Realtime: React.FC = () => {
       <Card>
         <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }} size="middle">
           <Space wrap>
-            <Cascader
-              style={{ width: 300 }}
-              options={cascaderOptions}
-              value={selectedFilters}
-              onChange={(selectedValues) => {
-                setSelectedFilters(selectedValues);
-              }}
-              multiple
-              maxTagCount="responsive"
-              showCheckedStrategy={SHOW_CHILD}
-              placeholder="Filter by project or function"
-              changeOnSelect
-            />
             <Select
               style={{ width: 150 }}
               placeholder="Method"
@@ -519,10 +446,10 @@ const Realtime: React.FC = () => {
                 children: (
                   <Descriptions bordered column={2}>
                     <Descriptions.Item label="Project">
-                      <Tag color="blue">{currentRow.project.name}</Tag>
+                      <Tag color="blue">{currentRow.project || '-'}</Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="Function">
-                      <Tag color="cyan">{currentRow.function.name}</Tag>
+                      <Tag color="cyan">{currentRow.function || '-'}</Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="Method">
                       {(() => {

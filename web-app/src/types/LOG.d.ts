@@ -35,6 +35,36 @@ declare namespace LOG {
     createdAt: string;
   };
 
+  type RealtimeLog = {
+    id: string;
+    project: string;
+    function: string;
+    method: string;
+    type: 'DEBUG' | 'SUCCESS' | 'INFO' | 'WARNING' | 'ERROR';
+    request: {
+      userAgent?: string;
+      url: string;
+      body?: any;
+      params?: any;
+      headers?: any;
+    };
+    response: {
+      code: number;
+      success: boolean;
+      message?: string;
+      data?: any;
+    };
+    consoleLog?: string;
+    additionalData?: any;
+    latency?: number;
+    createdBy?: {
+      id: string;
+      fullname: string;
+      emplCode: string;
+    };
+    createdAt: string;
+  };
+
   type Project = {
     id: string;
     name: string;
