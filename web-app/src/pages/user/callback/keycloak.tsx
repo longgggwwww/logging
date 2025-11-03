@@ -44,7 +44,7 @@ const KeycloakCallback: React.FC = () => {
 
           // Redirect to main page or requested page
           const urlParams = new URL(window.location.href).searchParams;
-          const redirect = urlParams.get('redirect') || '/list';
+          const redirect = urlParams.get('redirect') || '/realtime';
           history.push(redirect);
         } else {
           // If no token, redirect to login page

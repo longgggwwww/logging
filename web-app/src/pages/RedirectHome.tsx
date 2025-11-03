@@ -44,7 +44,7 @@ export default () => {
       };
 
       if (isAuth) {
-        go('/list');
+        go('/realtime');
         setHasRedirected(true);
         return;
       }
@@ -54,7 +54,7 @@ export default () => {
       // Safety fallback: if not redirected after 2s (edge case), force full redirect
       setTimeout(() => {
         if (!hasRedirected) {
-          const fallback = isKeycloakAuthenticated() ? '/list' : '/user/login';
+          const fallback = isKeycloakAuthenticated() ? '/realtime' : '/user/login';
           console.warn('RedirectHome: fallback redirect to', fallback);
           window.location.href = fallback;
         }

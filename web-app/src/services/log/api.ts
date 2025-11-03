@@ -4,16 +4,12 @@ import { request } from "@umijs/max";
 
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
-console.log('debug API_BASE_URL', `"${process.env.API_BASE_URL}"`, API_BASE_URL);
-
 // Client credentials config (read from env). WARNING: placing client secret in
 // frontend bundle is insecure. Prefer a server-side proxy when possible.
 const KC_URL = keycloakConfig.url;
 const KC_REALM = keycloakConfig.realm;
 const KC_CLIENT_ID = keycloakConfig.apiClientId;
 const KC_CLIENT_SECRET = keycloakConfig.clientSecret;
-
-console.log('debug KC', KC_URL, KC_REALM, KC_CLIENT_ID, !!KC_CLIENT_SECRET);
 
 // In-module cache for client credentials token
 let clientToken: { token: string; expiresAt: number } | null = null;
