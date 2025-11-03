@@ -28,16 +28,16 @@ export default [
     component: './user/callback/keycloak',
   },
   {
-    name: 'Table List',
-    icon: 'table',
-    path: '/list',
-    component: './table-list',
-  },
-  {
     name: 'Realtime',
     icon: 'dashboard',
     path: '/realtime',
     component: './realtime',
+  },
+  {
+    name: 'Table List',
+    icon: 'table',
+    path: '/list',
+    component: './table-list',
   },
   {
     path: '/',

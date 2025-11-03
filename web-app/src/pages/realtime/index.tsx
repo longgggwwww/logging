@@ -7,14 +7,13 @@ import {
     PageContainer,
     ProTable,
 } from '@ant-design/pro-components';
-import { Badge, Cascader, Collapse, DatePicker, Descriptions, Drawer, Space, Tag, Typography } from 'antd';
+import { Badge, Cascader, Collapse, Descriptions, Drawer, List, Space, Table, Tag, Typography, Card, Select } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const { SHOW_CHILD } = Cascader;
-const { RangePicker } = DatePicker;
 const { Text, Paragraph } = Typography;
 
 interface CascaderOption {
@@ -35,6 +34,11 @@ const Realtime: React.FC = () => {
   const [cascaderOptions, setCascaderOptions] = useState<CascaderOption[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<any[]>([]);
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
+  const [logs, setLogs] = useState<LOG.Log[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [methodFilter, setMethodFilter] = useState<string | undefined>(undefined);
+  const [levelFilter, setLevelFilter] = useState<string | undefined>(undefined);
+  const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set());
 
   // Socket.IO Connection
   useEffect(() => {
@@ -71,6 +75,40 @@ const Realtime: React.FC = () => {
       console.log('  - Severity:', log.severity);
       console.log('  - Message:', log.message);
       console.log('  - Full log:', JSON.stringify(log, null, 2));
+      
+      // Add new log to the top of the list with animation
+      setLogs((prevLogs) => {
+        // Normalize the log data
+        const normalizedLog = {
+          ...log,
+          requestUrl: log.request?.url ?? log.requestUrl ?? '',
+          requestHeaders: log.request?.headers ?? log.requestHeaders,
+          requestUserAgent: log.request?.userAgent ?? log.requestUserAgent,
+          requestParams: log.request?.params ?? log.requestParams,
+          requestBody: log.request?.body ?? log.requestBody,
+          responseCode: log.response?.code ?? log.responseCode ?? 0,
+          responseSuccess: log.response?.success ?? log.responseSuccess,
+          responseMessage: log.response?.message ?? log.responseMessage,
+          responseData: log.response?.data ?? log.responseData,
+        };
+        return [normalizedLog, ...prevLogs];
+      });
+      
+      // Mark this log as new for animation
+      setNewLogIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(log.id);
+        return newSet;
+      });
+      
+      // Remove the "new" marker after animation completes
+      setTimeout(() => {
+        setNewLogIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(log.id);
+          return newSet;
+        });
+      }, 1000);
     });
 
     socket.on('metrics', (metrics) => {
@@ -123,15 +161,39 @@ const Realtime: React.FC = () => {
     loadProjectsAndFunctions();
   }, []);
 
-  // Ensure dateRange is cleared when timeRange has initial value
+  // Load initial logs
   useEffect(() => {
-    if (formRef.current) {
-      const formValues = formRef.current.getFieldsValue();
-      if (formValues.timeRange && formValues.dateRange) {
-        // If both have values, clear dateRange (prioritize timeRange with initialValue)
-        formRef.current.setFieldsValue({ dateRange: undefined });
+    const loadInitialLogs = async () => {
+      setLoading(true);
+      try {
+        const response = await getLogs({
+          paginationType: 'offset',
+          page: 1,
+          take: 50,
+        });
+
+        const mapped = (response.data.data || []).map((item: any) => ({
+          ...item,
+          requestUrl: item.request?.url ?? item.requestUrl ?? '',
+          requestHeaders: item.request?.headers ?? item.requestHeaders,
+          requestUserAgent: item.request?.userAgent ?? item.requestUserAgent,
+          requestParams: item.request?.params ?? item.requestParams,
+          requestBody: item.request?.body ?? item.requestBody,
+          responseCode: item.response?.code ?? item.responseCode ?? 0,
+          responseSuccess: item.response?.success ?? item.responseSuccess,
+          responseMessage: item.response?.message ?? item.responseMessage,
+          responseData: item.response?.data ?? item.responseData,
+        }));
+
+        setLogs(mapped);
+      } catch (error) {
+        console.error('Failed to load initial logs:', error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadInitialLogs();
   }, []);
 
   // Convert log type to badge status
@@ -256,35 +318,6 @@ const Realtime: React.FC = () => {
       },
     },
     {
-      title: 'Time Range',
-      dataIndex: 'timeRange',
-      hideInTable: true,
-      valueType: 'select',
-      valueEnum: {
-        '15m': { text: 'Last 15 minutes' },
-        '30m': { text: 'Last 30 minutes' },
-        '1h': { text: 'Last 1 hour' },
-        '3h': { text: 'Last 3 hours' },
-        '6h': { text: 'Last 6 hours' },
-        '12h': { text: 'Last 12 hours' },
-        '24h': { text: 'Last 24 hours' },
-        '7d': { text: 'Last 7 days' },
-        '30d': { text: 'Last 30 days' },
-      },
-      initialValue: '24h',
-    },
-    {
-      title: 'Date Range',
-      dataIndex: 'dateRange',
-      hideInTable: true,
-      renderFormItem: () => (
-        <RangePicker
-          format="YYYY-MM-DD"
-          style={{ width: '100%' }}
-        />
-      ),
-    },
-    {
       title: 'Created At',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
@@ -310,7 +343,62 @@ const Realtime: React.FC = () => {
       },
     },
   ];
+  // Filter logs based on selected filters
+  const filteredLogs = logs.filter((log) => {
+    // Apply method filter
+    if (methodFilter && log.method !== methodFilter) {
+      return false;
+    }
 
+    // Apply level filter
+    if (levelFilter && log.type !== levelFilter) {
+      return false;
+    }
+
+    // Apply cascader filter
+    if (selectedFilters && selectedFilters.length > 0) {
+      let matchesFilter = false;
+      
+      selectedFilters.forEach((path: any) => {
+        if (Array.isArray(path)) {
+          const projectMatch = path.find((item: string) => 
+            item.startsWith('project-') && item === `project-${log.project.id}`
+          );
+          const functionMatch = path.find((item: string) => 
+            item.startsWith('function-') && item === `function-${log.function.id}`
+          );
+          
+          if (functionMatch) {
+            matchesFilter = true;
+          } else if (projectMatch && path.length === 1) {
+            matchesFilter = true;
+          }
+        }
+      });
+      
+      if (!matchesFilter) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Convert columns to table columns format
+  const tableColumns = columns.map((col) => {
+    if (col.hideInSearch === false || col.hideInTable) {
+      return null;
+    }
+    return {
+      title: col.title,
+      dataIndex: col.dataIndex,
+      key: col.dataIndex as string,
+      width: col.width,
+      align: col.align,
+      render: col.render,
+      ellipsis: col.ellipsis,
+    };
+  }).filter(Boolean);
 
   return (
     <PageContainer
@@ -323,157 +411,91 @@ const Realtime: React.FC = () => {
         ],
       }}
     >
-      <ProTable<LOG.Log, LOG.LogListParams>
-        headerTitle="Logs"
-        actionRef={actionRef}
-        formRef={formRef}
-        rowKey="id"
-        search={{
-          labelWidth: 120,
-          defaultCollapsed: false,
-        }}
-        form={{
-          onValuesChange: (changedValues: any) => {
-            // When timeRange changes, clear dateRange
-            if (changedValues.timeRange !== undefined) {
-              formRef.current?.setFieldsValue({ dateRange: undefined });
-            }
-            // When dateRange changes, clear timeRange
-            if (changedValues.dateRange !== undefined) {
-              formRef.current?.setFieldsValue({ timeRange: undefined });
-            }
-          },
-        }}
-        pagination={{
-          defaultPageSize: 10,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-        }}
-        request={async (params: any) => {
-          
-          // Use selectedFilters state instead of params.filter
-          const filter = selectedFilters;
-          const projectIds: string[] = [];
-          const functionIds: string[] = [];
+      <Card>
+        <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }} size="middle">
+          <Space wrap>
+            <Cascader
+              style={{ width: 300 }}
+              options={cascaderOptions}
+              value={selectedFilters}
+              onChange={(selectedValues) => {
+                setSelectedFilters(selectedValues);
+              }}
+              multiple
+              maxTagCount="responsive"
+              showCheckedStrategy={SHOW_CHILD}
+              placeholder="Filter by project or function"
+              changeOnSelect
+            />
+            <Select
+              style={{ width: 150 }}
+              placeholder="Method"
+              allowClear
+              value={methodFilter}
+              onChange={setMethodFilter}
+              options={[
+                { label: 'GET', value: 'GET' },
+                { label: 'POST', value: 'POST' },
+                { label: 'PUT', value: 'PUT' },
+                { label: 'PATCH', value: 'PATCH' },
+                { label: 'DELETE', value: 'DELETE' },
+              ]}
+            />
+            <Select
+              style={{ width: 150 }}
+              placeholder="Type"
+              allowClear
+              value={levelFilter}
+              onChange={setLevelFilter}
+              options={[
+                { label: 'DEBUG', value: 'DEBUG' },
+                { label: 'SUCCESS', value: 'SUCCESS' },
+                { label: 'INFO', value: 'INFO' },
+                { label: 'WARNING', value: 'WARNING' },
+                { label: 'ERROR', value: 'ERROR' },
+              ]}
+            />
+          </Space>
+        </Space>
 
-          if (filter && Array.isArray(filter) && filter.length > 0) {
-            
-            // Cascader with multiple returns array of arrays like [["project-1"], ["project-2", "function-2"]]
-            filter.forEach((path: any) => {
-              if (Array.isArray(path)) {
-                // Each path is an array like ["project-1"] or ["project-1", "function-1"]
-                path.forEach((item: string) => {
-                  if (typeof item === 'string') {
-                    if (item.startsWith('project-')) {
-                      const projectId = item.replace('project-', '');
-                      if (!projectIds.includes(projectId)) {
-                        projectIds.push(projectId);
-                      }
-                    } else if (item.startsWith('function-')) {
-                      const functionId = item.replace('function-', '');
-                      if (!functionIds.includes(functionId)) {
-                        functionIds.push(functionId);
-                      }
-                    }
-                  }
-                });
-              } else if (typeof path === 'string') {
-                // Fallback for single values
-                if (path.startsWith('project-')) {
-                  const projectId = path.replace('project-', '');
-                  if (!projectIds.includes(projectId)) {
-                    projectIds.push(projectId);
-                  }
-                } else if (path.startsWith('function-')) {
-                  const functionId = path.replace('function-', '');
-                  if (!functionIds.includes(functionId)) {
-                    functionIds.push(functionId);
-                  }
-                }
+        <style>
+          {`
+            @keyframes slideInFromTop {
+              from {
+                opacity: 0;
+                transform: translateY(-20px);
               }
-            });
-            
-            // parsed project/function ids available in projectIds and functionIds
-          }
-
-          // Build request parameters
-          const requestParams: LOG.LogListParams = {
-            paginationType: 'offset',
-            page: params.current || 1,
-            take: params.pageSize || 50,
-          };
-
-          // Add filters only if they have values
-          if (params.method) {
-            requestParams.method = params.method;
-          }
-
-          if (params.level) {
-            requestParams.type = params.level;
-          }
-
-          // Handle custom date range or time range
-          if (params.dateRange && Array.isArray(params.dateRange) && params.dateRange.length === 2) {
-            const startDate = dayjs(params.dateRange[0]).startOf('day');
-            const endDate = dayjs(params.dateRange[1]).endOf('day');
-            
-            if (startDate.isValid() && endDate.isValid()) {
-              requestParams.startTime = startDate.toISOString();
-              requestParams.endTime = endDate.toISOString();
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
             }
-          } else if (params.timeRange) {
-            requestParams.timeRange = params.timeRange;
-          } else {
-            requestParams.timeRange = '24h'; // Default
-          }
+            
+            .new-log-row {
+              animation: slideInFromTop 0.5s ease-out;
+              background-color: #e6f7ff;
+            }
+            
+            .new-log-row td {
+              background-color: #e6f7ff !important;
+            }
+          `}
+        </style>
 
-          if (projectIds.length > 0) {
-            requestParams.projectIds = projectIds.join(',');
-          }
-
-          if (functionIds.length > 0) {
-            requestParams.functionIds = functionIds.join(',');
-          }
-
-          // API request params prepared in requestParams
-
-          try {
-            const response = await getLogs(requestParams);
-
-            // Normalize API items to shape expected by the table.
-            // The backend returns nested `request.url` and `response.code`,
-            // but the table/typings expect flat `requestUrl` and `responseCode`.
-            const mapped = (response.data.data || []).map((item: any) => ({
-              ...item,
-              // request.* -> flattened fields used by columns / drawer
-              requestUrl: item.request?.url ?? item.requestUrl ?? '',
-              requestHeaders: item.request?.headers ?? item.requestHeaders,
-              requestUserAgent: item.request?.userAgent ?? item.requestUserAgent,
-              requestParams: item.request?.params ?? item.requestParams,
-              requestBody: item.request?.body ?? item.requestBody,
-              // response.* -> flattened fields
-              responseCode: item.response?.code ?? item.responseCode ?? 0,
-              responseSuccess: item.response?.success ?? item.responseSuccess,
-              responseMessage: item.response?.message ?? item.responseMessage,
-              responseData: item.response?.data ?? item.responseData,
-            }));
-
-            return {
-              data: mapped,
-              success: true,
-              total: response.data.pagination.total || 0,
-            };
-          } catch (error) {
-            console.error('❌ Failed to fetch logs:', error);
-            return {
-              data: [],
-              success: false,
-              total: 0,
-            };
-          }
-        }}
-        columns={columns}
-      />
+        <Table
+          loading={loading}
+          dataSource={filteredLogs}
+          columns={tableColumns as any}
+          rowKey="id"
+          pagination={false}
+          locale={{ emptyText: 'No logs available' }}
+          scroll={{ x: 'max-content' }}
+          rowClassName={(record) => {
+            // Apply animation class to newly added logs
+            return newLogIds.has(record.id) ? 'new-log-row' : '';
+          }}
+        />
+      </Card>
 
       <Drawer
         title="Log Details"
