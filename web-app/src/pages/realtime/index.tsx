@@ -85,13 +85,6 @@ const Realtime: React.FC = () => {
 
     socket.on('new_log', (log) => {
       console.log('📨 New log received:', log);
-      console.log('  - Timestamp:', log.timestamp);
-      console.log('  - Hostname:', log.hostname);
-      console.log('  - Appname:', log.appname);
-      console.log('  - Severity:', log.severity);
-      console.log('  - Message:', log.message);
-      console.log('  - Full log:', JSON.stringify(log, null, 2));
-
       // Add new log to the top of the list with animation
       setLogs((prevLogs) => {
         // Normalize the log data
