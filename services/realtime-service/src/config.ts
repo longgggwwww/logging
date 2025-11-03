@@ -23,9 +23,7 @@ export const CONFIG: Config = {
     corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:8000',
   },
   topics: {
-    main: process.env.KAFKA_MAIN_TOPIC || 'error-logs',
-    dlq: process.env.KAFKA_DLQ_TOPIC || 'error-logs-dlq',
-    retry: process.env.KAFKA_RETRY_TOPIC || 'error-logs-retry',
+    main: process.env.KAFKA_TOPIC || 'error-logs',
   },
 };
 
@@ -33,6 +31,4 @@ console.log('📋 Configuration loaded:');
 console.log(`  - Kafka brokers: ${CONFIG.kafka.brokers.join(', ')}`);
 console.log(`  - Socket port: ${CONFIG.socket.port}`);
 console.log(`  - CORS origin: ${CONFIG.socket.corsOrigin}`);
-console.log(`  - Kafka main topic: ${CONFIG.topics.main}`);
-console.log(`  - Kafka DLQ topic: ${CONFIG.topics.dlq}`);
-console.log(`  - Kafka retry topic: ${CONFIG.topics.retry}`);
+console.log(`  - Kafka topic: ${CONFIG.topics.main}`);

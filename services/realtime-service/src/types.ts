@@ -15,8 +15,6 @@ export interface Config {
   };
   topics: {
     main: string;
-    dlq: string;
-    retry: string;
   };
 }
 
