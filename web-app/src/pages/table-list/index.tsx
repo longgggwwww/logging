@@ -1,16 +1,19 @@
-import { getLogs, getProjects } from '@/services/log';
-import type {
-    ActionType,
-    ProColumns,
-} from '@ant-design/pro-components';
-import {
-    PageContainer,
-    ProTable,
-} from '@ant-design/pro-components';
-import { Badge, Cascader, Collapse, DatePicker, Descriptions, Drawer, Space, Tag, Typography } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import {
+  Badge,
+  Cascader,
+  Collapse,
+  DatePicker,
+  Descriptions,
+  Drawer,
+  Tag,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useRef, useState } from 'react';
+import { getLogs, getProjects } from '@/services/log';
 
 const { SHOW_CHILD } = Cascader;
 const { RangePicker } = DatePicker;
@@ -39,26 +42,29 @@ const TableList: React.FC = () => {
       try {
         const response = await getProjects({ expand: 'functions' });
         const projects = response.data.data;
-        
+
         // Convert to cascader structure
-        const options: CascaderOption[] = projects.map((project: LOG.Project) => ({
-          label: project.name,
-          value: `project-${project.id}`,
-          projectId: project.id,
-          children: project.functions?.map((func: LOG.Function) => ({
-            label: func.name,
-            value: `function-${func.id}`,
-            functionId: func.id,
+        const options: CascaderOption[] = projects.map(
+          (project: LOG.Project) => ({
+            label: project.name,
+            value: `project-${project.id}`,
             projectId: project.id,
-          })) || [],
-        }));
-        
+            children:
+              project.functions?.map((func: LOG.Function) => ({
+                label: func.name,
+                value: `function-${func.id}`,
+                functionId: func.id,
+                projectId: project.id,
+              })) || [],
+          }),
+        );
+
         setCascaderOptions(options);
       } catch (error) {
         console.error('Failed to load projects:', error);
       }
     };
-    
+
     loadProjectsAndFunctions();
   }, []);
 
@@ -143,7 +149,11 @@ const TableList: React.FC = () => {
           PATCH: 'purple',
           DELETE: 'red',
         };
-        return <Tag color={colorMap[record.method] || 'default'}>{record.method}</Tag>;
+        return (
+          <Tag color={colorMap[record.method] || 'default'}>
+            {record.method}
+          </Tag>
+        );
       },
     },
     {
@@ -158,7 +168,9 @@ const TableList: React.FC = () => {
         ERROR: { text: 'ERROR', status: 'Error' },
       },
       render: (_, record) => {
-        return <Badge status={getTypeBadgeStatus(record.type)} text={record.type} />;
+        return (
+          <Badge status={getTypeBadgeStatus(record.type)} text={record.type} />
+        );
       },
     },
     {
@@ -217,10 +229,7 @@ const TableList: React.FC = () => {
       dataIndex: 'dateRange',
       hideInTable: true,
       renderFormItem: () => (
-        <RangePicker
-          format="YYYY-MM-DD"
-          style={{ width: '100%' }}
-        />
+        <RangePicker format="YYYY-MM-DD" style={{ width: '100%' }} />
       ),
     },
     {
@@ -249,7 +258,6 @@ const TableList: React.FC = () => {
       },
     },
   ];
-
 
   return (
     <PageContainer>
@@ -280,14 +288,12 @@ const TableList: React.FC = () => {
           pageSizeOptions: ['10', '20', '50', '100'],
         }}
         request={async (params: any) => {
-          
           // Use selectedFilters state instead of params.filter
           const filter = selectedFilters;
           const projectIds: string[] = [];
           const functionIds: string[] = [];
 
           if (filter && Array.isArray(filter) && filter.length > 0) {
-            
             // Cascader with multiple returns array of arrays like [["project-1"], ["project-2", "function-2"]]
             filter.forEach((path: any) => {
               if (Array.isArray(path)) {
@@ -322,7 +328,7 @@ const TableList: React.FC = () => {
                 }
               }
             });
-            
+
             // parsed project/function ids available in projectIds and functionIds
           }
 
@@ -343,10 +349,14 @@ const TableList: React.FC = () => {
           }
 
           // Handle custom date range or time range
-          if (params.dateRange && Array.isArray(params.dateRange) && params.dateRange.length === 2) {
+          if (
+            params.dateRange &&
+            Array.isArray(params.dateRange) &&
+            params.dateRange.length === 2
+          ) {
             const startDate = dayjs(params.dateRange[0]).startOf('day');
             const endDate = dayjs(params.dateRange[1]).endOf('day');
-            
+
             if (startDate.isValid() && endDate.isValid()) {
               requestParams.startTime = startDate.toISOString();
               requestParams.endTime = endDate.toISOString();
@@ -378,7 +388,8 @@ const TableList: React.FC = () => {
               // request.* -> flattened fields used by columns / drawer
               requestUrl: item.request?.url ?? item.requestUrl ?? '',
               requestHeaders: item.request?.headers ?? item.requestHeaders,
-              requestUserAgent: item.request?.userAgent ?? item.requestUserAgent,
+              requestUserAgent:
+                item.request?.userAgent ?? item.requestUserAgent,
               requestParams: item.request?.params ?? item.requestParams,
               requestBody: item.request?.body ?? item.requestBody,
               // response.* -> flattened fields
@@ -417,7 +428,7 @@ const TableList: React.FC = () => {
         styles={{ body: { paddingBottom: 80 } }}
       >
         {currentRow && (
-          <Collapse 
+          <Collapse
             defaultActiveKey={['basic']}
             size="large"
             items={[
@@ -441,11 +452,18 @@ const TableList: React.FC = () => {
                           PATCH: 'purple',
                           DELETE: 'red',
                         };
-                        return <Tag color={colorMap[currentRow.method] || 'default'}>{currentRow.method}</Tag>;
+                        return (
+                          <Tag color={colorMap[currentRow.method] || 'default'}>
+                            {currentRow.method}
+                          </Tag>
+                        );
                       })()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Type">
-                      <Badge status={getTypeBadgeStatus(currentRow.type)} text={currentRow.type} />
+                      <Badge
+                        status={getTypeBadgeStatus(currentRow.type)}
+                        text={currentRow.type}
+                      />
                     </Descriptions.Item>
                     <Descriptions.Item label="URL" span={2}>
                       <Text copyable>{currentRow.request.url}</Text>
@@ -460,10 +478,13 @@ const TableList: React.FC = () => {
                       })()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Created At">
-                      {dayjs(currentRow.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                      {dayjs(currentRow.createdAt).format(
+                        'YYYY-MM-DD HH:mm:ss',
+                      )}
                     </Descriptions.Item>
                     <Descriptions.Item label="Created By" span={2}>
-                      {currentRow.createdBy?.fullname} ({currentRow.createdBy?.emplCode})
+                      {currentRow.createdBy?.fullname} (
+                      {currentRow.createdBy?.emplCode})
                     </Descriptions.Item>
                   </Descriptions>
                 ),
@@ -481,14 +502,20 @@ const TableList: React.FC = () => {
                     {currentRow.request.headers && (
                       <Descriptions.Item label="Headers">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
-                            {JSON.stringify(currentRow.request.headers, null, 2)}
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '200px',
+                              overflow: 'auto',
+                            }}
+                          >
+                            {JSON.stringify(
+                              currentRow.request.headers,
+                              null,
+                              2,
+                            )}
                           </pre>
                         </Paragraph>
                       </Descriptions.Item>
@@ -496,13 +523,15 @@ const TableList: React.FC = () => {
                     {currentRow.request.params && (
                       <Descriptions.Item label="Params">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '200px',
+                              overflow: 'auto',
+                            }}
+                          >
                             {JSON.stringify(currentRow.request.params, null, 2)}
                           </pre>
                         </Paragraph>
@@ -511,13 +540,15 @@ const TableList: React.FC = () => {
                     {currentRow.request.body && (
                       <Descriptions.Item label="Body">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '300px',
-                            overflow: 'auto'
-                          }}>
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '300px',
+                              overflow: 'auto',
+                            }}
+                          >
                             {JSON.stringify(currentRow.request.body, null, 2)}
                           </pre>
                         </Paragraph>
@@ -536,14 +567,17 @@ const TableList: React.FC = () => {
                         const code = currentRow.response.code;
                         let color = 'default';
                         if (code >= 200 && code < 300) color = 'success';
-                        else if (code >= 300 && code < 400) color = 'processing';
+                        else if (code >= 300 && code < 400)
+                          color = 'processing';
                         else if (code >= 400 && code < 500) color = 'warning';
                         else if (code >= 500) color = 'error';
                         return <Badge status={color as any} text={code} />;
                       })()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Success">
-                      <Tag color={currentRow.response.success ? 'green' : 'red'}>
+                      <Tag
+                        color={currentRow.response.success ? 'green' : 'red'}
+                      >
                         {currentRow.response.success ? 'Yes' : 'No'}
                       </Tag>
                     </Descriptions.Item>
@@ -555,13 +589,15 @@ const TableList: React.FC = () => {
                     {currentRow.response.data && (
                       <Descriptions.Item label="Data">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '300px',
-                            overflow: 'auto'
-                          }}>
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '300px',
+                              overflow: 'auto',
+                            }}
+                          >
                             {JSON.stringify(currentRow.response.data, null, 2)}
                           </pre>
                         </Paragraph>
@@ -570,44 +606,56 @@ const TableList: React.FC = () => {
                   </Descriptions>
                 ),
               },
-              ...(currentRow.consoleLog || currentRow.additionalData ? [{
-                key: 'additional',
-                label: 'Additional Information',
-                children: (
-                  <Descriptions bordered column={1}>
-                    {currentRow.consoleLog && (
-                      <Descriptions.Item label="Console Log">
-                        <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
-                            {currentRow.consoleLog}
-                          </pre>
-                        </Paragraph>
-                      </Descriptions.Item>
-                    )}
-                    {currentRow.additionalData && (
-                      <Descriptions.Item label="Additional Data">
-                        <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
-                            {JSON.stringify(currentRow.additionalData, null, 2)}
-                          </pre>
-                        </Paragraph>
-                      </Descriptions.Item>
-                    )}
-                  </Descriptions>
-                ),
-              }] : []),
+              ...(currentRow.consoleLog || currentRow.additionalData
+                ? [
+                    {
+                      key: 'additional',
+                      label: 'Additional Information',
+                      children: (
+                        <Descriptions bordered column={1}>
+                          {currentRow.consoleLog && (
+                            <Descriptions.Item label="Console Log">
+                              <Paragraph>
+                                <pre
+                                  style={{
+                                    background: '#f5f5f5',
+                                    padding: '12px',
+                                    borderRadius: '4px',
+                                    maxHeight: '200px',
+                                    overflow: 'auto',
+                                  }}
+                                >
+                                  {currentRow.consoleLog}
+                                </pre>
+                              </Paragraph>
+                            </Descriptions.Item>
+                          )}
+                          {currentRow.additionalData && (
+                            <Descriptions.Item label="Additional Data">
+                              <Paragraph>
+                                <pre
+                                  style={{
+                                    background: '#f5f5f5',
+                                    padding: '12px',
+                                    borderRadius: '4px',
+                                    maxHeight: '200px',
+                                    overflow: 'auto',
+                                  }}
+                                >
+                                  {JSON.stringify(
+                                    currentRow.additionalData,
+                                    null,
+                                    2,
+                                  )}
+                                </pre>
+                              </Paragraph>
+                            </Descriptions.Item>
+                          )}
+                        </Descriptions>
+                      ),
+                    },
+                  ]
+                : []),
             ]}
           />
         )}

@@ -1,8 +1,12 @@
+import { history, useModel } from '@umijs/max';
 import { Spin } from 'antd';
 import { useEffect } from 'react';
-import { history, useModel } from '@umijs/max';
-import { handleKeycloakCallback, formatUserForDashboard, loadKeycloakUserProfile } from '@/services/keycloak';
 import { flushSync } from 'react-dom';
+import {
+  formatUserForDashboard,
+  handleKeycloakCallback,
+  loadKeycloakUserProfile,
+} from '@/services/keycloak';
 
 const KeycloakCallback: React.FC = () => {
   const { setInitialState } = useModel('@@initialState');
@@ -16,7 +20,10 @@ const KeycloakCallback: React.FC = () => {
           // Save token to localStorage
           localStorage.setItem('keycloak_token', authData.token);
           if (authData.refreshToken) {
-            localStorage.setItem('keycloak_refresh_token', authData.refreshToken);
+            localStorage.setItem(
+              'keycloak_refresh_token',
+              authData.refreshToken,
+            );
           }
           if (authData.idToken) {
             localStorage.setItem('keycloak_id_token', authData.idToken);
@@ -27,7 +34,7 @@ const KeycloakCallback: React.FC = () => {
           if (userInfo) {
             // Load additional profile from Keycloak (if needed)
             const profile = await loadKeycloakUserProfile();
-            
+
             // Format user info for dashboard
             const currentUser = formatUserForDashboard(userInfo, profile);
 

@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react';
 import { history, useModel } from '@umijs/max';
-import { isKeycloakAuthenticated, initKeycloakWithSession } from '@/services/keycloak';
+import { useEffect, useState } from 'react';
+import {
+  initKeycloakWithSession,
+  isKeycloakAuthenticated,
+} from '@/services/keycloak';
 
 export default () => {
   const { initialState } = useModel('@@initialState');
@@ -14,7 +17,10 @@ export default () => {
       // start redirect flow
 
       try {
-        if (initialState && typeof (initialState as any).fetchUserInfo === 'function') {
+        if (
+          initialState &&
+          typeof (initialState as any).fetchUserInfo === 'function'
+        ) {
           await (initialState as any).fetchUserInfo();
         } else {
           // If runtime does not provide fetchUserInfo (routes with layout:false may not initialize),
@@ -32,7 +38,7 @@ export default () => {
       }
 
       const isAuth = isKeycloakAuthenticated();
-  // isAuth evaluated
+      // isAuth evaluated
 
       const go = (to: string) => {
         try {
@@ -54,7 +60,9 @@ export default () => {
       // Safety fallback: if not redirected after 2s (edge case), force full redirect
       setTimeout(() => {
         if (!hasRedirected) {
-          const fallback = isKeycloakAuthenticated() ? '/realtime' : '/user/login';
+          const fallback = isKeycloakAuthenticated()
+            ? '/realtime'
+            : '/user/login';
           console.warn('RedirectHome: fallback redirect to', fallback);
           window.location.href = fallback;
         }
@@ -68,7 +76,14 @@ export default () => {
   // If already redirected, show loading
   if (hasRedirected) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
         Redirecting...
       </div>
     );
@@ -76,7 +91,14 @@ export default () => {
 
   // While waiting for fetch/restore session, show a placeholder (do not redirect immediately)
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+      }}
+    >
       Loading...
     </div>
   );

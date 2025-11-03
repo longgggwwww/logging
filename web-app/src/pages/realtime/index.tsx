@@ -1,19 +1,23 @@
-import { getProjects } from '@/services/log';
-import type {
-    ActionType,
-    ProColumns,
-} from '@ant-design/pro-components';
-import {
-    PageContainer,
-    ProTable,
-} from '@ant-design/pro-components';
-import { Badge, Cascader, Collapse, Descriptions, Drawer, List, Space, Table, Tag, Typography, Card, Select } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
+import {
+  Badge,
+  Card,
+  Collapse,
+  Descriptions,
+  Drawer,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
+import { getProjects } from '@/services/log';
 
-const { SHOW_CHILD } = Cascader;
 const { Text, Paragraph } = Typography;
 
 interface CascaderOption {
@@ -25,19 +29,21 @@ interface CascaderOption {
 }
 
 const Realtime: React.FC = () => {
-  const actionRef = useRef<ActionType | null>(null);
-  const formRef = useRef<any>(null);
+  const _actionRef = useRef<ActionType | null>(null);
+  const _formRef = useRef<any>(null);
   const socketRef = useRef<Socket | null>(null);
   const isSubscribedRef = useRef<boolean>(false);
 
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [currentRow, setCurrentRow] = useState<LOG.RealtimeLog>();
-  const [cascaderOptions, setCascaderOptions] = useState<CascaderOption[]>([]);
-  const [selectedFilters, setSelectedFilters] = useState<any[]>([]);
+  const [_cascaderOptions, setCascaderOptions] = useState<CascaderOption[]>([]);
+  const [_selectedFilters, _setSelectedFilters] = useState<any[]>([]);
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
   const [logs, setLogs] = useState<LOG.RealtimeLog[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [methodFilter, setMethodFilter] = useState<string | undefined>(undefined);
+  const [loading, _setLoading] = useState<boolean>(false);
+  const [methodFilter, setMethodFilter] = useState<string | undefined>(
+    undefined,
+  );
   const [levelFilter, setLevelFilter] = useState<string | undefined>(undefined);
   const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set());
 
@@ -50,7 +56,7 @@ const Realtime: React.FC = () => {
     }
 
     console.log('🔌 Connecting to Socket.IO server...');
-    
+
     // Connect to realtime-service
     const socket = io('http://localhost:8090', {
       transports: ['websocket', 'polling'],
@@ -64,7 +70,7 @@ const Realtime: React.FC = () => {
     socket.on('connect', () => {
       console.log('✅ Socket.IO connected! Socket ID:', socket.id);
       setSocketConnected(true);
-      
+
       // Subscribe only once
       if (!isSubscribedRef.current) {
         socket.emit('subscribe');
@@ -85,7 +91,7 @@ const Realtime: React.FC = () => {
       console.log('  - Severity:', log.severity);
       console.log('  - Message:', log.message);
       console.log('  - Full log:', JSON.stringify(log, null, 2));
-      
+
       // Add new log to the top of the list with animation
       setLogs((prevLogs) => {
         // Normalize the log data
@@ -103,14 +109,14 @@ const Realtime: React.FC = () => {
         };
         return [normalizedLog, ...prevLogs];
       });
-      
+
       // Mark this log as new for animation
       setNewLogIds((prev) => {
         const newSet = new Set(prev);
         newSet.add(log.id);
         return newSet;
       });
-      
+
       // Remove the "new" marker after animation completes
       setTimeout(() => {
         setNewLogIds((prev) => {
@@ -148,30 +154,31 @@ const Realtime: React.FC = () => {
       try {
         const response = await getProjects({ expand: 'functions' });
         const projects = response.data.data;
-        
+
         // Convert to cascader structure
-        const options: CascaderOption[] = projects.map((project: LOG.Project) => ({
-          label: project.name,
-          value: `project-${project.id}`,
-          projectId: project.id,
-          children: project.functions?.map((func: LOG.Function) => ({
-            label: func.name,
-            value: `function-${func.id}`,
-            functionId: func.id,
+        const options: CascaderOption[] = projects.map(
+          (project: LOG.Project) => ({
+            label: project.name,
+            value: `project-${project.id}`,
             projectId: project.id,
-          })) || [],
-        }));
-        
+            children:
+              project.functions?.map((func: LOG.Function) => ({
+                label: func.name,
+                value: `function-${func.id}`,
+                functionId: func.id,
+                projectId: project.id,
+              })) || [],
+          }),
+        );
+
         setCascaderOptions(options);
       } catch (error) {
         console.error('Failed to load projects:', error);
       }
     };
-    
+
     loadProjectsAndFunctions();
   }, []);
-
-
 
   // Convert log type to badge status
   const getTypeBadgeStatus = (type: string) => {
@@ -223,7 +230,11 @@ const Realtime: React.FC = () => {
           PATCH: 'purple',
           DELETE: 'red',
         };
-        return <Tag color={colorMap[record.method] || 'default'}>{record.method}</Tag>;
+        return (
+          <Tag color={colorMap[record.method] || 'default'}>
+            {record.method}
+          </Tag>
+        );
       },
     },
     {
@@ -238,7 +249,9 @@ const Realtime: React.FC = () => {
         ERROR: { text: 'ERROR', status: 'Error' },
       },
       render: (_, record) => {
-        return <Badge status={getTypeBadgeStatus(record.type)} text={record.type} />;
+        return (
+          <Badge status={getTypeBadgeStatus(record.type)} text={record.type} />
+        );
       },
     },
     {
@@ -280,11 +293,15 @@ const Realtime: React.FC = () => {
       hideInSearch: true,
       sorter: true,
       render: (_, record, index) => {
-        const formattedDate = dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss');
+        const formattedDate = dayjs(record.createdAt).format(
+          'YYYY-MM-DD HH:mm:ss',
+        );
         return (
           <Space>
             <span>{formattedDate}</span>
-            {index === 0 && <Badge count="newest" style={{ backgroundColor: '#ff4d4f' }} />}
+            {index === 0 && (
+              <Badge count="newest" style={{ backgroundColor: '#ff4d4f' }} />
+            )}
             {index > 0 && index < 5 && <Badge status="error" />}
           </Space>
         );
@@ -325,20 +342,22 @@ const Realtime: React.FC = () => {
   });
 
   // Convert columns to table columns format
-  const tableColumns = columns.map((col) => {
-    if (col.hideInSearch === false || col.hideInTable) {
-      return null;
-    }
-    return {
-      title: col.title,
-      dataIndex: col.dataIndex,
-      key: col.dataIndex as string,
-      width: col.width,
-      align: col.align,
-      render: col.render,
-      ellipsis: col.ellipsis,
-    };
-  }).filter(Boolean);
+  const tableColumns = columns
+    .map((col) => {
+      if (col.hideInSearch === false || col.hideInTable) {
+        return null;
+      }
+      return {
+        title: col.title,
+        dataIndex: col.dataIndex,
+        key: col.dataIndex as string,
+        width: col.width,
+        align: col.align,
+        render: col.render,
+        ellipsis: col.ellipsis,
+      };
+    })
+    .filter(Boolean);
 
   return (
     <PageContainer
@@ -347,12 +366,16 @@ const Realtime: React.FC = () => {
         extra: [
           <Tag key="socket" color={socketConnected ? 'green' : 'red'}>
             {socketConnected ? '🟢 Connected' : '🔴 Disconnected'}
-          </Tag>
+          </Tag>,
         ],
       }}
     >
       <Card>
-        <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }} size="middle">
+        <Space
+          direction="vertical"
+          style={{ width: '100%', marginBottom: 16 }}
+          size="middle"
+        >
           <Space wrap>
             <Select
               style={{ width: 150 }}
@@ -436,7 +459,7 @@ const Realtime: React.FC = () => {
         styles={{ body: { paddingBottom: 80 } }}
       >
         {currentRow && (
-          <Collapse 
+          <Collapse
             defaultActiveKey={['basic']}
             size="large"
             items={[
@@ -460,11 +483,18 @@ const Realtime: React.FC = () => {
                           PATCH: 'purple',
                           DELETE: 'red',
                         };
-                        return <Tag color={colorMap[currentRow.method] || 'default'}>{currentRow.method}</Tag>;
+                        return (
+                          <Tag color={colorMap[currentRow.method] || 'default'}>
+                            {currentRow.method}
+                          </Tag>
+                        );
                       })()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Type">
-                      <Badge status={getTypeBadgeStatus(currentRow.type)} text={currentRow.type} />
+                      <Badge
+                        status={getTypeBadgeStatus(currentRow.type)}
+                        text={currentRow.type}
+                      />
                     </Descriptions.Item>
                     <Descriptions.Item label="URL" span={2}>
                       <Text copyable>{currentRow.request.url}</Text>
@@ -479,10 +509,13 @@ const Realtime: React.FC = () => {
                       })()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Created At">
-                      {dayjs(currentRow.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                      {dayjs(currentRow.createdAt).format(
+                        'YYYY-MM-DD HH:mm:ss',
+                      )}
                     </Descriptions.Item>
                     <Descriptions.Item label="Created By" span={2}>
-                      {currentRow.createdBy?.fullname} ({currentRow.createdBy?.emplCode})
+                      {currentRow.createdBy?.fullname} (
+                      {currentRow.createdBy?.emplCode})
                     </Descriptions.Item>
                   </Descriptions>
                 ),
@@ -500,14 +533,20 @@ const Realtime: React.FC = () => {
                     {currentRow.request.headers && (
                       <Descriptions.Item label="Headers">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
-                            {JSON.stringify(currentRow.request.headers, null, 2)}
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '200px',
+                              overflow: 'auto',
+                            }}
+                          >
+                            {JSON.stringify(
+                              currentRow.request.headers,
+                              null,
+                              2,
+                            )}
                           </pre>
                         </Paragraph>
                       </Descriptions.Item>
@@ -515,13 +554,15 @@ const Realtime: React.FC = () => {
                     {currentRow.request.params && (
                       <Descriptions.Item label="Params">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '200px',
+                              overflow: 'auto',
+                            }}
+                          >
                             {JSON.stringify(currentRow.request.params, null, 2)}
                           </pre>
                         </Paragraph>
@@ -530,13 +571,15 @@ const Realtime: React.FC = () => {
                     {currentRow.request.body && (
                       <Descriptions.Item label="Body">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '300px',
-                            overflow: 'auto'
-                          }}>
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '300px',
+                              overflow: 'auto',
+                            }}
+                          >
                             {JSON.stringify(currentRow.request.body, null, 2)}
                           </pre>
                         </Paragraph>
@@ -555,14 +598,17 @@ const Realtime: React.FC = () => {
                         const code = currentRow.response.code;
                         let color = 'default';
                         if (code >= 200 && code < 300) color = 'success';
-                        else if (code >= 300 && code < 400) color = 'processing';
+                        else if (code >= 300 && code < 400)
+                          color = 'processing';
                         else if (code >= 400 && code < 500) color = 'warning';
                         else if (code >= 500) color = 'error';
                         return <Badge status={color as any} text={code} />;
                       })()}
                     </Descriptions.Item>
                     <Descriptions.Item label="Success">
-                      <Tag color={currentRow.response.success ? 'green' : 'red'}>
+                      <Tag
+                        color={currentRow.response.success ? 'green' : 'red'}
+                      >
                         {currentRow.response.success ? 'Yes' : 'No'}
                       </Tag>
                     </Descriptions.Item>
@@ -574,13 +620,15 @@ const Realtime: React.FC = () => {
                     {currentRow.response.data && (
                       <Descriptions.Item label="Data">
                         <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '300px',
-                            overflow: 'auto'
-                          }}>
+                          <pre
+                            style={{
+                              background: '#f5f5f5',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              maxHeight: '300px',
+                              overflow: 'auto',
+                            }}
+                          >
                             {JSON.stringify(currentRow.response.data, null, 2)}
                           </pre>
                         </Paragraph>
@@ -589,44 +637,56 @@ const Realtime: React.FC = () => {
                   </Descriptions>
                 ),
               },
-              ...(currentRow.consoleLog || currentRow.additionalData ? [{
-                key: 'additional',
-                label: 'Additional Information',
-                children: (
-                  <Descriptions bordered column={1}>
-                    {currentRow.consoleLog && (
-                      <Descriptions.Item label="Console Log">
-                        <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
-                            {currentRow.consoleLog}
-                          </pre>
-                        </Paragraph>
-                      </Descriptions.Item>
-                    )}
-                    {currentRow.additionalData && (
-                      <Descriptions.Item label="Additional Data">
-                        <Paragraph>
-                          <pre style={{ 
-                            background: '#f5f5f5', 
-                            padding: '12px', 
-                            borderRadius: '4px',
-                            maxHeight: '200px',
-                            overflow: 'auto'
-                          }}>
-                            {JSON.stringify(currentRow.additionalData, null, 2)}
-                          </pre>
-                        </Paragraph>
-                      </Descriptions.Item>
-                    )}
-                  </Descriptions>
-                ),
-              }] : []),
+              ...(currentRow.consoleLog || currentRow.additionalData
+                ? [
+                    {
+                      key: 'additional',
+                      label: 'Additional Information',
+                      children: (
+                        <Descriptions bordered column={1}>
+                          {currentRow.consoleLog && (
+                            <Descriptions.Item label="Console Log">
+                              <Paragraph>
+                                <pre
+                                  style={{
+                                    background: '#f5f5f5',
+                                    padding: '12px',
+                                    borderRadius: '4px',
+                                    maxHeight: '200px',
+                                    overflow: 'auto',
+                                  }}
+                                >
+                                  {currentRow.consoleLog}
+                                </pre>
+                              </Paragraph>
+                            </Descriptions.Item>
+                          )}
+                          {currentRow.additionalData && (
+                            <Descriptions.Item label="Additional Data">
+                              <Paragraph>
+                                <pre
+                                  style={{
+                                    background: '#f5f5f5',
+                                    padding: '12px',
+                                    borderRadius: '4px',
+                                    maxHeight: '200px',
+                                    overflow: 'auto',
+                                  }}
+                                >
+                                  {JSON.stringify(
+                                    currentRow.additionalData,
+                                    null,
+                                    2,
+                                  )}
+                                </pre>
+                              </Paragraph>
+                            </Descriptions.Item>
+                          )}
+                        </Descriptions>
+                      ),
+                    },
+                  ]
+                : []),
             ]}
           />
         )}

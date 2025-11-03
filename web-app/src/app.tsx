@@ -2,18 +2,14 @@ import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { history } from '@umijs/max';
 import React from 'react';
+import { AvatarDropdown, AvatarName, Footer } from '@/components';
 import {
-  AvatarDropdown,
-  AvatarName,
-  Footer,
-} from '@/components';
-import { 
-  getKeycloak, 
-  formatUserForDashboard, 
-  loadKeycloakUserProfile,
+  formatUserForDashboard,
   getAccessToken,
+  getKeycloak,
   initKeycloakWithSession,
-  isKeycloakAuthenticated 
+  isKeycloakAuthenticated,
+  loadKeycloakUserProfile,
 } from '@/services/keycloak';
 import defaultSettings from '../config/defaultSettings';
 import '@ant-design/v5-patch-for-react-19';
@@ -33,13 +29,16 @@ export async function getInitialState(): Promise<{
     try {
       // Try to restore Keycloak session from localStorage
       const authenticated = await initKeycloakWithSession();
-      
+
       if (authenticated) {
         const keycloak = getKeycloak();
         if (keycloak?.tokenParsed) {
           // Get user info from Keycloak
           const profile = await loadKeycloakUserProfile();
-          const currentUser = formatUserForDashboard(keycloak.tokenParsed, profile);
+          const currentUser = formatUserForDashboard(
+            keycloak.tokenParsed,
+            profile,
+          );
           return currentUser;
         }
       }
@@ -55,14 +54,10 @@ export async function getInitialState(): Promise<{
     }
     return undefined;
   };
-  
+
   // If not login page, execute
   const { location } = history;
-  if (
-    ![loginPath, '/callback/keycloak'].includes(
-      location.pathname,
-    )
-  ) {
+  if (![loginPath, '/callback/keycloak'].includes(location.pathname)) {
     const currentUser = await fetchUserInfo();
     return {
       fetchUserInfo,

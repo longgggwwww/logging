@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
 import { history } from '@umijs/max';
+import React, { useEffect } from 'react';
 import { isKeycloakAuthenticated } from '@/services/keycloak';
 
 interface AuthCheckProps {
