@@ -4,10 +4,12 @@ This project is a simple Discord bot built with TypeScript. It serves as a templ
 
 ## Features
 
-- Command handling
+- Command handling with Discord slash commands
 - Event handling
+- Kafka integration for consuming and producing log messages
 - TypeScript support
 - ESLint and Prettier for code quality and formatting
+- Test command for sending mock data to Kafka
 
 ## Project Structure
 
@@ -16,11 +18,20 @@ discord-bot
 ├── src
 │   ├── bot.ts               # Entry point of the bot
 │   ├── commands             # Directory for command handlers
-│   │   └── ping.ts          # Ping command handler
+│   │   ├── index.ts         # Command registration and handling
+│   │   ├── ping.ts          # Ping command handler
+│   │   └── log.ts           # Log command for sending mock data
 │   ├── events               # Directory for event handlers
 │   │   └── ready.ts         # Ready event handler
-│   └── types                # Directory for custom types
-│       └── index.ts         # Custom types and interfaces
+│   ├── messages             # Mock log messages for testing
+│   │   ├── 0.ts - 19.ts     # Individual message files
+│   │   └── messages.ts      # Message exports
+│   ├── types                # Directory for custom types
+│   │   └── index.ts         # Custom types and interfaces
+│   ├── config.ts            # Configuration
+│   ├── kafka.ts             # Kafka consumer and producer
+│   ├── processor.ts         # Message processing logic
+│   └── types.ts             # Type definitions
 ├── .eslintrc.js             # ESLint configuration
 ├── .prettierrc              # Prettier configuration
 ├── package.json             # npm configuration
@@ -49,13 +60,51 @@ discord-bot
 
 ## Usage
 
-To start the bot, run the following command:
+Before running the bot, set up your environment variables:
+
+1. Copy `.env.example` to `.env`:
+   ```
+   cp .env.example .env
+   ```
+
+2. Update the `.env` file with your Discord bot credentials:
+   - `DISCORD_TOKEN`: Your Discord bot token
+   - `DISCORD_CLIENT_ID`: Your Discord application client ID
+   - `DISCORD_GUILD_ID`: Your Discord server (guild) ID
+   - Configure Kafka settings if needed
+
+To start the bot, run:
 
 ```
 npm start
 ```
 
-Make sure to set up your Discord bot token in the environment variables or directly in the code before running the bot.
+Or for development with auto-reload:
+
+```
+npm run dev
+```
+
+## Available Commands
+
+The bot supports the following slash commands:
+
+### `/ping`
+Simple health check command that responds with "Pong!"
+
+### `/log`
+Send log messages to Kafka for testing the logging pipeline.
+
+**Options:**
+- `sample` (required): Choose data sample (currently only Sample 0 - E-commerce Platform)
+- `count` (required): Number of messages to send (1-20)
+
+**Example:**
+```
+/log sample:0 count:5
+```
+
+This will send 5 log messages to the configured Kafka topic.
 
 ## Contributing
 
