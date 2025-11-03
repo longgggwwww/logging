@@ -484,7 +484,7 @@ const Realtime: React.FC = () => {
           setCurrentRow(undefined);
           setShowDetail(false);
         }}
-        bodyStyle={{ paddingBottom: 80 }}
+        styles={{ body: { paddingBottom: 80 } }}
       >
         {currentRow && (
           <Collapse 
