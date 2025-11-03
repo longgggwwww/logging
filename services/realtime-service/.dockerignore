@@ -14,25 +14,4 @@ README.md
 *.md
 
 # Environment
-.env
 .env.*
-!.env.example
-
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
-*~
-
-# Testing
-coverage
-.nyc_output
-
-# Logs
-logs
-*.log
-
-# OS
-.DS_Store
-Thumbs.db

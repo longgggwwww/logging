@@ -3,7 +3,7 @@ import { run } from './src/main.js';
 // ============================================
 // START THE SERVICE
 // ============================================
-run().catch((error) => {
-  console.error('💥 Failed to start realtime service:', error);
+run().catch((err) => {
+  console.error('💥 Failed to start realtime service:', err);
   process.exit(1);
 });

@@ -5,16 +5,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 
-# Install dependencies (including devDependencies for build)
 RUN npm ci
 
-# Copy source code
 COPY . .
 
-# Build TypeScript
 RUN npm run build
 
 # ============================================
@@ -24,7 +20,6 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 
 # Install only production dependencies
@@ -41,6 +36,6 @@ RUN addgroup -g 1001 -S nodejs && \
 
 USER nodejs
 
-EXPOSE 8080
+EXPOSE 3000
 
 CMD ["node", "dist/index.js"]
