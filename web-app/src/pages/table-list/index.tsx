@@ -2,19 +2,19 @@ import { getLogs, getProjects } from '@/services/log';
 import type {
     ActionType,
     ProColumns,
-    ProDescriptionsItemProps,
 } from '@ant-design/pro-components';
 import {
     PageContainer,
-    ProDescriptions,
     ProTable,
 } from '@ant-design/pro-components';
-import { Badge, Cascader, DatePicker, Drawer, Tag } from 'antd';
+import { Badge, Cascader, DatePicker, Descriptions, Drawer, Space, Tag, Typography } from 'antd';
+import { EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import React, { useEffect, useRef, useState } from 'react';
 
 const { SHOW_CHILD } = Cascader;
 const { RangePicker } = DatePicker;
+const { Text, Paragraph } = Typography;
 
 interface CascaderOption {
   value: string | number;
@@ -166,18 +166,6 @@ const TableList: React.FC = () => {
       dataIndex: 'requestUrl',
       ellipsis: true,
       hideInSearch: true,
-      render: (dom, entity) => {
-        return (
-          <a
-            onClick={() => {
-              setCurrentRow(entity);
-              setShowDetail(true);
-            }}
-          >
-            {dom}
-          </a>
-        );
-      },
     },
     {
       title: 'Response Code',
@@ -241,6 +229,24 @@ const TableList: React.FC = () => {
       valueType: 'dateTime',
       hideInSearch: true,
       sorter: true,
+    },
+    {
+      title: 'Actions',
+      dataIndex: 'actions',
+      hideInSearch: true,
+      width: 80,
+      align: 'center',
+      render: (_, record) => {
+        return (
+          <EyeOutlined
+            style={{ fontSize: '16px', cursor: 'pointer', color: '#1890ff' }}
+            onClick={() => {
+              setCurrentRow(record);
+              setShowDetail(true);
+            }}
+          />
+        );
+      },
     },
   ];
 
@@ -400,26 +406,191 @@ const TableList: React.FC = () => {
       />
 
       <Drawer
-        width={200}
+        title="Log Details"
+        placement="right"
+        width="100%"
         open={showDetail}
         onClose={() => {
           setCurrentRow(undefined);
           setShowDetail(false);
         }}
-        closable={false}
+        bodyStyle={{ paddingBottom: 80 }}
       >
-        {currentRow?.request.url && (
-          <ProDescriptions<LOG.Log>
-            column={1}
-            title={currentRow.request.url}
-            request={async () => ({
-              data: currentRow || {},
-            })}
-            params={{
-              id: currentRow?.id,
-            }}
-            columns={columns as ProDescriptionsItemProps<LOG.Log>[]}
-          />
+        {currentRow && (
+          <Space direction="vertical" style={{ width: '100%' }} size="large">
+            {/* Basic Information */}
+            <Descriptions title="Basic Information" bordered column={2}>
+              <Descriptions.Item label="Project">
+                <Tag color="blue">{currentRow.project.name}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Function">
+                <Tag color="cyan">{currentRow.function.name}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Method">
+                {(() => {
+                  const colorMap: Record<string, string> = {
+                    GET: 'green',
+                    POST: 'blue',
+                    PUT: 'orange',
+                    PATCH: 'purple',
+                    DELETE: 'red',
+                  };
+                  return <Tag color={colorMap[currentRow.method] || 'default'}>{currentRow.method}</Tag>;
+                })()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Type">
+                <Badge status={getTypeBadgeStatus(currentRow.type)} text={currentRow.type} />
+              </Descriptions.Item>
+              <Descriptions.Item label="URL" span={2}>
+                <Text copyable>{currentRow.request.url}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Latency">
+                {(() => {
+                  const latency = currentRow.latency || 0;
+                  let color = 'green';
+                  if (latency > 1000) color = 'red';
+                  else if (latency > 500) color = 'orange';
+                  return <span style={{ color }}>{latency} ms</span>;
+                })()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created At">
+                {dayjs(currentRow.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By" span={2}>
+                {currentRow.createdBy?.fullname} ({currentRow.createdBy?.emplCode})
+              </Descriptions.Item>
+            </Descriptions>
+
+            {/* Request Details */}
+            <Descriptions title="Request Details" bordered column={1}>
+              {currentRow.request.userAgent && (
+                <Descriptions.Item label="User Agent">
+                  <Text copyable>{currentRow.request.userAgent}</Text>
+                </Descriptions.Item>
+              )}
+              {currentRow.request.headers && (
+                <Descriptions.Item label="Headers">
+                  <Paragraph>
+                    <pre style={{ 
+                      background: '#f5f5f5', 
+                      padding: '12px', 
+                      borderRadius: '4px',
+                      maxHeight: '200px',
+                      overflow: 'auto'
+                    }}>
+                      {JSON.stringify(currentRow.request.headers, null, 2)}
+                    </pre>
+                  </Paragraph>
+                </Descriptions.Item>
+              )}
+              {currentRow.request.params && (
+                <Descriptions.Item label="Params">
+                  <Paragraph>
+                    <pre style={{ 
+                      background: '#f5f5f5', 
+                      padding: '12px', 
+                      borderRadius: '4px',
+                      maxHeight: '200px',
+                      overflow: 'auto'
+                    }}>
+                      {JSON.stringify(currentRow.request.params, null, 2)}
+                    </pre>
+                  </Paragraph>
+                </Descriptions.Item>
+              )}
+              {currentRow.request.body && (
+                <Descriptions.Item label="Body">
+                  <Paragraph>
+                    <pre style={{ 
+                      background: '#f5f5f5', 
+                      padding: '12px', 
+                      borderRadius: '4px',
+                      maxHeight: '300px',
+                      overflow: 'auto'
+                    }}>
+                      {JSON.stringify(currentRow.request.body, null, 2)}
+                    </pre>
+                  </Paragraph>
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+
+            {/* Response Details */}
+            <Descriptions title="Response Details" bordered column={1}>
+              <Descriptions.Item label="Status Code">
+                {(() => {
+                  const code = currentRow.response.code;
+                  let color = 'default';
+                  if (code >= 200 && code < 300) color = 'success';
+                  else if (code >= 300 && code < 400) color = 'processing';
+                  else if (code >= 400 && code < 500) color = 'warning';
+                  else if (code >= 500) color = 'error';
+                  return <Badge status={color as any} text={code} />;
+                })()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Success">
+                <Tag color={currentRow.response.success ? 'green' : 'red'}>
+                  {currentRow.response.success ? 'Yes' : 'No'}
+                </Tag>
+              </Descriptions.Item>
+              {currentRow.response.message && (
+                <Descriptions.Item label="Message">
+                  {currentRow.response.message}
+                </Descriptions.Item>
+              )}
+              {currentRow.response.data && (
+                <Descriptions.Item label="Data">
+                  <Paragraph>
+                    <pre style={{ 
+                      background: '#f5f5f5', 
+                      padding: '12px', 
+                      borderRadius: '4px',
+                      maxHeight: '300px',
+                      overflow: 'auto'
+                    }}>
+                      {JSON.stringify(currentRow.response.data, null, 2)}
+                    </pre>
+                  </Paragraph>
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+
+            {/* Console Log & Additional Data */}
+            {(currentRow.consoleLog || currentRow.additionalData) && (
+              <Descriptions title="Additional Information" bordered column={1}>
+                {currentRow.consoleLog && (
+                  <Descriptions.Item label="Console Log">
+                    <Paragraph>
+                      <pre style={{ 
+                        background: '#f5f5f5', 
+                        padding: '12px', 
+                        borderRadius: '4px',
+                        maxHeight: '200px',
+                        overflow: 'auto'
+                      }}>
+                        {currentRow.consoleLog}
+                      </pre>
+                    </Paragraph>
+                  </Descriptions.Item>
+                )}
+                {currentRow.additionalData && (
+                  <Descriptions.Item label="Additional Data">
+                    <Paragraph>
+                      <pre style={{ 
+                        background: '#f5f5f5', 
+                        padding: '12px', 
+                        borderRadius: '4px',
+                        maxHeight: '200px',
+                        overflow: 'auto'
+                      }}>
+                        {JSON.stringify(currentRow.additionalData, null, 2)}
+                      </pre>
+                    </Paragraph>
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+            )}
+          </Space>
         )}
       </Drawer>
     </PageContainer>
