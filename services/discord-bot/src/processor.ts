@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { LogMessage } from './types.js';
-import { Client, TextChannel, ChannelType } from 'discord.js';
+import { Client, TextChannel, ChannelType, CategoryChannel } from 'discord.js';
 
 let discordClient: Client;
 
@@ -58,6 +58,35 @@ export const processMessage = async ({
   }
 };
 
+const getOrCreateCategory = async (
+  guild: any
+): Promise<CategoryChannel | null> => {
+  const categoryName = 'Projects';
+
+  // Check if category already exists
+  let category = guild.channels.cache.find(
+    (ch: any) => ch.name === categoryName && ch.type === ChannelType.GuildCategory
+  ) as CategoryChannel;
+
+  if (category) {
+    return category;
+  }
+
+  // Create new category
+  try {
+    category = await guild.channels.create({
+      name: categoryName,
+      type: ChannelType.GuildCategory,
+      reason: 'Category for project log channels',
+    });
+    console.log(`🆕 Created new category: ${category.name}`);
+    return category;
+  } catch (error) {
+    console.error('❌ Error creating category:', error);
+    return null;
+  }
+};
+
 const getOrCreateChannel = async (
   projectName: string
 ): Promise<TextChannel | null> => {
@@ -72,12 +101,30 @@ const getOrCreateChannel = async (
     return null;
   }
 
+  // Get or create category first
+  const category = await getOrCreateCategory(guild);
+  if (!category) {
+    console.error('❌ Failed to get or create category');
+    return null;
+  }
+
   // Check if channel already exists
   let channel = guild.channels.cache.find(
     (ch) => ch.name === projectName && ch.type === ChannelType.GuildText
   ) as TextChannel;
 
   if (channel) {
+    // Move channel to category if not already there
+    if (channel.parentId !== category.id) {
+      try {
+        await channel.setParent(category.id, {
+          reason: `Moving ${projectName} to category ${category.name}`,
+        });
+        console.log(`📁 Moved channel ${channel.name} to category: ${category.name}`);
+      } catch (error) {
+        console.error('❌ Error moving channel to category:', error);
+      }
+    }
     return channel;
   }
 
@@ -86,9 +133,10 @@ const getOrCreateChannel = async (
     channel = await guild.channels.create({
       name: projectName,
       type: ChannelType.GuildText,
+      parent: category.id,
       reason: `Channel for project ${projectName} logs`,
     });
-    console.log(`🆕 Created new channel: ${channel.name}`);
+    console.log(`🆕 Created new channel: ${channel.name} in category: ${category.name}`);
     return channel;
   } catch (error) {
     console.error('❌ Error creating channel:', error);
