@@ -15,6 +15,11 @@ export interface Config {
       minSeverityCode: number;
       criticalTypes: string[];
     };
+    generalChannelFilter: {
+      enabled: boolean;
+      minSeverityCode: number;
+      criticalTypes: string[];
+    };
   };
   processing: {
     maxRetries: number;

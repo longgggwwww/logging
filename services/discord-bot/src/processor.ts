@@ -3,9 +3,11 @@ import { LogMessage } from './types.js';
 import { Client, TextChannel, ChannelType, CategoryChannel } from 'discord.js';
 
 let discordClient: Client;
+let generalChannelCache: TextChannel | null = null;
 
 export const setDiscordClient = (client: Client) => {
   discordClient = client;
+  generalChannelCache = null; // Reset cache when client changes
 };
 
 export const processMessage = async ({
@@ -52,6 +54,15 @@ export const processMessage = async ({
     await sendMessageToChannel(channel, logData);
 
     console.log(`✅ Message sent to channel: ${channel.name}`);
+
+    // Check if message should also be sent to general channel
+    if (shouldSendToGeneralChannel(logData)) {
+      const generalChannel = await getOrCreateGeneralChannel();
+      if (generalChannel) {
+        await sendMessageToChannel(generalChannel, logData);
+        console.log(`✅ Message also sent to general channel: ${generalChannel.name}`);
+      }
+    }
   } catch (error: any) {
     console.error('❌ Error processing message:', error);
     // For now, just log. In production, might want to send to DLQ
@@ -195,4 +206,102 @@ const getColorForType = (type?: string): number => {
     DEBUG: 0x808080, // Gray
   };
   return typeColors[type || 'INFO'] || 0x0099ff;
+};
+
+const shouldSendToGeneralChannel = (logData: LogMessage): boolean => {
+  const { generalChannelFilter } = CONFIG.discord;
+  
+  if (!generalChannelFilter.enabled) {
+    return false;
+  }
+
+  // Check if message type is in critical types
+  const isCriticalType = generalChannelFilter.criticalTypes.includes(
+    logData.type || ''
+  );
+
+  // Check if severity code meets minimum
+  const meetsMinSeverity = logData.response?.code >= generalChannelFilter.minSeverityCode;
+
+  return isCriticalType || meetsMinSeverity;
+};
+
+const getOrCreateGeneralChannel = async (): Promise<TextChannel | null> => {
+  // Return cached channel if available and still valid
+  if (generalChannelCache) {
+    try {
+      // Verify channel still exists
+      await generalChannelCache.fetch();
+      return generalChannelCache;
+    } catch (error) {
+      console.warn('⚠️  Cached general channel no longer valid, will recreate');
+      generalChannelCache = null;
+    }
+  }
+
+  if (!discordClient || !CONFIG.discord.guildId) {
+    console.error('❌ Discord client or guild ID not set');
+    return null;
+  }
+
+  const guild = discordClient.guilds.cache.get(CONFIG.discord.guildId);
+  if (!guild) {
+    console.error(`❌ Guild ${CONFIG.discord.guildId} not found`);
+    return null;
+  }
+
+  const channelName = 'general-logs';
+
+  // Fetch all channels to ensure we have the latest data
+  await guild.channels.fetch();
+
+  // Get Projects category ID to exclude channels in it
+  const projectsCategory = guild.channels.cache.find(
+    (c) => c.name === 'Projects' && c.type === ChannelType.GuildCategory
+  ) as CategoryChannel | undefined;
+
+  // Find existing general channel (not in Projects category)
+  let channel = guild.channels.cache.find((ch) => {
+    return (
+      ch.name === channelName &&
+      ch.type === ChannelType.GuildText &&
+      ch.parentId !== projectsCategory?.id
+    );
+  }) as TextChannel | undefined;
+
+  if (channel) {
+    generalChannelCache = channel; // Cache the found channel
+    return channel;
+  }
+
+  // Double-check by fetching again before creating
+  await guild.channels.fetch();
+  channel = guild.channels.cache.find((ch) => {
+    return (
+      ch.name === channelName &&
+      ch.type === ChannelType.GuildText &&
+      ch.parentId !== projectsCategory?.id
+    );
+  }) as TextChannel | undefined;
+
+  if (channel) {
+    generalChannelCache = channel; // Cache the found channel
+    return channel;
+  }
+
+  // Create new general channel (without category)
+  try {
+    channel = await guild.channels.create({
+      name: channelName,
+      type: ChannelType.GuildText,
+      topic: 'General log channel for warnings and errors from all projects',
+      reason: 'Channel for general warning and error logs',
+    });
+    console.log(`🆕 Created new general channel: ${channel.name}`);
+    generalChannelCache = channel; // Cache the newly created channel
+    return channel;
+  } catch (error) {
+    console.error('❌ Error creating general channel:', error);
+    return null;
+  }
 };
