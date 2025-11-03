@@ -8,13 +8,11 @@ export interface Config {
     brokers: string[];
     connectionTimeout: number;
     requestTimeout: number;
+    topics: string[];
   };
   socket: {
     port: number;
     corsOrigin: string;
-  };
-  topics: {
-    main: string;
   };
 }
 

@@ -18,10 +18,10 @@ export const run = async () => {
 
     // Subscribe to main topic only
     await consumer.subscribe({
-      topics: [CONFIG.topics.main],
+      topics: CONFIG.kafka.topics,
       fromBeginning: false,
     });
-    console.log(`✅ Subscribed to topic: ${CONFIG.topics.main}`);
+    console.log(`✅ Subscribed to topic: ${CONFIG.kafka.topics.join(', ')}`);
 
     // Run consumer
     await consumer.run({
