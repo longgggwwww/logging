@@ -27,8 +27,6 @@ export interface Config {
   };
   topics: {
     main: string;
-    deadLetter: string;
-    retry: string;
   };
 }
 

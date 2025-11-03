@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 import { Client, GatewayIntentBits } from 'discord.js';
 // import { loadCommands } from './commands';
 import { onReady } from './events/ready.js';
-import { consumer, producer } from './kafka.js';
+import { consumer } from './kafka.js';
 import { CONFIG } from './config.js';
 import { processMessage, setDiscordClient } from './processor.js';
 
@@ -28,21 +28,17 @@ client.login(process.env.DISCORD_TOKEN);
 
 const startKafkaConsumer = async (): Promise<void> => {
   try {
-    // Connect producer first (needed for DLQ and retry if implemented)
-    await producer.connect();
-    console.log('✅ Producer connected');
-
     // Connect consumer
     await consumer.connect();
     console.log('✅ Consumer connected');
 
-    // Subscribe to topics
+    // Subscribe to main topic only
     await consumer.subscribe({
-      topics: [CONFIG.topics.main, CONFIG.topics.retry],
+      topics: [CONFIG.topics.main],
       fromBeginning: false,
     });
     console.log(
-      `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`
+      `✅ Subscribed to topic: ${CONFIG.topics.main}`
     );
 
     // Run consumer
@@ -66,7 +62,6 @@ process.on('SIGINT', async () => {
   console.log('\n⏹️  Shutting down gracefully...');
   try {
     await consumer.disconnect();
-    await producer.disconnect();
     console.log('✅ Disconnected from Kafka');
     client.destroy();
     process.exit(0);
