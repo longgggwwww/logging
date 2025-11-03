@@ -29,13 +29,14 @@ services:
     environment:
       NODE_ENV: "production"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
-      KAFKA_MAIN_TOPIC: "error-logs"
+      KAFKA_MAIN_TOPIC: "logs"
       DISCORD_TOKEN: "${DISCORD_BOT_TOKEN}"
       DISCORD_GUILD_ID: "${DISCORD_GUILD_ID}"
       DISCORD_CRITICAL_TYPES: "ERROR"
       DISCORD_MIN_SEVERITY_CODE: "500"
       DISCORD_GENERAL_MIN_SEVERITY_CODE: "400"
       DISCORD_GENERAL_CRITICAL_TYPES: "WARNING,ERROR"
+      DISCORD_CLIENT_ID: "${DISCORD_CLIENT_ID}"
     networks:
       - kafka-network
     depends_on:
@@ -52,9 +53,9 @@ services:
     container_name: fcm-service
     environment:
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
-      KAFKA_MAIN_TOPIC: "error-logs"
-      KAFKA_DLQ_TOPIC: "error-logs-dlq"
-      KAFKA_RETRY_TOPIC: "error-logs-retry"
+      KAFKA_MAIN_TOPIC: "logs"
+      KAFKA_DLQ_TOPIC: "logs-dlq"
+      KAFKA_RETRY_TOPIC: "logs-retry"
       FCM_TOPICS: "all_users,error_alerts"
       FCM_MIN_SEVERITY_CODE: "500"
       FCM_CRITICAL_TYPES: "ERROR"
@@ -74,13 +75,11 @@ services:
       dockerfile: Dockerfile
     container_name: realtime-service
     environment:
+      WEBSOCKET_CORS_ORIGIN: "${WEBSOCKET_CORS_ORIGIN:-*}"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
-      KAFKA_TOPICS: "error-logs"
-      SOCKET_PORT: "8080"
-      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:8000}"
-      NODE_ENV: "production"
+      KAFKA_TOPICS: "logs"
     ports:
-      - "8090:8080"
+      - "5000:3000"
     networks:
       - kafka-network
     depends_on:
@@ -165,9 +164,9 @@ services:
     command:
       - |
         sleep 20
-        /opt/kafka/bin/kafka-topics.sh --create --topic error-logs --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
-        /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-retry --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
-        /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        /opt/kafka/bin/kafka-topics.sh --create --topic logs --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        /opt/kafka/bin/kafka-topics.sh --create --topic logs-dlq --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        /opt/kafka/bin/kafka-topics.sh --create --topic logs-retry --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
     networks:
       - kafka-network
     depends_on:
@@ -199,15 +198,15 @@ services:
       dockerfile: Dockerfile
     container_name: log-processor
     environment:
-      DATABASE_URL: "mongodb://admin:password@mongodb:27017/log_processor_db?authSource=admin"
+      DATABASE_URL: "${MONGO_URL:-mongodb://admin:123456@mongodb:27017/logs?authSource=admin}"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
       KAFKA_GROUP_ID: "log-processor-group"
       KAFKA_CLIENT_ID: "log-processor"
-      KAFKA_TOPIC: "logs.error.dlq"
-      KAFKA_MAIN_TOPIC: "error-logs"
-      KAFKA_DLQ_TOPIC: "error-logs-dlq"
-      KAFKA_RETRY_TOPIC: "error-logs-retry"
+      KAFKA_TOPIC: "logs"
+      KAFKA_MAIN_TOPIC: "logs"
+      KAFKA_DLQ_TOPIC: "logs-dlq"
+      KAFKA_RETRY_TOPIC: "logs-retry"
       NODE_ENV: "production"
     networks:
       - kafka-network
@@ -223,8 +222,9 @@ services:
     image: mongo:7.0
     container_name: mongodb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_ROOT_USERNAME: "${MONGO_USERNAME:-longgggwww}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD:-123456}"
+      MONGO_INITDB_DATABASE: "${MONGO_DATABASE:-logs}"
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -234,9 +234,9 @@ services:
     image: postgres:15
     container_name: postgres
     environment:
-      POSTGRES_DB: kafka_db
-      POSTGRES_USER: kafka_user
-      POSTGRES_PASSWORD: kafka_password
+      POSTGRES_DB: "${POSTGRES_DB:-kafka}"
+      POSTGRES_USER: "${POSTGRES_USER:-longgggwww}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-123456}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql
