@@ -87,7 +87,7 @@ export async function invalidateLogsCache(
   const keysToDelete: string[] = [];
 
   // Use SCAN to iterate over keys matching "logs:list:*"
-  let cursor = 0;
+  let cursor = "0";
   do {
     const result = await redisClient.scan(cursor, {
       MATCH: "logs:list:*",
@@ -95,7 +95,7 @@ export async function invalidateLogsCache(
     });
     cursor = result.cursor;
     keysToDelete.push(...result.keys);
-  } while (cursor !== 0);
+  } while (cursor !== "0");
 
   if (keysToDelete.length > 0) {
     await redisClient.del(keysToDelete);
