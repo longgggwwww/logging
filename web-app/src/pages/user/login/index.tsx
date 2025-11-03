@@ -1,9 +1,5 @@
 import { KeyOutlined } from '@ant-design/icons';
-import {
-  FormattedMessage,
-  Helmet,
-  useIntl,
-} from '@umijs/max';
+import { FormattedMessage, Helmet, useIntl } from '@umijs/max';
 import { App, Button, Card } from 'antd';
 import { createStyles } from 'antd-style';
 import React from 'react';
@@ -49,7 +45,6 @@ const useStyles = createStyles(({ token }) => {
   };
 });
 
-
 const Login: React.FC = () => {
   const { styles } = useStyles();
   const { message } = App.useApp();
@@ -64,7 +59,7 @@ const Login: React.FC = () => {
         intl.formatMessage({
           id: 'pages.login.keycloak.failure',
           defaultMessage: 'Keycloak login failed!',
-        })
+        }),
       );
     }
   };
@@ -80,14 +75,14 @@ const Login: React.FC = () => {
           {Settings.title && ` - ${Settings.title}`}
         </title>
       </Helmet>
-  {/* Language selector removed from login screen */}
+      {/* Language selector removed from login screen */}
       <div className={styles.content}>
         <Card className={styles.card}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <img 
-              alt="logo" 
-              src="/logo.svg" 
-              style={{ 
+            <img
+              alt="logo"
+              src="/logo.svg"
+              style={{
                 height: 44,
                 marginBottom: 16,
               }}

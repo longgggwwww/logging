@@ -9,7 +9,10 @@ import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import React from 'react';
 import { flushSync } from 'react-dom';
-import { logoutKeycloakLocal, isKeycloakAuthenticated } from '@/services/keycloak';
+import {
+  isKeycloakAuthenticated,
+  logoutKeycloakLocal,
+} from '@/services/keycloak';
 import HeaderDropdown from '../HeaderDropdown';
 
 export type GlobalHeaderRightProps = {
@@ -51,7 +54,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   const loginOut = async () => {
     // Check if logged in via Keycloak
     const isKeycloak = isKeycloakAuthenticated();
-    
+
     if (isKeycloak) {
       // Local logout: only clear session in app, DO NOT logout from Keycloak SSO
       // Do not call backend outLogin to avoid "Cannot POST /api/login/outLogin" when
