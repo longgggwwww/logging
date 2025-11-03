@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import { Client, GatewayIntentBits } from 'discord.js';
-// import { loadCommands } from './commands';
+import { registerCommands, setupCommandHandlers } from './commands/index.js';
 import { onReady } from './events/ready.js';
 import { consumer } from './kafka.js';
 import { CONFIG } from './config.js';
@@ -18,11 +18,15 @@ client.once('clientReady', async () => {
   console.log('🤖 Discord bot is ready!');
   onReady();
 
+  // Register slash commands
+  await registerCommands();
+
+  // Setup command handlers
+  setupCommandHandlers(client);
+
   // Start Kafka consumer after bot is ready
   await startKafkaConsumer();
 });
-
-// loadCommands(client);
 
 client.login(process.env.DISCORD_TOKEN);
 
