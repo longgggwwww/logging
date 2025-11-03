@@ -1,13 +1,9 @@
-import * as dotenv from 'dotenv';
 import { Config } from './types.js';
-
-// Load environment variables
-dotenv.config();
 
 // ============================================
 // CONFIGURATION
 // ============================================
-export const CONFIG: Config = {
+export const conf: Config = {
   kafka: {
     clientId: 'realtime-logs-consumer',
     brokers: process.env.KAFKA_BROKERS?.split(',') || [
@@ -17,16 +13,14 @@ export const CONFIG: Config = {
     ],
     connectionTimeout: 30000,
     requestTimeout: 30000,
-    topics: process.env.KAFKA_TOPICS?.split(',') || ['error-logs'],
+    topics: process.env.KAFKA_TOPICS?.split(',') || ['logs'],
   },
   socket: {
-    port: parseInt(process.env.SOCKET_PORT || '8080', 10),
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:8000',
+    corsOrigin: process.env.CORS_ORIGIN || '*',
   },
 };
 
 console.log('📋 Configuration loaded:');
-console.log(`  - Kafka brokers: ${CONFIG.kafka.brokers.join(', ')}`);
-console.log(`  - Socket port: ${CONFIG.socket.port}`);
-console.log(`  - CORS origin: ${CONFIG.socket.corsOrigin}`);
-console.log(`  - Kafka topics: ${CONFIG.kafka.topics.join(', ')}`);
+console.log(`  - Kafka brokers: ${conf.kafka.brokers.join(', ')}`);
+console.log(`  - CORS origin: ${conf.socket.corsOrigin}`);
+console.log(`  - Kafka topics: ${conf.kafka.topics.join(', ')}`);

@@ -1,12 +1,10 @@
 import { EachMessagePayload } from 'kafkajs';
-import { LogMessage } from './types.js';
 import { broadcastLog } from './socket.js';
-import { metrics } from './socket.js';
 
 // ============================================
 // MESSAGE PROCESSOR
 // ============================================
-export const processMessage = async ({
+export const processMsg = async ({
   partition,
   message,
 }: EachMessagePayload) => {
@@ -17,30 +15,11 @@ export const processMessage = async ({
     }
 
     // Parse message
-    const logMessage: LogMessage = JSON.parse(message.value.toString());
-
-    // Update metrics
-    metrics.messagesReceived++;
-
-    // Log processing (optional, can be removed for production)
-    if (metrics.messagesReceived % 100 === 0) {
-      console.log(
-        `📊 Processed ${metrics.messagesReceived} messages, broadcast ${metrics.messagesBroadcast}`
-      );
-    }
+    const log = JSON.parse(message.value.toString());
 
     // Broadcast to connected clients
-    broadcastLog({
-      ...logMessage,
-      _meta: {
-        partition,
-        offset: message.offset,
-        timestamp: message.timestamp,
-      },
-    });
-  } catch (error) {
-    metrics.errors++;
-    console.error('❌ Error processing message:', error);
-    console.error('Message:', message.value?.toString());
+    broadcastLog(log);
+  } catch (err) {
+    console.error('❌ Error processing message:', err);
   }
 };
