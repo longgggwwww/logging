@@ -34,6 +34,12 @@ export default [
     component: './table-list',
   },
   {
+    name: 'Realtime',
+    icon: 'dashboard',
+    path: '/realtime',
+    component: './realtime',
+  },
+  {
     path: '/',
     component: './RedirectHome',
     layout: false,

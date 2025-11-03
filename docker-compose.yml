@@ -68,6 +68,30 @@ services:
       - kafka-init
     restart: unless-stopped
 
+  realtime-service:
+    build:
+      context: ./services/realtime-service
+      dockerfile: Dockerfile
+    container_name: realtime-service
+    environment:
+      KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
+      KAFKA_MAIN_TOPIC: "error-logs"
+      KAFKA_DLQ_TOPIC: "error-logs-dlq"
+      KAFKA_RETRY_TOPIC: "error-logs-retry"
+      SOCKET_PORT: "8080"
+      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:8000}"
+      NODE_ENV: "production"
+    ports:
+      - "8090:8080"
+    networks:
+      - kafka-network
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+      - kafka-controller-3
+      - kafka-init
+    restart: unless-stopped
+
   kafka-controller-1:
     image: apache/kafka:3.7.0
     container_name: kafka-controller-1
@@ -146,6 +170,7 @@ services:
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-retry --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
         /opt/kafka/bin/kafka-topics.sh --create --topic error-logs-dlq --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        /opt/kafka/bin/kafka-topics.sh --create --topic syslog --bootstrap-server kafka-controller-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
     networks:
       - kafka-network
     depends_on:
