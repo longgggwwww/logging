@@ -82,19 +82,41 @@ export const run = async (): Promise<void> => {
       } else {
         resolve(num);
       }
-      rl.close();
     });
   });
 
   const selectedMessages = messages[selectedSample];
+  const totalMessages = selectedMessages.length;
+
+  console.log(`\nSample ${selectedSample} has ${totalMessages} messages available.`);
+
+  // Prompt for number of messages to send
+  const numMessagesToSend = await new Promise<number>((resolve) => {
+    rl.question(`Enter the number of messages to send (1-${totalMessages}, default: ${totalMessages}): `, (answer) => {
+      if (answer.trim() === "") {
+        resolve(totalMessages);
+      } else {
+        const num = parseInt(answer, 10);
+        if (isNaN(num) || num < 1 || num > totalMessages) {
+          console.log(`Invalid input. Using ${totalMessages} messages.`);
+          resolve(totalMessages);
+        } else {
+          resolve(num);
+        }
+      }
+      rl.close();
+    });
+  });
+
+  const messagesToSend = selectedMessages.slice(0, numMessagesToSend);
 
   console.log(
-    `Sending ${selectedMessages.length} messages of sample ${selectedSample}...\n`
+    `\nSending ${messagesToSend.length} messages of sample ${selectedSample}...\n`
   );
 
   // Send each message in the selected sample
-  for (let i = 0; i < selectedMessages.length; i++) {
-    const currentMessage = selectedMessages[i];
+  for (let i = 0; i < messagesToSend.length; i++) {
+    const currentMessage = messagesToSend[i];
     try {
       const messageValue = JSON.stringify(currentMessage);
 
@@ -109,7 +131,7 @@ export const run = async (): Promise<void> => {
       ]);
 
       console.log(
-        `✅ Sent message ${i + 1}/${selectedMessages.length} to topics:`
+        `✅ Sent message ${i + 1}/${messagesToSend.length} to topics:`
       );
       console.log(`Topics: ${topics.join(", ")}`);
       console.log(`   Project: ${currentMessage.project || "N/A"}`);
@@ -133,7 +155,7 @@ export const run = async (): Promise<void> => {
   console.log("\n✅ Sent all test messages");
   console.log("📋 Summary:");
   console.log(`   - Sample: ${selectedSample}`);
-  console.log(`   - Total messages: ${selectedMessages.length}`);
+  console.log(`   - Total messages sent: ${messagesToSend.length}/${totalMessages}`);
   console.log(`   - Topics: ${topics.join(", ")}`);
   console.log("\n💡 Check consumer logs to see processing in action!");
 
