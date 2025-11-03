@@ -25,8 +25,3 @@ export const consumer = kafka.consumer({
   heartbeatInterval: 3000,
   maxWaitTimeInMs: 5000,
 });
-
-export const producer = kafka.producer({
-  allowAutoTopicCreation: true,
-  transactionTimeout: 30000,
-});

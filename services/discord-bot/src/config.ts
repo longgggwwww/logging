@@ -40,8 +40,6 @@ export const CONFIG: Config = {
     retryDelay: 2000,
   },
   topics: {
-    main: process.env.KAFKA_MAIN_TOPIC || 'error-logs',
-    deadLetter: process.env.KAFKA_DLQ_TOPIC || 'error-logs-dlq',
-    retry: process.env.KAFKA_RETRY_TOPIC || 'error-logs-retry',
+    main: process.env.KAFKA_MAIN_TOPIC || 'logs',
   },
 };

@@ -30,12 +30,12 @@ services:
       NODE_ENV: "production"
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
       KAFKA_MAIN_TOPIC: "error-logs"
-      KAFKA_RETRY_TOPIC: "error-logs-retry"
-      KAFKA_DLQ_TOPIC: "error-logs-dlq"
       DISCORD_TOKEN: "${DISCORD_BOT_TOKEN}"
       DISCORD_GUILD_ID: "${DISCORD_GUILD_ID}"
       DISCORD_CRITICAL_TYPES: "ERROR"
       DISCORD_MIN_SEVERITY_CODE: "500"
+      DISCORD_GENERAL_MIN_SEVERITY_CODE: "400"
+      DISCORD_GENERAL_CRITICAL_TYPES: "WARNING,ERROR"
     networks:
       - kafka-network
     depends_on:
