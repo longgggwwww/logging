@@ -1,7 +1,38 @@
+# Dependencies
 node_modules
-dist
 npm-debug.log
+
+# Build output
+dist
+
+# Git
 .git
 .gitignore
+
+# Documentation
 README.md
+*.md
+
+# Environment
 .env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

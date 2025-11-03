@@ -1,15 +1,46 @@
+# ============================================
+# BUILD STAGE
+# ============================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# ============================================
+# PRODUCTION STAGE
+# ============================================
 FROM node:20-alpine
 
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
 
-RUN npm install
+# Install only production dependencies
+RUN npm ci --omit=dev && \
+    npm cache clean --force
 
-COPY . .
+# Copy built files from builder stage
+COPY --from=builder /app/dist ./dist
 
-RUN npm run build
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
 
 EXPOSE 8080
 
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]
