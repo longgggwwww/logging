@@ -75,7 +75,7 @@ services:
     container_name: realtime-service
     environment:
       KAFKA_BROKERS: "kafka-controller-1:9092,kafka-controller-2:9092,kafka-controller-3:9092"
-      KAFKA_TOPIC: "error-logs"
+      KAFKA_TOPICS: "error-logs"
       SOCKET_PORT: "8080"
       CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:8000}"
       NODE_ENV: "production"

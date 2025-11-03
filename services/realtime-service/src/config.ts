@@ -17,13 +17,11 @@ export const CONFIG: Config = {
     ],
     connectionTimeout: 30000,
     requestTimeout: 30000,
+    topics: process.env.KAFKA_TOPICS?.split(',') || ['error-logs'],
   },
   socket: {
     port: parseInt(process.env.SOCKET_PORT || '8080', 10),
     corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:8000',
-  },
-  topics: {
-    main: process.env.KAFKA_TOPIC || 'error-logs',
   },
 };
 
@@ -31,4 +29,4 @@ console.log('📋 Configuration loaded:');
 console.log(`  - Kafka brokers: ${CONFIG.kafka.brokers.join(', ')}`);
 console.log(`  - Socket port: ${CONFIG.socket.port}`);
 console.log(`  - CORS origin: ${CONFIG.socket.corsOrigin}`);
-console.log(`  - Kafka topic: ${CONFIG.topics.main}`);
+console.log(`  - Kafka topics: ${CONFIG.kafka.topics.join(', ')}`);
