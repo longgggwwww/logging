@@ -7,7 +7,6 @@ import { metrics } from './socket.js';
 // MESSAGE PROCESSOR
 // ============================================
 export const processMessage = async ({
-  topic,
   partition,
   message,
 }: EachMessagePayload) => {
@@ -34,7 +33,6 @@ export const processMessage = async ({
     broadcastLog({
       ...logMessage,
       _meta: {
-        topic,
         partition,
         offset: message.offset,
         timestamp: message.timestamp,

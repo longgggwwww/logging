@@ -16,14 +16,12 @@ export const run = async () => {
     await consumer.connect();
     console.log('✅ Kafka consumer connected');
 
-    // Subscribe to topics
+    // Subscribe to main topic only
     await consumer.subscribe({
-      topics: [CONFIG.topics.main, CONFIG.topics.retry],
+      topics: [CONFIG.topics.main],
       fromBeginning: false,
     });
-    console.log(
-      `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`
-    );
+    console.log(`✅ Subscribed to topic: ${CONFIG.topics.main}`);
 
     // Run consumer
     await consumer.run({
