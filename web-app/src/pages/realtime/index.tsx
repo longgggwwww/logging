@@ -58,7 +58,7 @@ const Realtime: React.FC = () => {
     console.log('🔌 Connecting to Socket.IO server...');
 
     // Connect to realtime-service
-    const socket = io('http://localhost:8090', {
+    const socket = io('http://localhost:5000', {
       transports: ['websocket', 'polling'],
       reconnectionDelay: 1000,
       reconnection: true,
@@ -83,7 +83,7 @@ const Realtime: React.FC = () => {
       console.log('🎉 Received connected event:', data);
     });
 
-    socket.on('new_log', (log) => {
+    socket.on('new-log', (log) => {
       console.log('📨 New log received:', log);
       // Add new log to the top of the list with animation
       setLogs((prevLogs) => {

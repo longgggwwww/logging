@@ -42,9 +42,11 @@ npm run dev
 ## Socket.IO Events
 
 ### Client -> Server
+
 - `subscribe` - Subscribe to log updates
 - `unsubscribe` - Unsubscribe from log updates
 
 ### Server -> Client
+
 - `new_log` - New log message received
 - `metrics` - Service metrics update

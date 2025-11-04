@@ -10,6 +10,7 @@ export interface Config {
     topics: string[];
   };
   socket: {
+    port: number;
     corsOrigin: string;
   };
 }
