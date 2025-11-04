@@ -1,10 +1,42 @@
-import * as dotenv from 'dotenv';
-import { Config } from './types.js';
+// ============================================
+// TYPES
+// ============================================
+export interface FilterConfig {
+  enabled: boolean;
+  minSeverityCode: number;
+  criticalTypes: string[];
+}
 
-// Load environment variables
-dotenv.config();
+export interface KafkaConfig {
+  clientId: string;
+  brokers: string[];
+  connectionTimeout: number;
+  requestTimeout: number;
+}
 
-export const CONFIG: Config = {
+export interface DiscordConfig {
+  token: string;
+  guildId: string;
+  maxRetries: number;
+  retryDelay: number;
+  timeout: number;
+  filter: FilterConfig;
+  generalChannelFilter: FilterConfig;
+}
+
+export interface ProcessingConfig {
+  maxRetries: number;
+  retryDelay: number;
+}
+
+export interface TopicConfig {
+  main: string;
+}
+
+// ============================================
+// CONFIGURATION
+// ============================================
+export const conf = {
   kafka: {
     clientId: 'discord-bot-consumer',
     brokers: (
@@ -15,6 +47,7 @@ export const CONFIG: Config = {
     requestTimeout: 30000,
   },
   discord: {
+    token: process.env.DISCORD_TOKEN || '',
     guildId: process.env.DISCORD_GUILD_ID || '',
     maxRetries: 3,
     retryDelay: 1000, // 1 second
@@ -42,4 +75,4 @@ export const CONFIG: Config = {
   topics: {
     main: process.env.KAFKA_MAIN_TOPIC || 'logs',
   },
-};
+} as const;

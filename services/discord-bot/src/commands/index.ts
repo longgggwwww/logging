@@ -20,7 +20,16 @@ export async function registerCommands() {
   const commandsData = commands.map((cmd) => cmd.data.toJSON());
 
   try {
-    console.log('Started refreshing application (/) commands.');
+    console.log('🗑️  Clearing global application commands...');
+    
+    // Clear global commands first
+    await rest.put(
+      Routes.applicationCommands(process.env.DISCORD_CLIENT_ID || ''),
+      { body: [] }
+    );
+    
+    console.log('✅ Successfully cleared global commands.');
+    console.log('📝 Started refreshing guild application (/) commands.');
 
     await rest.put(
       Routes.applicationGuildCommands(

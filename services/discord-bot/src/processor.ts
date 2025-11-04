@@ -1,6 +1,6 @@
-import { CONFIG } from './config.js';
+import { conf } from './config.js';
 import { LogMessage } from './types.js';
-import { Client, TextChannel, ChannelType, CategoryChannel } from 'discord.js';
+import { Client, TextChannel, ChannelType, CategoryChannel, PermissionFlagsBits } from 'discord.js';
 
 let discordClient: Client;
 let generalChannelCache: TextChannel | null = null;
@@ -89,8 +89,15 @@ const getOrCreateCategory = async (
       name: categoryName,
       type: ChannelType.GuildCategory,
       reason: 'Category for project log channels',
+      permissionOverwrites: [
+        {
+          id: guild.id, // @everyone role
+          deny: [PermissionFlagsBits.SendMessages],
+          allow: [PermissionFlagsBits.ViewChannel],
+        },
+      ],
     });
-    console.log(`🆕 Created new category: ${category.name}`);
+    console.log(`🆕 Created new category: ${category.name} (readonly)`);
     return category;
   } catch (error) {
     console.error('❌ Error creating category:', error);
@@ -101,14 +108,14 @@ const getOrCreateCategory = async (
 const getOrCreateChannel = async (
   projectName: string
 ): Promise<TextChannel | null> => {
-  if (!discordClient || !CONFIG.discord.guildId) {
+  if (!discordClient || !conf.discord.guildId) {
     console.error('❌ Discord client or guild ID not set');
     return null;
   }
 
-  const guild = discordClient.guilds.cache.get(CONFIG.discord.guildId);
+  const guild = discordClient.guilds.cache.get(conf.discord.guildId);
   if (!guild) {
-    console.error(`❌ Guild ${CONFIG.discord.guildId} not found`);
+    console.error(`❌ Guild ${conf.discord.guildId} not found`);
     return null;
   }
 
@@ -146,8 +153,15 @@ const getOrCreateChannel = async (
       type: ChannelType.GuildText,
       parent: category.id,
       reason: `Channel for project ${projectName} logs`,
+      permissionOverwrites: [
+        {
+          id: guild.id, // @everyone role
+          deny: [PermissionFlagsBits.SendMessages],
+          allow: [PermissionFlagsBits.ViewChannel],
+        },
+      ],
     });
-    console.log(`🆕 Created new channel: ${channel.name} in category: ${category.name}`);
+    console.log(`🆕 Created new channel: ${channel.name} in category: ${category.name} (readonly)`);
     return channel;
   } catch (error) {
     console.error('❌ Error creating channel:', error);
@@ -209,7 +223,7 @@ const getColorForType = (type?: string): number => {
 };
 
 const shouldSendToGeneralChannel = (logData: LogMessage): boolean => {
-  const { generalChannelFilter } = CONFIG.discord;
+  const { generalChannelFilter } = conf.discord;
   
   if (!generalChannelFilter.enabled) {
     return false;
@@ -239,18 +253,18 @@ const getOrCreateGeneralChannel = async (): Promise<TextChannel | null> => {
     }
   }
 
-  if (!discordClient || !CONFIG.discord.guildId) {
+  if (!discordClient || !conf.discord.guildId) {
     console.error('❌ Discord client or guild ID not set');
     return null;
   }
 
-  const guild = discordClient.guilds.cache.get(CONFIG.discord.guildId);
+  const guild = discordClient.guilds.cache.get(conf.discord.guildId);
   if (!guild) {
-    console.error(`❌ Guild ${CONFIG.discord.guildId} not found`);
+    console.error(`❌ Guild ${conf.discord.guildId} not found`);
     return null;
   }
 
-  const channelName = 'general-logs';
+  const channelName = 'general';
 
   // Fetch all channels to ensure we have the latest data
   await guild.channels.fetch();
@@ -296,8 +310,15 @@ const getOrCreateGeneralChannel = async (): Promise<TextChannel | null> => {
       type: ChannelType.GuildText,
       topic: 'General log channel for warnings and errors from all projects',
       reason: 'Channel for general warning and error logs',
+      permissionOverwrites: [
+        {
+          id: guild.id, // @everyone role
+          deny: [PermissionFlagsBits.SendMessages],
+          allow: [PermissionFlagsBits.ViewChannel],
+        },
+      ],
     });
-    console.log(`🆕 Created new general channel: ${channel.name}`);
+    console.log(`🆕 Created new general channel: ${channel.name} (readonly)`);
     generalChannelCache = channel; // Cache the newly created channel
     return channel;
   } catch (error) {

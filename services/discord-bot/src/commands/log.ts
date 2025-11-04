@@ -4,7 +4,7 @@ import {
   EmbedBuilder,
 } from 'discord.js';
 import { producer } from '../kafka.js';
-import { CONFIG } from '../config.js';
+import { conf } from '../config.js';
 import { testMessages } from '../messages/messages.js';
 
 export const data = new SlashCommandBuilder()
@@ -48,7 +48,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     // Send messages to Kafka
     await producer.send({
-      topic: CONFIG.topics.main,
+      topic: conf.topics.main,
       messages: kafkaMessages,
     });
 
@@ -59,7 +59,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       .addFields(
         { name: 'Data Sample', value: `Sample ${dataSample}`, inline: true },
         { name: 'Count', value: `${count} messages`, inline: true },
-        { name: 'Topic', value: CONFIG.topics.main, inline: true }
+        { name: 'Topic', value: conf.topics.main, inline: true }
       )
       .setTimestamp();
 
