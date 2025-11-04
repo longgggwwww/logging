@@ -104,3 +104,89 @@ export async function invalidateLogsCache(
     );
   }
 }
+
+// Function to invalidate cache keys related to projects
+export async function invalidateProjectsCache(
+  redisClient: any,
+  projectId: string,
+): Promise<void> {
+  const keysToDelete: string[] = [];
+
+  // Use SCAN to iterate over keys matching project-related patterns
+  let cursor = "0";
+  do {
+    const result = await redisClient.scan(cursor, {
+      MATCH: "projects:*",
+      COUNT: 100,
+    });
+    cursor = result.cursor;
+    keysToDelete.push(...result.keys);
+  } while (cursor !== "0");
+
+  // Also invalidate specific project cache
+  cursor = "0";
+  do {
+    const result = await redisClient.scan(cursor, {
+      MATCH: `project:${projectId}:*`,
+      COUNT: 100,
+    });
+    cursor = result.cursor;
+    keysToDelete.push(...result.keys);
+  } while (cursor !== "0");
+
+  if (keysToDelete.length > 0) {
+    await redisClient.del(keysToDelete);
+    console.log(
+      `🗑️ Invalidated ${keysToDelete.length} project cache keys for project ${projectId}`,
+    );
+  }
+}
+
+// Function to invalidate cache keys related to functions
+export async function invalidateFunctionsCache(
+  redisClient: any,
+  projectId: string,
+  functionId: string,
+): Promise<void> {
+  const keysToDelete: string[] = [];
+
+  // Use SCAN to iterate over keys matching function-related patterns
+  let cursor = "0";
+  do {
+    const result = await redisClient.scan(cursor, {
+      MATCH: "functions:*",
+      COUNT: 100,
+    });
+    cursor = result.cursor;
+    keysToDelete.push(...result.keys);
+  } while (cursor !== "0");
+
+  // Also invalidate specific function cache
+  cursor = "0";
+  do {
+    const result = await redisClient.scan(cursor, {
+      MATCH: `function:${functionId}*`,
+      COUNT: 100,
+    });
+    cursor = result.cursor;
+    keysToDelete.push(...result.keys);
+  } while (cursor !== "0");
+
+  // Also invalidate project functions cache
+  cursor = "0";
+  do {
+    const result = await redisClient.scan(cursor, {
+      MATCH: `project:${projectId}:functions`,
+      COUNT: 100,
+    });
+    cursor = result.cursor;
+    keysToDelete.push(...result.keys);
+  } while (cursor !== "0");
+
+  if (keysToDelete.length > 0) {
+    await redisClient.del(keysToDelete);
+    console.log(
+      `🗑️ Invalidated ${keysToDelete.length} function cache keys for function ${functionId} in project ${projectId}`,
+    );
+  }
+}

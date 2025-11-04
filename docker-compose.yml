@@ -190,6 +190,7 @@ services:
       - kafka-network
     depends_on:
       - mongodb
+      - redis
       - kafka-1
       - kafka-2
       - kafka-3
@@ -203,6 +204,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-longgggwww}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-123456}
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-logs}
+    ports:
+      - 27017:27017
     volumes:
       - mongodb_data:/data/db
     networks:

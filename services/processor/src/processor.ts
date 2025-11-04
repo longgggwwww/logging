@@ -1,6 +1,10 @@
 import { ProjectModel, FunctionModel, LogModel } from "./models/index.js";
 import { LogMessage } from "./config.js";
-import { publishInvalidateLogs } from "./redis.js";
+import {
+  publishInvalidateLogs,
+  publishInvalidateProjects,
+  publishInvalidateFunctions,
+} from "./redis.js";
 
 // ============================================
 // MESSAGE PROCESSOR (Mongoose implementation)
@@ -26,6 +30,8 @@ export const processLogMessage = async (message: any): Promise<void> => {
     if (!project) {
       project = await ProjectModel.create({ name: log.project });
       console.log(`✅ Created new project: ${log.project}`);
+      // Invalidate projects cache
+      await publishInvalidateProjects(project._id.toString());
     }
 
     // Find or create function
@@ -42,6 +48,11 @@ export const processLogMessage = async (message: any): Promise<void> => {
       await project.save();
       console.log(
         `✅ Created new function: ${log.function} for project: ${log.project}`,
+      );
+      // Invalidate functions cache
+      await publishInvalidateFunctions(
+        project._id.toString(),
+        func._id.toString(),
       );
     }
 
