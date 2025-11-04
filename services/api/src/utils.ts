@@ -1,4 +1,4 @@
-import type { TimeFilter } from "./types.js";
+import type { TimeFilter } from "./config.js";
 
 // ============================================
 // UTILITIES

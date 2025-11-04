@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 
 import { conf } from "../config.js";
 import { LogModel } from "../models/index.js";
-import type { CacheParams, LogQueryParams } from "../types.js";
+import type { CacheParams, LogQueryParams } from "../config.js";
 import { generateCacheKey, getTimeRangeFilter } from "../utils.js";
 import { redisClient } from "../redis.js";
 
@@ -64,10 +64,7 @@ router.get("/v1/logs", async (req: Request, res: Response) => {
       : "cursor";
 
     // Validate and parse take
-    const limit = Math.min(
-      parseInt(take) || conf.defaultTake,
-      conf.maxTake,
-    );
+    const limit = Math.min(parseInt(take) || conf.defaultTake, conf.maxTake);
 
     // Validate and parse page for offset pagination
     const pageNumber = Math.max(parseInt(page) || 1, 1);
@@ -232,11 +229,7 @@ router.get("/v1/logs", async (req: Request, res: Response) => {
     }
 
     // Cache the response
-    await redisClient.setEx(
-      cacheKey,
-      conf.cacheTtl,
-      JSON.stringify(response),
-    );
+    await redisClient.setEx(cacheKey, conf.cacheTtl, JSON.stringify(response));
 
     res.json(response);
   } catch (error: any) {

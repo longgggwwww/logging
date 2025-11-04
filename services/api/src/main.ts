@@ -1,14 +1,15 @@
 import { app, initializeServer, shutdown } from "./server.js";
 
+const PORT = process.env.PORT || 3000;
+
 // ============================================
-// STARTUP
+// START SERVER
 // ============================================
-async function startServer() {
+async function start() {
   try {
     await initializeServer();
-
-    app.listen(3000, () => {
-      console.log("🚀 Server running on port 3000");
+    app.listen(PORT, () => {
+      console.log(`🚀 API Server running on port ${PORT}`);
     });
   } catch (err) {
     console.error("❌ Failed to start server:", err);
@@ -16,8 +17,10 @@ async function startServer() {
   }
 }
 
-// Handle graceful shutdown
+// ============================================
+// SIGNAL HANDLERS
+// ============================================
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-startServer();
+start();

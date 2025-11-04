@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 
 import { LogModel } from "../models/index.js";
-import type { StatsQueryParams } from "../types.js";
+import type { StatsQueryParams } from "../config.js";
 import { getTimeRangeFilter } from "../utils.js";
 import { redisClient } from "../redis.js";
 
