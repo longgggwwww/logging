@@ -1,10 +1,10 @@
 import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  EmbedBuilder,
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    SlashCommandBuilder,
 } from 'discord.js';
-import { producer } from '../kafka.js';
 import { conf } from '../config.js';
+import { producer } from '../kafka.js';
 import { testMessages } from '../messages/messages.js';
 
 export const data = new SlashCommandBuilder()
@@ -35,9 +35,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
 
   try {
-    // Connect producer if not connected
-    await producer.connect();
-
     // Get messages to send
     const messagesToSend = testMessages.slice(0, count);
 
@@ -49,11 +46,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       }),
     }));
 
-    // Send messages to Kafka
+    // Send messages to Kafka (producer is already connected in bot.ts)
     await producer.send({
       topic: conf.topics.main,
       messages: kafkaMessages,
     });
+
+    console.log(`✅ Sent ${count} log messages to Kafka topic: ${conf.topics.main}`);
 
     // Create success embed message
     const successEmbed = new EmbedBuilder()

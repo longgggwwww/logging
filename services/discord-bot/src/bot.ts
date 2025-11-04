@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import { registerCommands, setupCommandHandlers } from './commands/index.js';
-import { onReady } from './events/ready.js';
-import { consumer } from './kafka.js';
 import { conf } from './config.js';
+import { onReady } from './events/ready.js';
+import { consumer, producer } from './kafka.js';
 import { processMessage, setDiscordClient } from './processor.js';
 
 let client: Client | null = null;
@@ -34,6 +34,10 @@ export const initializeBot = async (): Promise<Client> => {
 
 const startKafkaConsumer = async (): Promise<void> => {
   try {
+    // Connect producer first
+    await producer.connect();
+    console.log('✅ Producer connected');
+
     // Connect consumer
     await consumer.connect();
     console.log('✅ Consumer connected');
@@ -64,8 +68,11 @@ const startKafkaConsumer = async (): Promise<void> => {
 export const shutdown = async (): Promise<void> => {
   console.log('\n⏹️  Shutting down gracefully...');
   try {
+    await producer.disconnect();
+    console.log('✅ Producer disconnected from Kafka');
+    
     await consumer.disconnect();
-    console.log('✅ Disconnected from Kafka');
+    console.log('✅ Consumer disconnected from Kafka');
 
     if (client) {
       client.destroy();
