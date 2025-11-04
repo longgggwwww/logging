@@ -1,12 +1,12 @@
 import { createClient } from "redis";
 
-import { CONFIG } from "./config.js";
+import { conf } from "./config.js";
 
 // ============================================
 // REDIS CLIENTS
 // ============================================
 export const redisClient = createClient({
-  url: CONFIG.redisUrl,
+  url: conf.redisUrl,
 });
 
 redisClient.on("error", (err: Error) =>
@@ -23,7 +23,7 @@ redisClient.on("end", () => {
 // REDIS SUBSCRIBER
 // ============================================
 export const redisSubscriber = createClient({
-  url: CONFIG.redisUrl,
+  url: conf.redisUrl,
 });
 
 redisSubscriber.on("error", (err: Error) =>

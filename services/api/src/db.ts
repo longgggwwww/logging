@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
+import { conf } from "./config.js";
 
+// ============================================
+// DATABASE CONNECTIONS
+// ============================================
 export const connectDatabase = async (): Promise<void> => {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL not set");
-  }
-
-  await mongoose.connect(process.env.DATABASE_URL);
+  await mongoose.connect(conf.mongo.url);
   console.log("✅ Connected to MongoDB via Mongoose");
 };
 

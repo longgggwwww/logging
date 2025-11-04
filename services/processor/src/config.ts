@@ -6,10 +6,7 @@ import { Config } from "./types.js";
 export const CONFIG: Config = {
   kafka: {
     clientId: "log-processor",
-    brokers: (
-      process.env.KAFKA_BROKERS ||
-      "localhost:19092,localhost:29092,localhost:39092"
-    ).split(","),
+    brokers: (process.env.KAFKA_BROKERS || "kafka-1,kafka-2,kafka-3").split(","),
     connectionTimeout: 30000,
     requestTimeout: 30000,
     retry: {
@@ -24,9 +21,15 @@ export const CONFIG: Config = {
     maxWaitTimeInMs: 5000,
   },
   topics: {
-    main: process.env.KAFKA_MAIN_TOPIC || "error-logs",
-    deadLetter: process.env.KAFKA_DLQ_TOPIC || "error-logs-dlq",
-    retry: process.env.KAFKA_RETRY_TOPIC || "error-logs-retry",
+    main: "logs",
+    dlq: "logs-dlq",
+    retry: "logs-retry",
   },
   maxRetries: 3,
+  database: {
+    url: process.env.MONGO_URL || "mongodb://admin:123456@mongodb:27017/logs?authSource=admin",
+  },
+  redis: {
+    url: process.env.REDIS_URL || "redis://redis:6379",
+  },
 };
