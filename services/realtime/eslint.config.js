@@ -1,6 +1,6 @@
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-plugin-prettier";
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-plugin-prettier';
 
 export default [
   js.configs.recommended,
@@ -10,12 +10,12 @@ export default [
       prettier,
     },
     rules: {
-      "prettier/prettier": "error",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-require-imports": "off",
+      'prettier/prettier': 'error',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
   {
-    ignores: ["node_modules/**", "dist/**"],
+    ignores: ['node_modules/**', 'dist/**'],
   },
 ];

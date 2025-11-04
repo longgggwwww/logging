@@ -1,15 +1,11 @@
 import { consumer } from './kafka.js';
 import { conf } from './config.js';
 import { processMsg } from './processor.js';
-import { startSocketServer } from './socket.js';
+import { startServer } from './server.js';
 
-// ============================================
-// MAIN ENTRY POINT
-// ============================================
 export const run = async () => {
   try {
-    startSocketServer();
-    console.log('✅ Socket.IO server started');
+    startServer();
 
     await consumer.connect();
     console.log('✅ Kafka consumer connected');
@@ -18,7 +14,7 @@ export const run = async () => {
       topics: conf.kafka.topics,
       fromBeginning: false,
     });
-    console.log(`✅ Subscribed to topic: ${conf.kafka.topics.join(', ')}`);
+    console.log(`✅ Subscribed to topics: ${conf.kafka.topics.join(', ')}`);
 
     await consumer.run({
       autoCommit: true,
@@ -26,18 +22,13 @@ export const run = async () => {
       eachMessage: processMsg,
     });
 
-    console.log(
-      '\n🚀 Realtime service is running and ready to broadcast logs...\n'
-    );
+    console.log('🚀 Realtime service is running\n');
   } catch (err) {
     console.error('❌ Fatal error:', err);
     process.exit(1);
   }
 };
 
-// ============================================
-// GRACEFUL SHUTDOWN
-// ============================================
 export const shutdown = async () => {
   console.log('\n⏹️  Shutting down gracefully...');
 
@@ -51,13 +42,9 @@ export const shutdown = async () => {
   process.exit(0);
 };
 
-// ============================================
-// SIGNAL HANDLERS
-// ============================================
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
-// Handle uncaught errors
 process.on('uncaughtException', (err) => {
   console.error('💥 Uncaught Exception:', err);
   shutdown();
