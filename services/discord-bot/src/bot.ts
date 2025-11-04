@@ -6,6 +6,9 @@ import { consumer, producer } from './kafka.js';
 import { processMessage, setDiscordClient } from './processor.js';
 
 let client: Client | null = null;
+let isProducerReady = false;
+
+export const isKafkaProducerReady = (): boolean => isProducerReady;
 
 export const initializeBot = async (): Promise<Client> => {
   client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -35,10 +38,13 @@ export const initializeBot = async (): Promise<Client> => {
 const startKafkaConsumer = async (): Promise<void> => {
   try {
     // Connect producer first
+    console.log('🔌 Connecting producer...');
     await producer.connect();
+    isProducerReady = true;
     console.log('✅ Producer connected');
 
     // Connect consumer
+    console.log('🔌 Connecting consumer...');
     await consumer.connect();
     console.log('✅ Consumer connected');
 
@@ -61,6 +67,7 @@ const startKafkaConsumer = async (): Promise<void> => {
     );
   } catch (error: any) {
     console.error('❌ Fatal error starting Kafka consumer:', error);
+    isProducerReady = false;
     process.exit(1);
   }
 };
@@ -68,8 +75,11 @@ const startKafkaConsumer = async (): Promise<void> => {
 export const shutdown = async (): Promise<void> => {
   console.log('\n⏹️  Shutting down gracefully...');
   try {
-    await producer.disconnect();
-    console.log('✅ Producer disconnected from Kafka');
+    if (isProducerReady) {
+      await producer.disconnect();
+      console.log('✅ Producer disconnected from Kafka');
+      isProducerReady = false;
+    }
     
     await consumer.disconnect();
     console.log('✅ Consumer disconnected from Kafka');

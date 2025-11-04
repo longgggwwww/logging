@@ -1,7 +1,7 @@
 import { Client, REST, Routes } from 'discord.js';
 import * as dotenv from 'dotenv';
-import * as pingCommand from './ping.js';
 import * as logCommand from './log.js';
+import * as pingCommand from './ping.js';
 
 dotenv.config();
 
@@ -64,15 +64,22 @@ export function setupCommandHandlers(client: Client) {
       await command.execute(interaction);
     } catch (error) {
       console.error('❌ Error executing command:', error);
-      const errorMessage = {
-        content: 'There was an error while executing this command!',
-        ephemeral: true,
-      };
+      
+      // Only try to respond if the interaction hasn't expired
+      try {
+        const errorMessage = {
+          content: 'There was an error while executing this command!',
+          ephemeral: true,
+        };
 
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(errorMessage);
-      } else {
-        await interaction.reply(errorMessage);
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(errorMessage);
+        } else {
+          await interaction.reply(errorMessage);
+        }
+      } catch (replyError) {
+        // Interaction already expired, just log it
+        console.error('❌ Could not send error message (interaction expired):', replyError);
       }
     }
   });

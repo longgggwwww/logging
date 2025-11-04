@@ -75,6 +75,6 @@ export const conf = {
     retryDelay: 2000,
   },
   topics: {
-    main: process.env.KAFKA_MAIN_TOPIC || 'logs',
+    main: 'logs'
   },
 } as const;
