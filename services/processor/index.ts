@@ -2,7 +2,7 @@
 import { run } from "./src/main.js";
 
 // Start the application
-run().catch((error) => {
-  console.error("❌ Failed to start application:", error);
+run().catch((err) => {
+  console.error("❌ Failed to start application:", err);
   process.exit(1);
 });

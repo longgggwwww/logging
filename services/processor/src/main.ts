@@ -96,7 +96,7 @@ export const run = async (): Promise<void> => {
             } else {
               // Send to DLQ
               await producer.send({
-                topic: CONFIG.topics.deadLetter,
+                topic: CONFIG.topics.dlq,
                 messages: [{ value: JSON.stringify(logData) }],
               });
               console.log(
@@ -124,7 +124,7 @@ export const run = async (): Promise<void> => {
       );
       console.error("Please ensure the topics exist by running:");
       console.error(
-        `docker exec kafka-controller-1 /opt/kafka/bin/kafka-topics.sh \\`,
+        `docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \\`,
       );
       console.error(`  --bootstrap-server localhost:9092 \\`);
       console.error(`  --create --if-not-exists \\`);
@@ -132,7 +132,7 @@ export const run = async (): Promise<void> => {
       console.error(`  --partitions 3 \\`);
       console.error(`  --replication-factor 3`);
       console.error(
-        `  && docker exec kafka-controller-1 /opt/kafka/bin/kafka-topics.sh \\`,
+        `  && docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \\`,
       );
       console.error(`  --bootstrap-server localhost:9092 \\`);
       console.error(`  --create --if-not-exists \\`);

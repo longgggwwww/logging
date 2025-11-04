@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 
-import { CONFIG } from "../config.js";
+import { conf } from "../config.js";
 import { LogModel } from "../models/index.js";
 import type { CacheParams, LogQueryParams } from "../types.js";
 import { generateCacheKey, getTimeRangeFilter } from "../utils.js";
@@ -25,7 +25,7 @@ router.get("/v1/logs", async (req: Request, res: Response) => {
       endTime,
       cursorId,
       page = "1",
-      take = CONFIG.defaultTake.toString(),
+      take = conf.defaultTake.toString(),
       paginationType = "cursor", // 'cursor' or 'offset'
     } = req.query as LogQueryParams & Record<string, string>;
 
@@ -65,8 +65,8 @@ router.get("/v1/logs", async (req: Request, res: Response) => {
 
     // Validate and parse take
     const limit = Math.min(
-      parseInt(take) || CONFIG.defaultTake,
-      CONFIG.maxTake,
+      parseInt(take) || conf.defaultTake,
+      conf.maxTake,
     );
 
     // Validate and parse page for offset pagination
@@ -234,7 +234,7 @@ router.get("/v1/logs", async (req: Request, res: Response) => {
     // Cache the response
     await redisClient.setEx(
       cacheKey,
-      CONFIG.cacheTtl,
+      conf.cacheTtl,
       JSON.stringify(response),
     );
 

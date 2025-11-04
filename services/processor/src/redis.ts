@@ -1,9 +1,8 @@
 import { createClient } from "redis";
-
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+import { CONFIG } from "./config.js";
 
 export const redisPublisher = createClient({
-  url: redisUrl,
+  url: CONFIG.redis.url,
 });
 
 redisPublisher.on("error", (err: Error) =>

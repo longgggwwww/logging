@@ -10,13 +10,6 @@ export const kafka = new Kafka({
   connectionTimeout: CONFIG.kafka.connectionTimeout,
   requestTimeout: CONFIG.kafka.requestTimeout,
   retry: CONFIG.kafka.retry,
-  logCreator:
-    () =>
-    ({ level, log }) => {
-      if (level === logLevel.INFO || level === logLevel.ERROR) {
-        console.log(JSON.stringify(log, null, 2)); // Pretty-print JSON
-      }
-    },
 });
 
 export const consumer = kafka.consumer({
@@ -42,14 +35,14 @@ export const connectConsumer = async (): Promise<void> => {
 
 export const subscribeToTopic = async (): Promise<void> => {
   console.log(
-    `📝 Subscribing to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}...`,
+    `📝 Subscribing to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}...`
   );
   await consumer.subscribe({
     topics: [CONFIG.topics.main, CONFIG.topics.retry],
     fromBeginning: false,
   });
   console.log(
-    `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`,
+    `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`
   );
 };
 

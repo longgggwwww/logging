@@ -1,13 +1,8 @@
 import mongoose from "mongoose";
+import { CONFIG } from "./config.js";
 
-// ============================================
-// DATABASE CONNECTIONS
-// ============================================
 export const connectDatabase = async (): Promise<void> => {
-  const url = process.env.MONGO_URL;
-  if (!url) throw new Error("MONGO_URL not set");
-
-  await mongoose.connect(url);
+  await mongoose.connect(CONFIG.database.url);
   console.log("✅ Connected to MongoDB via Mongoose");
 };
 

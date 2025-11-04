@@ -53,8 +53,14 @@ export interface Config {
   consumer: ConsumerConfig;
   topics: {
     main: string;
-    deadLetter: string;
+    dlq: string;
     retry: string;
   };
   maxRetries: number;
+  database: {
+    url: string;
+  };
+  redis: {
+    url: string;
+  };
 }

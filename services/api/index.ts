@@ -13,8 +13,8 @@ async function startServer() {
       console.log(`⚡ Functions API: http://localhost:3000/v1/functions`);
       console.log(`📈 Stats API: http://localhost:3000/v1/stats`);
     });
-  } catch (error) {
-    console.error("❌ Failed to start server:", error);
+  } catch (err) {
+    console.error("❌ Failed to start server:", err);
     process.exit(1);
   }
 }
