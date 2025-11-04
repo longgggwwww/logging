@@ -3,7 +3,7 @@ import { Config } from './types.js';
 // ============================================
 // CONFIGURATION
 // ============================================
-export const CONFIG: Config = {
+export const conf: Config = {
   kafka: {
     clientId: 'fcm-consumer',
     brokers: process.env.KAFKA_BROKERS?.split(',') || [

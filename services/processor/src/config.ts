@@ -68,7 +68,7 @@ export interface Config {
 // ============================================
 // CONFIGURATION
 // ============================================
-export const CONFIG: Config = {
+export const conf: Config = {
   kafka: {
     clientId: "log-processor",
     brokers: (process.env.KAFKA_BROKERS || "kafka-1,kafka-2,kafka-3").split(

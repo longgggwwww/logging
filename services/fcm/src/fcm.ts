@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { conf } from './config.js';
 import { shouldSendNotification } from './filter.js';
 import { admin, isFirebaseReady } from './firebase.js';
 import { metrics } from './metrics.js';
@@ -25,9 +25,9 @@ export const sendFCMNotification = async (
   }
 
   // Check if there are topics or device tokens
-  const hasTopics = CONFIG.fcm.topics && CONFIG.fcm.topics.length > 0;
+  const hasTopics = conf.fcm.topics && conf.fcm.topics.length > 0;
   const hasDeviceTokens =
-    CONFIG.fcm.deviceTokens && CONFIG.fcm.deviceTokens.length > 0;
+    conf.fcm.deviceTokens && conf.fcm.deviceTokens.length > 0;
 
   if (!hasTopics && !hasDeviceTokens) {
     console.warn(
@@ -197,9 +197,9 @@ export const sendFCMNotification = async (
 
   // Send notification to FCM topics (priority)
   if (hasTopics) {
-    console.log(`📡 Sending to ${CONFIG.fcm.topics.length} FCM topic(s)...`);
+    console.log(`📡 Sending to ${conf.fcm.topics.length} FCM topic(s)...`);
 
-    for (const topic of CONFIG.fcm.topics) {
+    for (const topic of conf.fcm.topics) {
       try {
         // Realtime mode: Send once, no retry
         await admin.messaging().send({
@@ -226,10 +226,10 @@ export const sendFCMNotification = async (
   // Send notification to device tokens (if configured)
   if (hasDeviceTokens) {
     console.log(
-      `📱 Sending to ${CONFIG.fcm.deviceTokens.length} device token(s)...`
+      `📱 Sending to ${conf.fcm.deviceTokens.length} device token(s)...`
     );
 
-    for (const token of CONFIG.fcm.deviceTokens) {
+    for (const token of conf.fcm.deviceTokens) {
       try {
         // Realtime mode: Send once, no retry
         await admin.messaging().send({

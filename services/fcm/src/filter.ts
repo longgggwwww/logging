@@ -1,19 +1,19 @@
+import { conf } from './config.js';
 import { LogData } from './types.js';
-import { CONFIG } from './config.js';
 
 // ============================================
 // SEVERITY FILTER
 // ============================================
 export const shouldSendNotification = (logData: LogData): boolean => {
   // If filter is not enabled, send all
-  if (!CONFIG.fcm.filter.enabled) {
+  if (!conf.fcm.filter.enabled) {
     return true;
   }
 
   // Only send for ERROR type
   if (
     !logData.type ||
-    !CONFIG.fcm.filter.criticalTypes.includes(logData.type)
+    !conf.fcm.filter.criticalTypes.includes(logData.type)
   ) {
     console.log(
       `🔕 Filtered: Type '${logData.type || 'undefined'}' is not critical`
@@ -29,9 +29,9 @@ export const shouldSendNotification = (logData: LogData): boolean => {
   }
 
   // Only send when response code >= minSeverityCode (500)
-  if (responseCode < CONFIG.fcm.filter.minSeverityCode) {
+  if (responseCode < conf.fcm.filter.minSeverityCode) {
     console.log(
-      `🔕 Filtered: Response code ${responseCode} < ${CONFIG.fcm.filter.minSeverityCode} (not severe enough)`
+      `🔕 Filtered: Response code ${responseCode} < ${conf.fcm.filter.minSeverityCode} (not severe enough)`
     );
     return false;
   }

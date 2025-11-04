@@ -1,8 +1,8 @@
 import { createClient } from "redis";
-import { CONFIG } from "./config.js";
+import { conf } from "./config.js";
 
 export const redisPublisher = createClient({
-  url: CONFIG.redis.url,
+  url: conf.redis.url,
 });
 
 redisPublisher.on("error", (err: Error) =>

@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { conf } from './config.js';
 import { consumer } from './kafka.js';
 import { processMessage } from './processor.js';
 
@@ -16,10 +16,10 @@ export const initializeFCMService = async (): Promise<void> => {
 
     // Subscribe to main topic only (no retry topic in realtime mode)
     await consumer.subscribe({
-      topics: [CONFIG.topics.main],
+      topics: [conf.topics.main],
       fromBeginning: false,
     });
-    console.log(`✅ Subscribed to topic: ${CONFIG.topics.main}`);
+    console.log(`✅ Subscribed to topic: ${conf.topics.main}`);
 
     // Run consumer
     await consumer.run({

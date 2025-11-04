@@ -1,14 +1,14 @@
 import { Kafka } from 'kafkajs';
-import { CONFIG } from './config.js';
+import { conf } from './config.js';
 
 // ============================================
 // KAFKA SETUP
 // ============================================
 export const kafka = new Kafka({
-  clientId: CONFIG.kafka.clientId,
-  brokers: CONFIG.kafka.brokers,
-  connectionTimeout: CONFIG.kafka.connectionTimeout,
-  requestTimeout: CONFIG.kafka.requestTimeout,
+  clientId: conf.kafka.clientId,
+  brokers: conf.kafka.brokers,
+  connectionTimeout: conf.kafka.connectionTimeout,
+  requestTimeout: conf.kafka.requestTimeout,
   retry: {
     initialRetryTime: 300,
     retries: 8,

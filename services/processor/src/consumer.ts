@@ -1,10 +1,10 @@
+import { conf } from "./config.js";
 import {
-  consumer,
-  producer,
-  connectConsumer,
-  subscribeToTopic,
+    connectConsumer,
+    consumer,
+    producer,
+    subscribeToTopic,
 } from "./kafka.js";
-import { CONFIG } from "./config.js";
 import { processLogMessage } from "./processor.js";
 
 // ============================================
@@ -42,7 +42,7 @@ export const runConsumer = async (): Promise<void> => {
 
   console.log("🚀 Log processor service is running...");
   console.log(
-    `👂 Listening for messages on topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`,
+    `👂 Listening for messages on topics: ${conf.topics.main}, ${conf.topics.retry}`,
   );
 };
 
@@ -67,18 +67,18 @@ async function handleMessageError(message: any, error: unknown): Promise<void> {
 
     attemptCount += 1;
 
-    if (attemptCount <= CONFIG.maxRetries) {
+    if (attemptCount <= conf.maxRetries) {
       // Send to retry topic
       logData._retry = { attemptCount };
       await producer.send({
-        topic: CONFIG.topics.retry,
+        topic: conf.topics.retry,
         messages: [{ value: JSON.stringify(logData) }],
       });
       console.log(`🔄 Sent message to retry topic (attempt ${attemptCount})`);
     } else {
       // Send to DLQ
       await producer.send({
-        topic: CONFIG.topics.dlq,
+        topic: conf.topics.dlq,
         messages: [{ value: JSON.stringify(logData) }],
       });
       console.log(`🗑️ Sent message to DLQ after ${attemptCount} attempts`);

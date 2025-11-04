@@ -1,22 +1,22 @@
 import { Kafka } from "kafkajs";
-import { CONFIG } from "./config.js";
+import { conf } from "./config.js";
 
 // ============================================
 // KAFKA SETUP
 // ============================================
 export const kafka = new Kafka({
-  clientId: CONFIG.kafka.clientId,
-  brokers: CONFIG.kafka.brokers,
-  connectionTimeout: CONFIG.kafka.connectionTimeout,
-  requestTimeout: CONFIG.kafka.requestTimeout,
-  retry: CONFIG.kafka.retry,
+  clientId: conf.kafka.clientId,
+  brokers: conf.kafka.brokers,
+  connectionTimeout: conf.kafka.connectionTimeout,
+  requestTimeout: conf.kafka.requestTimeout,
+  retry: conf.kafka.retry,
 });
 
 export const consumer = kafka.consumer({
-  groupId: CONFIG.consumer.groupId,
-  sessionTimeout: CONFIG.consumer.sessionTimeout,
-  heartbeatInterval: CONFIG.consumer.heartbeatInterval,
-  maxWaitTimeInMs: CONFIG.consumer.maxWaitTimeInMs,
+  groupId: conf.consumer.groupId,
+  sessionTimeout: conf.consumer.sessionTimeout,
+  heartbeatInterval: conf.consumer.heartbeatInterval,
+  maxWaitTimeInMs: conf.consumer.maxWaitTimeInMs,
 });
 
 export const producer = kafka.producer({
@@ -35,14 +35,14 @@ export const connectConsumer = async (): Promise<void> => {
 
 export const subscribeToTopic = async (): Promise<void> => {
   console.log(
-    `📝 Subscribing to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}...`,
+    `📝 Subscribing to topics: ${conf.topics.main}, ${conf.topics.retry}...`,
   );
   await consumer.subscribe({
-    topics: [CONFIG.topics.main, CONFIG.topics.retry],
+    topics: [conf.topics.main, conf.topics.retry],
     fromBeginning: false,
   });
   console.log(
-    `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`,
+    `✅ Subscribed to topics: ${conf.topics.main}, ${conf.topics.retry}`,
   );
 };
 

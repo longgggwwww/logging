@@ -1,7 +1,7 @@
-import { producer, disconnectConsumer } from "./kafka.js";
-import { CONFIG } from "./config.js";
+import { conf } from "./config.js";
 import { runConsumer } from "./consumer.js";
 import { connectDatabase, disconnectDatabase } from "./db.js";
+import { disconnectConsumer, producer } from "./kafka.js";
 import { connectRedis, disconnectRedis } from "./redis.js";
 
 // ============================================
@@ -36,13 +36,13 @@ const start = async (): Promise<void> => {
 
     if (error.type === "UNKNOWN_TOPIC_OR_PARTITION") {
       console.error(
-        `\n💡 Topics "${CONFIG.topics.main}", "${CONFIG.topics.retry}" might not exist or are not ready.`,
+        `\n💡 Topics "${conf.topics.main}", "${conf.topics.retry}" might not exist or are not ready.`,
       );
       console.error("Please ensure the topics exist by running:");
       console.error(`docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \\`);
       console.error(`  --bootstrap-server localhost:9092 \\`);
       console.error(`  --create --if-not-exists \\`);
-      console.error(`  --topic ${CONFIG.topics.main} \\`);
+      console.error(`  --topic ${conf.topics.main} \\`);
       console.error(`  --partitions 3 \\`);
       console.error(`  --replication-factor 3`);
     }
