@@ -21,22 +21,12 @@
   "author": "DANH PHI LONG + AI",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "^14.15.0",
-    "dotenv": "^16.4.5",
-    "kafkajs": "^2.2.4"
+    "discord.js": "^14.15.0"
   },
   "devDependencies": {
     "@types/kafkajs": "^1.8.2",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
-    "eslint": "^9.38.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.6.2",
     "ts-node": "^10.0.0",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.2"
+    "tsx": "^4.20.6"
   },
   "ts-node": {
     "esm": true

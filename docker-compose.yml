@@ -1,7 +1,8 @@
 services:
   api:
     build:
-      context: ./services/api
+      context: .
+      dockerfile: ./services/api/Dockerfile
     container_name: api
     environment:
       MONGO_URL: ${MONGO_URL:-mongodb://longgggwww:123456@mongodb:27017/logs?authSource=admin}
@@ -21,7 +22,8 @@ services:
 
   discord-bot:
     build:
-      context: ./services/discord-bot
+      context: .
+      dockerfile: ./services/discord-bot/Dockerfile
     container_name: discord-bot
     environment:
       KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
@@ -41,7 +43,8 @@ services:
 
   fcm:
     build:
-      context: ./services/fcm
+      context: .
+      dockerfile: ./services/fcm/Dockerfile
     container_name: fcm
     environment:
       KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
@@ -56,7 +59,8 @@ services:
 
   realtime:
     build:
-      context: ./services/realtime
+      context: .
+      dockerfile: ./services/realtime/Dockerfile
     container_name: realtime
     environment:
       WEBSOCKET_CORS_ORIGIN: ${WEBSOCKET_CORS_ORIGIN:-*}
@@ -180,7 +184,8 @@ services:
 
   processor:
     build:
-      context: ./services/processor
+      context: .
+      dockerfile: ./services/processor/Dockerfile
     container_name: processor
     environment:
       MONGO_URL: ${MONGO_URL:-mongodb://longgggwww:123456@mongodb:27017/logs?authSource=admin}
