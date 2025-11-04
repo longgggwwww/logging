@@ -3,7 +3,6 @@ import Keycloak from "keycloak-connect";
 // ============================================
 // KEYCLOAK CONFIG
 // ============================================
-// Keycloak configuration derived from environment variables
 export const KEYCLOAK_CONFIG = {
   realm: process.env.KEYCLOAK_REALM || "master",
   "auth-server-url":
