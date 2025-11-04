@@ -66,9 +66,7 @@ export async function publishInvalidateProjects(
   while (attempt < maxRetries) {
     try {
       await redisPublisher.publish("invalidate:projects", message);
-      console.log(
-        `📤 Published cache invalidation for project ${projectId}`,
-      );
+      console.log(`📤 Published cache invalidation for project ${projectId}`);
       return;
     } catch (error) {
       attempt++;

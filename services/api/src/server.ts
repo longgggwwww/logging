@@ -62,10 +62,7 @@ export async function initializeServer(): Promise<void> {
         const { projectId, functionId } = JSON.parse(message);
         await invalidateFunctionsCache(redisClient, projectId, functionId);
       } catch (error) {
-        console.error(
-          "❌ Error handling functions cache invalidation:",
-          error,
-        );
+        console.error("❌ Error handling functions cache invalidation:", error);
       }
     },
   );
