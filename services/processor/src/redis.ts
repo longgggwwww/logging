@@ -16,7 +16,9 @@ redisPublisher.on("end", () => {
 });
 
 export async function connectRedis(): Promise<void> {
-  await redisPublisher.connect();
+  if (!redisPublisher.isOpen) {
+    await redisPublisher.connect();
+  }
 }
 
 export async function disconnectRedis(): Promise<void> {
@@ -51,5 +53,66 @@ export async function publishInvalidateLogs(
   }
   console.error(
     `❌ Failed to publish cache invalidation after ${maxRetries} attempts`,
+  );
+}
+
+export async function publishInvalidateProjects(
+  projectId: string,
+): Promise<void> {
+  const message = JSON.stringify({ projectId });
+  const maxRetries = 3;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      await redisPublisher.publish("invalidate:projects", message);
+      console.log(
+        `📤 Published cache invalidation for project ${projectId}`,
+      );
+      return;
+    } catch (error) {
+      attempt++;
+      console.error(
+        `❌ Failed to publish project invalidation (attempt ${attempt}/${maxRetries}):`,
+        error,
+      );
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+  console.error(
+    `❌ Failed to publish project invalidation after ${maxRetries} attempts`,
+  );
+}
+
+export async function publishInvalidateFunctions(
+  projectId: string,
+  functionId: string,
+): Promise<void> {
+  const message = JSON.stringify({ projectId, functionId });
+  const maxRetries = 3;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      await redisPublisher.publish("invalidate:functions", message);
+      console.log(
+        `📤 Published cache invalidation for function ${functionId} in project ${projectId}`,
+      );
+      return;
+    } catch (error) {
+      attempt++;
+      console.error(
+        `❌ Failed to publish function invalidation (attempt ${attempt}/${maxRetries}):`,
+        error,
+      );
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+  console.error(
+    `❌ Failed to publish function invalidation after ${maxRetries} attempts`,
   );
 }
