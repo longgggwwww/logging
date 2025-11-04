@@ -1,17 +1,23 @@
-import { admin } from './firebase.js';
 import { CONFIG } from './config.js';
-import { metrics } from './metrics.js';
-import { retryWithBackoff } from './retry.js';
 import { shouldSendNotification } from './filter.js';
-import { LogData, MessageMetadata, FCMDataPayload } from './types.js';
+import { admin, isFirebaseReady } from './firebase.js';
+import { metrics } from './metrics.js';
+import { FCMDataPayload, LogData } from './types.js';
 
 // ============================================
-// FCM NOTIFICATION WITH RETRY
+// FCM NOTIFICATION (REALTIME MODE - NO RETRY)
 // ============================================
 export const sendFCMNotification = async (
   logData: LogData,
-  metadata: Partial<MessageMetadata> = {}
+  metadata: { partition?: number; offset?: string } = {}
 ): Promise<boolean> => {
+  // Check if Firebase is initialized
+  if (!isFirebaseReady()) {
+    console.warn('⚠️  Firebase not initialized. Skipping FCM notification.');
+    metrics.filtered++;
+    return false;
+  }
+
   // Filter: Check if notification should be sent
   if (!shouldSendNotification(logData)) {
     metrics.filtered++;
@@ -195,12 +201,10 @@ export const sendFCMNotification = async (
 
     for (const topic of CONFIG.fcm.topics) {
       try {
-        await retryWithBackoff(async () => {
-          const response = await admin.messaging().send({
-            ...baseMessage,
-            topic: topic,
-          });
-          return response;
+        // Realtime mode: Send once, no retry
+        await admin.messaging().send({
+          ...baseMessage,
+          topic: topic,
         });
 
         results.success++;
@@ -227,12 +231,10 @@ export const sendFCMNotification = async (
 
     for (const token of CONFIG.fcm.deviceTokens) {
       try {
-        await retryWithBackoff(async () => {
-          const response = await admin.messaging().send({
-            ...baseMessage,
-            token: token,
-          });
-          return response;
+        // Realtime mode: Send once, no retry
+        await admin.messaging().send({
+          ...baseMessage,
+          token: token,
         });
 
         results.success++;

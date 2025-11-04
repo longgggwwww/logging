@@ -1,24 +1,11 @@
-node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.git
-.gitignore
-README.md
-README-vi.md
-.env
-.env.example
-.nyc_output
-coverage
-.coverage
-.idea
-.vscode
-*.swp
-*.swo
-*~
+# Ignore node modules and build output
+node_modules/
 dist/
-.prettierignore
-.prettierrc
-eslint.config.js
-docs/
-*.log
+
+# Ignore environment variable files
+.git/
+.gitignore
+.env*
+
+# Ignore documentation files
+*.md

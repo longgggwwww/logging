@@ -1,15 +1,11 @@
 import { sendFCMNotification } from './fcm.js';
 import { metrics } from './metrics.js';
-import { sendToRetryQueue } from './retry-queue.js';
-import { sendToDLQ } from './dlq.js';
-import { sleep } from './retry.js';
-import { CONFIG } from './config.js';
 
 // ============================================
 // MESSAGE PROCESSOR
 // ============================================
 export const processMessage = async ({
-  topic,
+  topic: _topic,
   partition,
   message,
 }: {
@@ -17,42 +13,19 @@ export const processMessage = async ({
   partition: number;
   message: { offset: string; value: Buffer | null; timestamp?: string };
 }) => {
-  const metadata = {
-    topic,
-    partition,
-    offset: message.offset,
-    timestamp: message.timestamp,
-  };
-
-  let logData;
-  let attemptCount = 0;
+  const startTime = Date.now();
 
   try {
     // Check if message value exists
     if (!message.value) {
       console.warn('⚠️  Received message with null value, skipping');
+      metrics.failed++;
       return;
     }
 
     // Parse message
     const rawMessage = message.value.toString();
-    logData = JSON.parse(rawMessage);
-
-    // Check if this is a retry message
-    if (logData._retry) {
-      attemptCount = logData._retry.attemptCount || 0;
-      console.log(`🔄 Processing retry message (attempt ${attemptCount})`);
-
-      // Check if we should delay processing
-      if (
-        logData._retry.nextRetryAfter &&
-        Date.now() < logData._retry.nextRetryAfter
-      ) {
-        const delay = logData._retry.nextRetryAfter - Date.now();
-        console.log(`⏸️  Delaying retry for ${delay}ms`);
-        await sleep(delay);
-      }
-    }
+    const logData = JSON.parse(rawMessage);
 
     // Validate message structure according to new structure
     if (!logData.projectName) {
@@ -82,47 +55,22 @@ export const processMessage = async ({
       offset: message.offset,
     };
 
-    // Send FCM notification with retry
+    // Send FCM notification (no retry, realtime mode)
     await sendFCMNotification(logData, fcmMetadata);
 
     metrics.processed++;
-    if (attemptCount > 0) {
-      metrics.retriedSuccessfully++;
-    }
+    console.log(
+      `✅ Message processed successfully (${Date.now() - startTime}ms)`
+    );
   } catch (error) {
     metrics.failed++;
+    const processingTime = Date.now() - startTime;
     console.error(
-      `❌ Error processing message (attempt ${attemptCount + 1}):`,
+      `❌ Error processing message (${processingTime}ms):`,
       (error as Error).message
     );
 
-    // Decide what to do based on error type and retry count
-    if (attemptCount < CONFIG.processing.maxRetries) {
-      // Send to retry queue
-      const retrySent = await sendToRetryQueue(
-        logData || {},
-        metadata,
-        attemptCount
-      );
-      if (!retrySent) {
-        // If retry queue fails, send to DLQ
-        await sendToDLQ(message.value!.toString(), error as Error, {
-          ...metadata,
-          attemptCount,
-        });
-      }
-    } else {
-      // Max retries reached, send to DLQ
-      console.error(
-        `❌ Max retries (${CONFIG.processing.maxRetries}) reached for message`
-      );
-      await sendToDLQ(message.value!.toString(), error as Error, {
-        ...metadata,
-        attemptCount,
-      });
-    }
-
-    // Don't throw error to prevent consumer from crashing
+    // Realtime mode: Don't retry or send to DLQ, just skip failed messages
     // Message offset will be committed, preventing reprocessing
   }
 };

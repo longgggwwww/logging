@@ -9,7 +9,7 @@ dotenv.config();
 // ============================================
 export const CONFIG: Config = {
   kafka: {
-    clientId: 'fcm-error-logs-consumer',
+    clientId: 'fcm-consumer',
     brokers: process.env.KAFKA_BROKERS?.split(',') || [
       'localhost:19092',
       'localhost:29092',
@@ -44,14 +44,7 @@ export const CONFIG: Config = {
       criticalTypes: process.env.FCM_CRITICAL_TYPES?.split(',') || ['ERROR'], // Only send for ERROR type
     },
   },
-  processing: {
-    maxRetries: 3,
-    retryDelay: 2000,
-  },
   topics: {
-    // main: 'error-logs',
-    main: process.env.KAFKA_MAIN_TOPIC || 'all_users',
-    deadLetter: process.env.KAFKA_DLQ_TOPIC || 'error-logs-dlq',
-    retry: process.env.KAFKA_RETRY_TOPIC || 'error-logs-retry',
+    main: 'logs',
   },
 };

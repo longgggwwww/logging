@@ -1,4 +1,6 @@
+# Ignore node modules and build output
 node_modules/
-service-account.json
 dist/
-.env
+
+# Ignore environment variable files
+.env*
