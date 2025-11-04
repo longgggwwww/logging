@@ -49,8 +49,8 @@ export async function shutdown(): Promise<void> {
     console.log("✅ Redis client disconnected");
     console.log("✅ Mongoose disconnected");
     process.exit(0);
-  } catch (error: any) {
-    console.error("❌ Error during shutdown:", error);
+  } catch (err) {
+    console.error("❌ Error during shutdown:", err);
     process.exit(1);
   }
 }
