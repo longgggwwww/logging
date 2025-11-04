@@ -1,5 +1,5 @@
 import { ProjectModel, FunctionModel, LogModel } from "./models/index.js";
-import { LogMessage } from "./types.js";
+import { LogMessage } from "./config.js";
 import { publishInvalidateLogs } from "./redis.js";
 
 // ============================================
@@ -46,7 +46,7 @@ export const processLogMessage = async (message: any): Promise<void> => {
     }
 
     // Create log entry
-    const newLog = await LogModel.create({
+    await LogModel.create({
       project: project._id,
       function: func._id,
       method: log.method,

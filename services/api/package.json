@@ -20,7 +20,7 @@
     "prisma",
     "logs"
   ],
-  "author": "",
+  "author": "DANH PHI LONG + AI",
   "license": "ISC",
   "dependencies": {
     "compression": "^1.7.4",

@@ -1,4 +1,4 @@
-import { Kafka, logLevel } from "kafkajs";
+import { Kafka } from "kafkajs";
 import { CONFIG } from "./config.js";
 
 // ============================================
@@ -35,14 +35,14 @@ export const connectConsumer = async (): Promise<void> => {
 
 export const subscribeToTopic = async (): Promise<void> => {
   console.log(
-    `📝 Subscribing to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}...`
+    `📝 Subscribing to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}...`,
   );
   await consumer.subscribe({
     topics: [CONFIG.topics.main, CONFIG.topics.retry],
     fromBeginning: false,
   });
   console.log(
-    `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`
+    `✅ Subscribed to topics: ${CONFIG.topics.main}, ${CONFIG.topics.retry}`,
   );
 };
 
