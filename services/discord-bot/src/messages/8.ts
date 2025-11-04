@@ -1,33 +1,33 @@
-import { LogMessage } from "../types.js";
+import { LogMessage } from '../types.js';
 
 export const message: LogMessage = {
-  project: "analytics-dashboard",
-  function: "exportData",
-  method: "GET",
-  type: "ERROR",
+  project: 'analytics-dashboard',
+  function: 'exportData',
+  method: 'GET',
+  type: 'ERROR',
   request: {
     headers: {},
-    userAgent: "Analytics/3.0.0",
-    url: "/api/export/customers",
-    params: { format: "csv" },
+    userAgent: 'Analytics/3.0.0',
+    url: '/api/export/customers',
+    params: { format: 'csv' },
   },
   response: {
     code: 500,
     success: false,
-    message: "Export failed - disk space full",
+    message: 'Export failed - disk space full',
     data: [],
   },
-  consoleLog: "Error: ENOSPC: no space left on device",
+  consoleLog: 'Error: ENOSPC: no space left on device',
   createdAt: new Date().toISOString(),
   createdBy: {
-    id: "analyst456",
-    fullname: "Le Van H",
-    emplCode: "ANA002",
+    id: 'analyst456',
+    fullname: 'Le Van H',
+    emplCode: 'ANA002',
   },
   additionalData: {
-    format: "csv",
+    format: 'csv',
     recordCount: 50000,
-    estimatedSize: "2GB",
+    estimatedSize: '2GB',
   },
   latency: 15000,
 };

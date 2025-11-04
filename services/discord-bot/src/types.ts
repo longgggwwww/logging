@@ -1,8 +1,8 @@
 export interface LogMessage {
   project: string;
   function: string;
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
-  type: "ERROR" | "SUCCESS" | "WARNING" | "INFO" | "DEBUG";
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'HEAD';
+  type: 'ERROR' | 'SUCCESS' | 'WARNING' | 'INFO' | 'DEBUG';
   request: {
     headers: Record<string, any>;
     userAgent: string;
@@ -29,6 +29,7 @@ export interface LogMessage {
     attemptCount: number;
     nextRetryAfter?: number;
   };
+  _isTest?: boolean;
 }
 
 export interface MessageMetadata {

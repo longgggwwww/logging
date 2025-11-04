@@ -1,4 +1,4 @@
-import { Client, Collection, REST, Routes } from 'discord.js';
+import { Client, REST, Routes } from 'discord.js';
 import * as dotenv from 'dotenv';
 import * as pingCommand from './ping.js';
 import * as logCommand from './log.js';
@@ -21,13 +21,13 @@ export async function registerCommands() {
 
   try {
     console.log('🗑️  Clearing global application commands...');
-    
+
     // Clear global commands first
     await rest.put(
       Routes.applicationCommands(process.env.DISCORD_CLIENT_ID || ''),
       { body: [] }
     );
-    
+
     console.log('✅ Successfully cleared global commands.');
     console.log('📝 Started refreshing guild application (/) commands.');
 
@@ -54,7 +54,9 @@ export function setupCommandHandlers(client: Client) {
     );
 
     if (!command) {
-      console.error(`No command matching ${interaction.commandName} was found.`);
+      console.error(
+        `No command matching ${interaction.commandName} was found.`
+      );
       return;
     }
 

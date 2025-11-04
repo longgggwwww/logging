@@ -61,7 +61,9 @@ export const conf = {
     },
     generalChannelFilter: {
       enabled: true,
-      minSeverityCode: parseInt(process.env.DISCORD_GENERAL_MIN_SEVERITY_CODE || '400'),
+      minSeverityCode: parseInt(
+        process.env.DISCORD_GENERAL_MIN_SEVERITY_CODE || '400'
+      ),
       criticalTypes: process.env.DISCORD_GENERAL_CRITICAL_TYPES?.split(',') || [
         'WARNING',
         'ERROR',

@@ -41,9 +41,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Get messages to send
     const messagesToSend = testMessages.slice(0, count);
 
-    // Prepare batch messages
+    // Prepare batch messages with _isTest flag
     const kafkaMessages = messagesToSend.map((message) => ({
-      value: JSON.stringify(message),
+      value: JSON.stringify({
+        ...message,
+        _isTest: true,
+      }),
     }));
 
     // Send messages to Kafka

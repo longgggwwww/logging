@@ -28,7 +28,7 @@ export const initializeBot = async (): Promise<Client> => {
   });
 
   await client.login(conf.discord.token);
-  
+
   return client;
 };
 
@@ -66,12 +66,12 @@ export const shutdown = async (): Promise<void> => {
   try {
     await consumer.disconnect();
     console.log('✅ Disconnected from Kafka');
-    
+
     if (client) {
       client.destroy();
       console.log('✅ Discord client destroyed');
     }
-    
+
     process.exit(0);
   } catch (error) {
     console.error('❌ Error during shutdown:', error);
