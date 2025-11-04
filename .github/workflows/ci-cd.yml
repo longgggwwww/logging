@@ -1,0 +1,314 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # Detect which services have changed
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      processor: ${{ steps.filter.outputs.processor }}
+      realtime: ${{ steps.filter.outputs.realtime }}
+      discord-bot: ${{ steps.filter.outputs.discord-bot }}
+      fcm: ${{ steps.filter.outputs.fcm }}
+      web-app: ${{ steps.filter.outputs.web-app }}
+      docker-compose: ${{ steps.filter.outputs.docker-compose }}
+      any-service: ${{ steps.check.outputs.any-service }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'services/api/**'
+            processor:
+              - 'services/processor/**'
+            realtime:
+              - 'services/realtime/**'
+            discord-bot:
+              - 'services/discord-bot/**'
+            fcm:
+              - 'services/fcm/**'
+            web-app:
+              - 'web-app/**'
+            docker-compose:
+              - 'docker-compose.yml'
+              - '.env.example'
+
+      - name: Check if any service changed
+        id: check
+        run: |
+          if [[ "${{ steps.filter.outputs.api }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.processor }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.realtime }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.discord-bot }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.fcm }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.web-app }}" == "true" ]]; then
+            echo "any-service=true" >> $GITHUB_OUTPUT
+          else
+            echo "any-service=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Build and test services
+  build:
+    name: Build Services
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any-service == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: api
+            changed: ${{ needs.detect-changes.outputs.api }}
+            context: .
+            dockerfile: ./services/api/Dockerfile
+          - service: processor
+            changed: ${{ needs.detect-changes.outputs.processor }}
+            context: .
+            dockerfile: ./services/processor/Dockerfile
+          - service: realtime
+            changed: ${{ needs.detect-changes.outputs.realtime }}
+            context: .
+            dockerfile: ./services/realtime/Dockerfile
+          - service: discord-bot
+            changed: ${{ needs.detect-changes.outputs.discord-bot }}
+            context: .
+            dockerfile: ./services/discord-bot/Dockerfile
+          - service: fcm
+            changed: ${{ needs.detect-changes.outputs.fcm }}
+            context: .
+            dockerfile: ./services/fcm/Dockerfile
+          - service: web-app
+            changed: ${{ needs.detect-changes.outputs.web-app }}
+            context: ./web-app
+            dockerfile: ./web-app/Dockerfile
+    steps:
+      - name: Skip if service unchanged
+        if: matrix.changed != 'true'
+        run: echo "Skipping ${{ matrix.service }} - no changes detected"
+
+      - name: Checkout code
+        if: matrix.changed == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        if: matrix.changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        if: matrix.changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false
+          tags: ${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/${{ matrix.service }}.tar
+
+      - name: Upload artifact
+        if: matrix.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-image
+          path: /tmp/${{ matrix.service }}.tar
+          retention-days: 1
+
+  # Deploy to VPS
+  deploy:
+    name: Deploy to VPS
+    needs: [detect-changes, build]
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main' && 
+      needs.detect-changes.outputs.any-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/images
+
+      - name: Create deployment directory on VPS
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ~/log-monitoring/deployment"
+
+      - name: Transfer Docker images to VPS
+        run: |
+          # Transfer only changed services
+          if [[ "${{ needs.detect-changes.outputs.api }}" == "true" ]]; then
+            scp /tmp/images/api-image/api.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/deployment/
+          fi
+          if [[ "${{ needs.detect-changes.outputs.processor }}" == "true" ]]; then
+            scp /tmp/images/processor-image/processor.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/deployment/
+          fi
+          if [[ "${{ needs.detect-changes.outputs.realtime }}" == "true" ]]; then
+            scp /tmp/images/realtime-image/realtime.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/deployment/
+          fi
+          if [[ "${{ needs.detect-changes.outputs.discord-bot }}" == "true" ]]; then
+            scp /tmp/images/discord-bot-image/discord-bot.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/deployment/
+          fi
+          if [[ "${{ needs.detect-changes.outputs.fcm }}" == "true" ]]; then
+            scp /tmp/images/fcm-image/fcm.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/deployment/
+          fi
+          if [[ "${{ needs.detect-changes.outputs.web-app }}" == "true" ]]; then
+            scp /tmp/images/web-app-image/web-app.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/deployment/
+          fi
+
+      - name: Transfer Docker Compose and scripts
+        run: |
+          scp docker-compose.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/
+          scp -r init-scripts ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/
+          
+          # Create deployment script
+          cat > /tmp/deploy.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          cd ~/log-monitoring
+          
+          # Load Docker images
+          for image in deployment/*.tar; do
+            if [ -f "$image" ]; then
+              echo "Loading $(basename $image)..."
+              docker load -i "$image"
+              rm "$image"
+            fi
+          done
+          
+          # Restart only changed services
+          CHANGED_SERVICES=()
+          
+          if [ -f deployment/api.tar.loaded ]; then
+            CHANGED_SERVICES+=("api")
+          fi
+          if [ -f deployment/processor.tar.loaded ]; then
+            CHANGED_SERVICES+=("processor")
+          fi
+          if [ -f deployment/realtime.tar.loaded ]; then
+            CHANGED_SERVICES+=("realtime")
+          fi
+          if [ -f deployment/discord-bot.tar.loaded ]; then
+            CHANGED_SERVICES+=("discord-bot")
+          fi
+          if [ -f deployment/fcm.tar.loaded ]; then
+            CHANGED_SERVICES+=("fcm")
+          fi
+          if [ -f deployment/web-app.tar.loaded ]; then
+            CHANGED_SERVICES+=("web-app")
+          fi
+          
+          # If any service changed, restart them
+          if [ ${#CHANGED_SERVICES[@]} -gt 0 ]; then
+            echo "Restarting services: ${CHANGED_SERVICES[@]}"
+            docker compose up -d --no-deps "${CHANGED_SERVICES[@]}"
+          fi
+          
+          # Clean up
+          rm -rf deployment/*.tar.loaded
+          
+          echo "Deployment completed successfully!"
+          EOF
+          
+          chmod +x /tmp/deploy.sh
+          scp /tmp/deploy.sh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/log-monitoring/
+
+      - name: Load Docker images and deploy
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          cd ~/log-monitoring
+          
+          # Load images and mark them
+          for image in deployment/*.tar; do
+            if [ -f "$image" ]; then
+              echo "Loading $(basename $image)..."
+              docker load -i "$image"
+              touch "${image}.loaded"
+            fi
+          done
+          
+          # Determine which services to restart
+          SERVICES_TO_RESTART=()
+          
+          if [ -f deployment/api.tar.loaded ]; then
+            SERVICES_TO_RESTART+=("api")
+            rm deployment/api.tar deployment/api.tar.loaded
+          fi
+          if [ -f deployment/processor.tar.loaded ]; then
+            SERVICES_TO_RESTART+=("processor")
+            rm deployment/processor.tar deployment/processor.tar.loaded
+          fi
+          if [ -f deployment/realtime.tar.loaded ]; then
+            SERVICES_TO_RESTART+=("realtime")
+            rm deployment/realtime.tar deployment/realtime.tar.loaded
+          fi
+          if [ -f deployment/discord-bot.tar.loaded ]; then
+            SERVICES_TO_RESTART+=("discord-bot")
+            rm deployment/discord-bot.tar deployment/discord-bot.tar.loaded
+          fi
+          if [ -f deployment/fcm.tar.loaded ]; then
+            SERVICES_TO_RESTART+=("fcm")
+            rm deployment/fcm.tar deployment/fcm.tar.loaded
+          fi
+          if [ -f deployment/web-app.tar.loaded ]; then
+            SERVICES_TO_RESTART+=("web-app")
+            rm deployment/web-app.tar deployment/web-app.tar.loaded
+          fi
+          
+          # Restart only changed services
+          if [ ${#SERVICES_TO_RESTART[@]} -gt 0 ]; then
+            echo "Restarting services: ${SERVICES_TO_RESTART[@]}"
+            docker compose up -d --no-deps ${SERVICES_TO_RESTART[@]}
+            
+            echo "Deployment completed successfully!"
+            echo "Restarted services:"
+            printf '  - %s\n' "${SERVICES_TO_RESTART[@]}"
+          else
+            echo "No services to restart"
+          fi
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          cd ~/log-monitoring
+          echo "Running services:"
+          docker compose ps
+          ENDSSH
+
+      - name: Cleanup old images
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          echo "Cleaning up old Docker images..."
+          docker image prune -f
+          ENDSSH
