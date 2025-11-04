@@ -86,7 +86,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/9092' || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -118,7 +118,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/9092' || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -150,7 +150,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/9092' || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -293,6 +293,28 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+    restart: unless-stopped
+
+  web-app:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+      args:
+        API_BASE_URL: ${API_BASE_URL:-http://localhost:3000}
+        WEBSOCKET_URL: ${WEBSOCKET_URL:-http://localhost:5000}
+        KEYCLOAK_SERVER_URL: ${KEYCLOAK_URL:?KEYCLOAK_URL is not set}
+        KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
+        KEYCLOAK_API_CLIENT_ID: ${KEYCLOAK_BE_CLIENT_ID:?KEYCLOAK_BE_CLIENT_ID is not set}
+        KEYCLOAK_PUBLIC_CLIENT_ID: ${KEYCLOAK_FE_CLIENT_ID:-web-app-client}
+        KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-keycloak-client-secret}
+    container_name: web-app
+    ports:
+      - "8000:80"
+    networks:
+      - kafka-network
+    depends_on:
+      - api
+      - realtime
     restart: unless-stopped
 
 volumes:

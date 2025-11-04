@@ -3,6 +3,7 @@
 # Script to run web-app with predefined environment variables
 
 API_BASE_URL=http://localhost:3000 \
+WEBSOCKET_URL=http://localhost:5000 \
 KEYCLOAK_SERVER_URL=https://keycloak.iit.vn \
 KEYCLOAK_REALM=master \
 KEYCLOAK_API_CLIENT_ID=BE-log-monitoring \

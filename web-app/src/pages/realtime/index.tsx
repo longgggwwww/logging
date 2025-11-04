@@ -1,22 +1,22 @@
+import { getProjects } from '@/services/log';
 import { EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-components';
 import {
-  Badge,
-  Card,
-  Collapse,
-  Descriptions,
-  Drawer,
-  Select,
-  Space,
-  Table,
-  Tag,
-  Typography,
+    Badge,
+    Card,
+    Collapse,
+    Descriptions,
+    Drawer,
+    Select,
+    Space,
+    Table,
+    Tag,
+    Typography,
 } from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { getProjects } from '@/services/log';
 
 const { Text, Paragraph } = Typography;
 
@@ -57,8 +57,11 @@ const Realtime: React.FC = () => {
 
     console.log('🔌 Connecting to Socket.IO server...');
 
+    // Get WebSocket URL from environment variable or use default
+    const websocketUrl = process.env.WEBSOCKET_URL || 'http://localhost:5000';
+
     // Connect to realtime-service
-    const socket = io('http://localhost:5000', {
+    const socket = io(websocketUrl, {
       transports: ['websocket', 'polling'],
       reconnectionDelay: 1000,
       reconnection: true,
