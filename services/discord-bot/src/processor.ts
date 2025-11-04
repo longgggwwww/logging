@@ -1,6 +1,12 @@
 import { conf } from './config.js';
 import { LogMessage } from './types.js';
-import { Client, TextChannel, ChannelType, CategoryChannel, PermissionFlagsBits } from 'discord.js';
+import {
+  Client,
+  TextChannel,
+  ChannelType,
+  CategoryChannel,
+  PermissionFlagsBits,
+} from 'discord.js';
 
 let discordClient: Client;
 let generalChannelCache: TextChannel | null = null;
@@ -40,10 +46,13 @@ export const processMessage = async ({
     }
 
     const project = logData.project;
-    console.log(`📨 Processing message for project: ${project}`);
+    const isTest = logData._isTest === true;
+    console.log(
+      `📨 Processing ${isTest ? 'TEST' : ''} message for project: ${project}`
+    );
 
-    // Get or create channel
-    const channel = await getOrCreateChannel(project);
+    // Get or create channel (Test or Projects category based on _isTest flag)
+    const channel = await getOrCreateChannel(project, isTest);
 
     if (!channel) {
       console.error(`❌ Failed to get or create channel for ${project}`);
@@ -55,12 +64,14 @@ export const processMessage = async ({
 
     console.log(`✅ Message sent to channel: ${channel.name}`);
 
-    // Check if message should also be sent to general channel
-    if (shouldSendToGeneralChannel(logData)) {
+    // Check if message should also be sent to general channel (only for non-test messages)
+    if (!isTest && shouldSendToGeneralChannel(logData)) {
       const generalChannel = await getOrCreateGeneralChannel();
       if (generalChannel) {
         await sendMessageToChannel(generalChannel, logData);
-        console.log(`✅ Message also sent to general channel: ${generalChannel.name}`);
+        console.log(
+          `✅ Message also sent to general channel: ${generalChannel.name}`
+        );
       }
     }
   } catch (error: any) {
@@ -70,13 +81,15 @@ export const processMessage = async ({
 };
 
 const getOrCreateCategory = async (
-  guild: any
+  guild: any,
+  isTest = false
 ): Promise<CategoryChannel | null> => {
-  const categoryName = 'Projects';
+  const categoryName = isTest ? 'Test' : 'Projects';
 
   // Check if category already exists
   let category = guild.channels.cache.find(
-    (ch: any) => ch.name === categoryName && ch.type === ChannelType.GuildCategory
+    (ch: any) =>
+      ch.name === categoryName && ch.type === ChannelType.GuildCategory
   ) as CategoryChannel;
 
   if (category) {
@@ -88,7 +101,7 @@ const getOrCreateCategory = async (
     category = await guild.channels.create({
       name: categoryName,
       type: ChannelType.GuildCategory,
-      reason: 'Category for project log channels',
+      reason: `Category for ${isTest ? 'test' : 'project'} log channels`,
       permissionOverwrites: [
         {
           id: guild.id, // @everyone role
@@ -106,7 +119,8 @@ const getOrCreateCategory = async (
 };
 
 const getOrCreateChannel = async (
-  projectName: string
+  projectName: string,
+  isTest = false
 ): Promise<TextChannel | null> => {
   if (!discordClient || !conf.discord.guildId) {
     console.error('❌ Discord client or guild ID not set');
@@ -119,30 +133,22 @@ const getOrCreateChannel = async (
     return null;
   }
 
-  // Get or create category first
-  const category = await getOrCreateCategory(guild);
+  // Get or create category first (Test or Projects based on isTest flag)
+  const category = await getOrCreateCategory(guild, isTest);
   if (!category) {
     console.error('❌ Failed to get or create category');
     return null;
   }
 
-  // Check if channel already exists
+  // Check if channel already exists IN THE SAME CATEGORY
   let channel = guild.channels.cache.find(
-    (ch) => ch.name === projectName && ch.type === ChannelType.GuildText
+    (ch) =>
+      ch.name === projectName &&
+      ch.type === ChannelType.GuildText &&
+      ch.parentId === category.id // Must be in the same category
   ) as TextChannel;
 
   if (channel) {
-    // Move channel to category if not already there
-    if (channel.parentId !== category.id) {
-      try {
-        await channel.setParent(category.id, {
-          reason: `Moving ${projectName} to category ${category.name}`,
-        });
-        console.log(`📁 Moved channel ${channel.name} to category: ${category.name}`);
-      } catch (error) {
-        console.error('❌ Error moving channel to category:', error);
-      }
-    }
     return channel;
   }
 
@@ -152,7 +158,7 @@ const getOrCreateChannel = async (
       name: projectName,
       type: ChannelType.GuildText,
       parent: category.id,
-      reason: `Channel for project ${projectName} logs`,
+      reason: `Channel for ${isTest ? 'test' : 'project'} ${projectName} logs`,
       permissionOverwrites: [
         {
           id: guild.id, // @everyone role
@@ -161,7 +167,9 @@ const getOrCreateChannel = async (
         },
       ],
     });
-    console.log(`🆕 Created new channel: ${channel.name} in category: ${category.name} (readonly)`);
+    console.log(
+      `🆕 Created new channel: ${channel.name} in category: ${category.name} (readonly)`
+    );
     return channel;
   } catch (error) {
     console.error('❌ Error creating channel:', error);
@@ -224,7 +232,7 @@ const getColorForType = (type?: string): number => {
 
 const shouldSendToGeneralChannel = (logData: LogMessage): boolean => {
   const { generalChannelFilter } = conf.discord;
-  
+
   if (!generalChannelFilter.enabled) {
     return false;
   }
@@ -235,7 +243,8 @@ const shouldSendToGeneralChannel = (logData: LogMessage): boolean => {
   );
 
   // Check if severity code meets minimum
-  const meetsMinSeverity = logData.response?.code >= generalChannelFilter.minSeverityCode;
+  const meetsMinSeverity =
+    logData.response?.code >= generalChannelFilter.minSeverityCode;
 
   return isCriticalType || meetsMinSeverity;
 };
@@ -247,7 +256,7 @@ const getOrCreateGeneralChannel = async (): Promise<TextChannel | null> => {
       // Verify channel still exists
       await generalChannelCache.fetch();
       return generalChannelCache;
-    } catch (error) {
+    } catch {
       console.warn('⚠️  Cached general channel no longer valid, will recreate');
       generalChannelCache = null;
     }
@@ -310,15 +319,8 @@ const getOrCreateGeneralChannel = async (): Promise<TextChannel | null> => {
       type: ChannelType.GuildText,
       topic: 'General log channel for warnings and errors from all projects',
       reason: 'Channel for general warning and error logs',
-      permissionOverwrites: [
-        {
-          id: guild.id, // @everyone role
-          deny: [PermissionFlagsBits.SendMessages],
-          allow: [PermissionFlagsBits.ViewChannel],
-        },
-      ],
     });
-    console.log(`🆕 Created new general channel: ${channel.name} (readonly)`);
+    console.log(`🆕 Created new general channel: ${channel.name}`);
     generalChannelCache = channel; // Cache the newly created channel
     return channel;
   } catch (error) {
