@@ -1,35 +1,3 @@
-export interface Config {
-  kafka: {
-    clientId: string;
-    brokers: string[];
-    connectionTimeout: number;
-    requestTimeout: number;
-  };
-  discord: {
-    guildId: string;
-    maxRetries: number;
-    retryDelay: number;
-    timeout: number;
-    filter: {
-      enabled: boolean;
-      minSeverityCode: number;
-      criticalTypes: string[];
-    };
-    generalChannelFilter: {
-      enabled: boolean;
-      minSeverityCode: number;
-      criticalTypes: string[];
-    };
-  };
-  processing: {
-    maxRetries: number;
-    retryDelay: number;
-  };
-  topics: {
-    main: string;
-  };
-}
-
 export interface LogMessage {
   project: string;
   function: string;

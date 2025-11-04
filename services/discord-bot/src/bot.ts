@@ -1,34 +1,36 @@
-import * as dotenv from 'dotenv';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { registerCommands, setupCommandHandlers } from './commands/index.js';
 import { onReady } from './events/ready.js';
 import { consumer } from './kafka.js';
-import { CONFIG } from './config.js';
+import { conf } from './config.js';
 import { processMessage, setDiscordClient } from './processor.js';
 
-// Load environment variables
-dotenv.config();
+let client: Client | null = null;
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+export const initializeBot = async (): Promise<Client> => {
+  client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Set Discord client for processor
-setDiscordClient(client);
+  // Set Discord client for processor
+  setDiscordClient(client);
 
-client.once('clientReady', async () => {
-  console.log('🤖 Discord bot is ready!');
-  onReady();
+  client.once('clientReady', async () => {
+    console.log('🤖 Discord bot is ready!');
+    onReady();
 
-  // Register slash commands
-  await registerCommands();
+    // Register slash commands
+    await registerCommands();
 
-  // Setup command handlers
-  setupCommandHandlers(client);
+    // Setup command handlers
+    setupCommandHandlers(client!);
 
-  // Start Kafka consumer after bot is ready
-  await startKafkaConsumer();
-});
+    // Start Kafka consumer after bot is ready
+    await startKafkaConsumer();
+  });
 
-client.login(process.env.DISCORD_TOKEN);
+  await client.login(conf.discord.token);
+  
+  return client;
+};
 
 const startKafkaConsumer = async (): Promise<void> => {
   try {
@@ -38,12 +40,10 @@ const startKafkaConsumer = async (): Promise<void> => {
 
     // Subscribe to main topic only
     await consumer.subscribe({
-      topics: [CONFIG.topics.main],
+      topics: [conf.topics.main],
       fromBeginning: false,
     });
-    console.log(
-      `✅ Subscribed to topic: ${CONFIG.topics.main}`
-    );
+    console.log(`✅ Subscribed to topic: ${conf.topics.main}`);
 
     // Run consumer
     await consumer.run({
@@ -61,16 +61,20 @@ const startKafkaConsumer = async (): Promise<void> => {
   }
 };
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
+export const shutdown = async (): Promise<void> => {
   console.log('\n⏹️  Shutting down gracefully...');
   try {
     await consumer.disconnect();
     console.log('✅ Disconnected from Kafka');
-    client.destroy();
+    
+    if (client) {
+      client.destroy();
+      console.log('✅ Discord client destroyed');
+    }
+    
     process.exit(0);
   } catch (error) {
     console.error('❌ Error during shutdown:', error);
     process.exit(1);
   }
-});
+};
