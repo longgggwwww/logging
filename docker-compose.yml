@@ -1,80 +1,65 @@
 services:
-  api:
-    build:
-      context: .
-      dockerfile: ./services/api/Dockerfile
-    container_name: api
+  # ============================================
+  # INFRASTRUCTURE LAYER
+  # ============================================
+  
+  postgres:
+    image: postgres:15
+    container_name: postgres
     environment:
-      MONGO_URL: ${MONGO_URL:-mongodb://longgggwww:123456@mongodb:27017/logs?authSource=admin}
-      REDIS_URL: redis://redis:6379
-      KEYCLOAK_URL: ${KEYCLOAK_URL:?}
-      KEYCLOAK_BE_CLIENT_ID: ${KEYCLOAK_BE_CLIENT_ID:?}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
-      SESSION_SECRET: ${SESSION_SECRET:-session-secret}
+      POSTGRES_DB: ${POSTGRES_DB:-kafka}
+      POSTGRES_USER: ${POSTGRES_USER:-longgggwww}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql
+    networks:
+      - kafka-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-longgggwww}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-longgggwww}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-123456}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-logs}
     ports:
-      - 3000:3000
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
     networks:
       - kafka-network
-    depends_on:
-      - mongodb
-      - redis
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
-  discord-bot:
-    build:
-      context: .
-      dockerfile: ./services/discord-bot/Dockerfile
-    container_name: discord-bot
-    environment:
-      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-      DISCORD_TOKEN: ${DISCORD_BOT_TOKEN:?DISCORD_BOT_TOKEN is not set}
-      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:?DISCORD_GUILD_ID is not set}
-      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?DISCORD_CLIENT_ID is not set}
-      DISCORD_CRITICAL_TYPES: ERROR
-      DISCORD_MIN_SEVERITY_CODE: 500
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
     networks:
       - kafka-network
-    depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
-      - kafka-init
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
-  fcm:
-    build:
-      context: .
-      dockerfile: ./services/fcm/Dockerfile
-    container_name: fcm
-    environment:
-      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-    networks:
-      - kafka-network
-    depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
-      - kafka-init
-    restart: unless-stopped
-
-  realtime:
-    build:
-      context: .
-      dockerfile: ./services/realtime/Dockerfile
-    container_name: realtime
-    environment:
-      WEBSOCKET_CORS_ORIGIN: ${WEBSOCKET_CORS_ORIGIN:-*}
-      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-    ports:
-      - 5000:3000
-    networks:
-      - kafka-network
-    depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
-      - kafka-init
-    restart: unless-stopped
+  # ============================================
+  # KAFKA CLUSTER
+  # ============================================
 
   kafka-1:
     image: apache/kafka:3.7.0
@@ -94,11 +79,19 @@ services:
       KAFKA_NUM_PARTITIONS: 3
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
     ports:
-      - 19092:19092
+      - "19092:19092"
     networks:
       - kafka-network
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
 
   kafka-2:
     image: apache/kafka:3.7.0
@@ -118,12 +111,19 @@ services:
       KAFKA_NUM_PARTITIONS: 3
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
     ports:
-      - 29092:29092
+      - "29092:29092"
     networks:
       - kafka-network
-
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
 
   kafka-3:
     image: apache/kafka:3.7.0
@@ -143,27 +143,43 @@ services:
       KAFKA_NUM_PARTITIONS: 3
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
     ports:
-      - 39092:39092
+      - "39092:39092"
     networks:
       - kafka-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
 
   kafka-init:
     image: apache/kafka:3.7.0
     container_name: kafka-init
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        sleep 20
-        /opt/kafka/bin/kafka-topics.sh --create --topic logs --bootstrap-server kafka-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
-        /opt/kafka/bin/kafka-topics.sh --create --topic logs-dlq --bootstrap-server kafka-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
-        /opt/kafka/bin/kafka-topics.sh --create --topic logs-retry --bootstrap-server kafka-1:9092 --partitions 3 --replication-factor 3 --if-not-exists
     networks:
       - kafka-network
     depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
-    restart: no
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for Kafka cluster to be ready..."
+        sleep 10
+        echo "Creating topics..."
+        /opt/kafka/bin/kafka-topics.sh --create --topic logs --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        /opt/kafka/bin/kafka-topics.sh --create --topic logs-dlq --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        /opt/kafka/bin/kafka-topics.sh --create --topic logs-retry --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --partitions 3 --replication-factor 3 --if-not-exists
+        echo "Topics created successfully!"
+    restart: "no"
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -171,16 +187,20 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kraft-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: 
-      KAFKA_CLUSTERS_0_KRAFT: true
+      KAFKA_CLUSTERS_0_ZOOKEEPER: ""
+      KAFKA_CLUSTERS_0_KRAFT: "true"
     ports:
-      - 8080:8080
+      - "8080:8080"
     networks:
       - kafka-network
     depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ============================================
+  # APPLICATION LAYER
+  # ============================================
 
   processor:
     build:
@@ -194,49 +214,86 @@ services:
     networks:
       - kafka-network
     depends_on:
-      - mongodb
-      - redis
-      - kafka-1
-      - kafka-2
-      - kafka-3
-      - kafka-init
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
-  mongodb:
-    image: mongo:7.0
-    container_name: mongodb
+  api:
+    build:
+      context: .
+      dockerfile: ./services/api/Dockerfile
+    container_name: api
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-longgggwww}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-123456}
-      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-logs}
+      MONGO_URL: ${MONGO_URL:-mongodb://longgggwww:123456@mongodb:27017/logs?authSource=admin}
+      REDIS_URL: redis://redis:6379
+      KEYCLOAK_URL: ${KEYCLOAK_URL:?}
+      KEYCLOAK_BE_CLIENT_ID: ${KEYCLOAK_BE_CLIENT_ID:?}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
+      SESSION_SECRET: ${SESSION_SECRET:-session-secret}
     ports:
-      - 27017:27017
-    volumes:
-      - mongodb_data:/data/db
+      - "3000:3000"
     networks:
       - kafka-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
-  postgres:
-    image: postgres:15
-    container_name: postgres
+  realtime:
+    build:
+      context: .
+      dockerfile: ./services/realtime/Dockerfile
+    container_name: realtime
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-kafka}
-      POSTGRES_USER: ${POSTGRES_USER:-longgggwww}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql
+      WEBSOCKET_CORS_ORIGIN: ${WEBSOCKET_CORS_ORIGIN:-*}
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    ports:
+      - "5000:3000"
     networks:
       - kafka-network
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
+  discord-bot:
+    build:
+      context: .
+      dockerfile: ./services/discord-bot/Dockerfile
+    container_name: discord-bot
+    environment:
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      DISCORD_TOKEN: ${DISCORD_BOT_TOKEN:?DISCORD_BOT_TOKEN is not set}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:?DISCORD_GUILD_ID is not set}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?DISCORD_CLIENT_ID is not set}
+      DISCORD_CRITICAL_TYPES: ERROR
+      DISCORD_MIN_SEVERITY_CODE: 500
     networks:
       - kafka-network
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  fcm:
+    build:
+      context: .
+      dockerfile: ./services/fcm/Dockerfile
+    container_name: fcm
+    environment:
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    networks:
+      - kafka-network
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
 volumes:
   postgres_data:

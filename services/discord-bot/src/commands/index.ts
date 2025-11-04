@@ -1,9 +1,6 @@
 import { Client, REST, Routes } from 'discord.js';
-import * as dotenv from 'dotenv';
 import * as logCommand from './log.js';
 import * as pingCommand from './ping.js';
-
-dotenv.config();
 
 export interface Command {
   data: any;

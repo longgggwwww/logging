@@ -34,7 +34,6 @@
     "typescript-eslint": "^8.46.2"
   },
   "dependencies": {
-    "kafkajs": "^2.2.4",
-    "dotenv": "^16.4.5"
+    "kafkajs": "^2.2.4"
   }
 }

@@ -1,8 +1,4 @@
-import * as dotenv from 'dotenv';
 import { initializeBot, shutdown } from './bot.js';
-
-// Load environment variables
-dotenv.config();
 
 // ============================================
 // START BOT
