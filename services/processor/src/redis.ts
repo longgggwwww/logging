@@ -23,7 +23,10 @@ export async function disconnectRedis(): Promise<void> {
   await redisPublisher.quit();
 }
 
-export async function publishInvalidateLogs(projectId: string, functionId: string): Promise<void> {
+export async function publishInvalidateLogs(
+  projectId: string,
+  functionId: string,
+): Promise<void> {
   const message = JSON.stringify({ projectId, functionId });
   const maxRetries = 3;
   let attempt = 0;
@@ -31,15 +34,22 @@ export async function publishInvalidateLogs(projectId: string, functionId: strin
   while (attempt < maxRetries) {
     try {
       await redisPublisher.publish("invalidate:logs", message);
-      console.log(`📤 Published cache invalidation for project ${projectId}, function ${functionId}`);
+      console.log(
+        `📤 Published cache invalidation for project ${projectId}, function ${functionId}`,
+      );
       return;
     } catch (error) {
       attempt++;
-      console.error(`❌ Failed to publish cache invalidation (attempt ${attempt}/${maxRetries}):`, error);
+      console.error(
+        `❌ Failed to publish cache invalidation (attempt ${attempt}/${maxRetries}):`,
+        error,
+      );
       if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
       }
     }
   }
-  console.error(`❌ Failed to publish cache invalidation after ${maxRetries} attempts`);
+  console.error(
+    `❌ Failed to publish cache invalidation after ${maxRetries} attempts`,
+  );
 }

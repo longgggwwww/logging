@@ -1,5 +1,5 @@
 {
-  "name": "log-processor",
+  "name": "processor",
   "version": "1.0.0",
   "type": "module",
   "description": "Kafka consumer service to process error logs and store to PostgreSQL using Prisma",
@@ -19,7 +19,7 @@
     "postgresql",
     "logging"
   ],
-  "author": "",
+  "author": "DANH PHI LONG + AI",
   "license": "ISC",
   "dependencies": {
     "@types/redis": "^4.0.10",
