@@ -1,0 +1,49 @@
+FROM node:20 AS builder
+
+WORKDIR /app
+
+# copy package files first for npm install caching
+COPY package*.json ./
+
+# Prefer npm ci when lockfile is available, fall back to npm install
+RUN --mount=type=cache,target=/root/.npm \
+    if [ -f package-lock.json ]; then npm ci --production=false --legacy-peer-deps; else npm install --legacy-peer-deps; fi
+
+# copy rest of sources and build
+COPY . .
+
+# Set build arguments
+ARG API_BASE_URL
+ARG WEBSOCKET_URL
+ARG KEYCLOAK_URL
+ARG KEYCLOAK_REALM
+ARG KEYCLOAK_BE_CLIENT_ID
+ARG KEYCLOAK_FE_CLIENT_ID
+ARG KEYCLOAK_CLIENT_SECRET
+
+# Set environment variables for build
+ENV NODE_ENV=production
+ENV API_BASE_URL=${API_BASE_URL:-http://localhost:3000}
+ENV WEBSOCKET_URL=${WEBSOCKET_URL:-http://localhost:5000}
+ENV KEYCLOAK_URL=${KEYCLOAK_URL}
+ENV KEYCLOAK_REALM=${KEYCLOAK_REALM:-master}
+ENV KEYCLOAK_BE_CLIENT_ID=${KEYCLOAK_BE_CLIENT_ID:-api-service}
+ENV KEYCLOAK_FE_CLIENT_ID=${KEYCLOAK_FE_CLIENT_ID:-web-app-client}
+ENV KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-keycloak-client-secret}
+
+RUN npm run build
+
+FROM nginx:stable-alpine
+
+# Remove default nginx index page
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy compiled static files from builder (ant-design-pro uses `dist`)
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom nginx config (expects `nginx.conf` at project root)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
