@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SSO Check</title>
+</head>
+<body>
+    <script>
+        // Silent SSO check iframe
+        parent.postMessage(location.href, location.origin);
+    </script>
+</body>
+</html>

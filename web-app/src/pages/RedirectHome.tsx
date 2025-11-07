@@ -1,0 +1,105 @@
+import { history, useModel } from '@umijs/max';
+import { useEffect, useState } from 'react';
+import {
+  initKeycloakWithSession,
+  isKeycloakAuthenticated,
+} from '@/services/keycloak';
+
+export default () => {
+  const { initialState } = useModel('@@initialState');
+  const [hasRedirected, setHasRedirected] = useState(false);
+
+  useEffect(() => {
+    // Execute once: if fetchUserInfo exists, call to restore session first
+    const doRedirect = async () => {
+      if (hasRedirected) return;
+
+      // start redirect flow
+
+      try {
+        if (
+          initialState &&
+          typeof (initialState as any).fetchUserInfo === 'function'
+        ) {
+          await (initialState as any).fetchUserInfo();
+        } else {
+          // If runtime does not provide fetchUserInfo (routes with layout:false may not initialize),
+          // try to restore Keycloak session directly
+          // no fetchUserInfo, try restoring Keycloak session directly
+          try {
+            await initKeycloakWithSession();
+          } catch (err) {
+            console.warn('RedirectHome: initKeycloakWithSession failed', err);
+          }
+        }
+      } catch (e) {
+        // fetchUserInfo may redirect or throw — just log and continue
+        console.warn('RedirectHome: fetchUserInfo threw', e);
+      }
+
+      const isAuth = isKeycloakAuthenticated();
+      // isAuth evaluated
+
+      const go = (to: string) => {
+        try {
+          history.push(to);
+        } catch (_err) {
+          // Fallback to full page redirect if history does not work
+          window.location.href = to;
+        }
+      };
+
+      if (isAuth) {
+        go('/realtime');
+        setHasRedirected(true);
+        return;
+      }
+      go('/user/login');
+      setHasRedirected(true);
+
+      // Safety fallback: if not redirected after 2s (edge case), force full redirect
+      setTimeout(() => {
+        if (!hasRedirected) {
+          const fallback = isKeycloakAuthenticated()
+            ? '/realtime'
+            : '/user/login';
+          console.warn('RedirectHome: fallback redirect to', fallback);
+          window.location.href = fallback;
+        }
+      }, 2000);
+    };
+
+    doRedirect();
+    // only run when component mounts or initialState changes
+  }, [initialState, hasRedirected]);
+
+  // If already redirected, show loading
+  if (hasRedirected) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
+        Redirecting...
+      </div>
+    );
+  }
+
+  // While waiting for fetch/restore session, show a placeholder (do not redirect immediately)
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+      }}
+    >
+      Loading...
+    </div>
+  );
+};
