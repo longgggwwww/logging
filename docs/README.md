@@ -73,12 +73,13 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 - **[QUICK_START.md](./QUICK_START.md)** - Hướng dẫn quick start
 
 ### 🚀 CI/CD Documentation
-- **[../CICD_SUMMARY.md](../CICD_SUMMARY.md)** - Complete CI/CD setup summary
+- **[CICD_SUMMARY.md](./CICD_SUMMARY.md)** - Complete CI/CD setup summary
 - **[CICD_QUICK_START.md](./CICD_QUICK_START.md)** - Quick start guide
 - **[CICD_SETUP.md](./CICD_SETUP.md)** - Detailed setup guide (Vietnamese)
 - **[CICD_DIAGRAM.md](./CICD_DIAGRAM.md)** - Visual diagrams & flow
 - **[CICD_CHECKLIST.md](./CICD_CHECKLIST.md)** - Step-by-step checklist
 - **[REBUILD_TRIGGER.md](./REBUILD_TRIGGER.md)** - 🔁 Rebuild trigger guide (NEW)
+- **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - NPM workspaces migration guide
 
 ### 📊 Log Processor Service Documentation
 - **[LOG_PROCESSOR_IMPLEMENTATION.md](./LOG_PROCESSOR_IMPLEMENTATION.md)** - ✨ Complete implementation summary
