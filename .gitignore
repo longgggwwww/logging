@@ -1,0 +1,9 @@
+# Files and directories
+node_modules/
+dist/
+
+# Google Service Account
+service-account.json
+
+# Environment
+.env
