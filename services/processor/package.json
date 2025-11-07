@@ -1,0 +1,32 @@
+{
+  "name": "processor",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Kafka consumer service to process error logs and store to PostgreSQL using Prisma",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write .",
+    "fix:all": "npm run lint:fix && npm run format"
+  },
+  "keywords": [
+    "kafka",
+    "consumer",
+    "prisma",
+    "postgresql",
+    "logging"
+  ],
+  "author": "DANH PHI LONG + AI",
+  "license": "ISC",
+  "dependencies": {
+    "@types/redis": "^4.0.10",
+    "mongoose": "^7.4.8",
+    "redis": "^5.9.0"
+  },
+  "devDependencies": {
+    "@types/kafkajs": "^1.8.2"
+  }
+}
