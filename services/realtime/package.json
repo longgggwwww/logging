@@ -1,0 +1,32 @@
+{
+  "name": "realtime-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Real-time WebSocket service for pushing log messages to web-app",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsc && node --env-file .env dist/index.js",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write .",
+    "fix:all": "npm run lint:fix && npm run format"
+  },
+  "keywords": [
+    "websocket",
+    "socket.io",
+    "kafka",
+    "realtime",
+    "logs"
+  ],
+  "author": "DANH PHI LONG + AI",
+  "license": "ISC",
+  "dependencies": {
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17"
+  }
+}
