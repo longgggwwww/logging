@@ -1,0 +1,37 @@
+{
+  "name": "test-producer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Test producer for Kafka messages",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --env-file .env dist/index.js",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write .",
+    "fix:all": "npm run lint:fix && npm run format"
+  },
+  "keywords": [
+    "kafka",
+    "producer",
+    "test"
+  ],
+  "author": "DANH PHI LONG + AI",
+  "license": "ISC",
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/kafkajs": "^1.8.2",
+    "@types/node": "^24.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
+  }
+}
