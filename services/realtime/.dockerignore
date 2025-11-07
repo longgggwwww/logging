@@ -1,0 +1,11 @@
+# Ignore node modules and build output
+node_modules/
+dist/
+
+# Ignore environment variable files
+.git/
+.gitignore
+.env.*
+
+# Ignore documentation files
+*.md
