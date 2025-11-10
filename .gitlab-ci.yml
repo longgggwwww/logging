@@ -332,21 +332,8 @@ deploy-to-vps:
     - chmod 700 ~/.ssh
     - echo "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
-    - ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null || (echo "ERROR: Invalid SSH key format" && exit 1)
-    - echo "Host bastion" > ~/.ssh/config
-    - echo "  HostName $VPS_BASTION_HOST" >> ~/.ssh/config
-    - echo "  User $VPS_BASTION_USER" >> ~/.ssh/config
-    - echo "  IdentityFile ~/.ssh/id_ed25519" >> ~/.ssh/config
-    - echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-    - echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
-    - echo "" >> ~/.ssh/config
-    - echo "Host vps" >> ~/.ssh/config
-    - echo "  HostName $VPS_HOST" >> ~/.ssh/config
-    - echo "  User $VPS_USER" >> ~/.ssh/config
-    - echo "  ProxyJump bastion" >> ~/.ssh/config
-    - echo "  IdentityFile ~/.ssh/id_ed25519" >> ~/.ssh/config
-    - echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-    - echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
+    - ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
+    - printf "Host bastion\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/id_ed25519\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n\nHost vps\n  HostName %s\n  User %s\n  ProxyJump bastion\n  IdentityFile ~/.ssh/id_ed25519\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n" "$VPS_BASTION_HOST" "$VPS_BASTION_USER" "$VPS_HOST" "$VPS_USER" > ~/.ssh/config
     - chmod 600 ~/.ssh/config
   script:
     - |
