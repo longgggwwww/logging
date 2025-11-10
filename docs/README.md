@@ -73,12 +73,23 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 - **[QUICK_START.md](./QUICK_START.md)** - Hướng dẫn quick start
 
 ### 🚀 CI/CD Documentation
+
+#### GitHub Actions
 - **[CICD_SUMMARY.md](./CICD_SUMMARY.md)** - Complete CI/CD setup summary
 - **[CICD_QUICK_START.md](./CICD_QUICK_START.md)** - Quick start guide
 - **[CICD_SETUP.md](./CICD_SETUP.md)** - Detailed setup guide (Vietnamese)
 - **[CICD_DIAGRAM.md](./CICD_DIAGRAM.md)** - Visual diagrams & flow
 - **[CICD_CHECKLIST.md](./CICD_CHECKLIST.md)** - Step-by-step checklist
 - **[REBUILD_TRIGGER.md](./REBUILD_TRIGGER.md)** - 🔁 Rebuild trigger guide (NEW)
+
+#### GitLab CI/CD
+- **[GITLAB_CICD_SUMMARY.md](./GITLAB_CICD_SUMMARY.md)** - ✨ Complete implementation summary
+- **[GITLAB_CICD_QUICK_START.md](./GITLAB_CICD_QUICK_START.md)** - 🚀 Quick start guide (Vietnamese)
+- **[GITLAB_CICD_SETUP.md](./GITLAB_CICD_SETUP.md)** - 📖 Detailed setup & configuration
+- **[GITLAB_CICD_DIAGRAM.md](./GITLAB_CICD_DIAGRAM.md)** - 📊 Visual diagrams & flows
+- **[GITHUB_VS_GITLAB_CICD.md](./GITHUB_VS_GITLAB_CICD.md)** - 🔄 Platform comparison & migration tips
+
+#### Other
 - **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - NPM workspaces migration guide
 
 ### 📊 Log Processor Service Documentation

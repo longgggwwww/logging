@@ -1,0 +1,512 @@
+stages:
+  - detect
+  - build
+  - deploy
+
+variables:
+  DOCKER_BUILDKIT: 1
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_DRIVER: overlay2
+
+# Detect which services have changed
+detect-changes:
+  stage: detect
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git
+  script:
+    - |
+      # Initialize outputs
+      echo "API_CHANGED=false" > changes.env
+      echo "PROCESSOR_CHANGED=false" >> changes.env
+      echo "REALTIME_CHANGED=false" >> changes.env
+      echo "DISCORD_BOT_CHANGED=false" >> changes.env
+      echo "FCM_CHANGED=false" >> changes.env
+      echo "WEB_APP_CHANGED=false" >> changes.env
+      echo "ANY_SERVICE_CHANGED=false" >> changes.env
+      
+      # Check for changes in each service
+      if [ "$CI_PIPELINE_SOURCE" = "merge_request_event" ]; then
+        BASE_SHA=$CI_MERGE_REQUEST_TARGET_BRANCH_SHA
+      else
+        if [ "$CI_COMMIT_BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+          BASE_SHA=$(git rev-parse HEAD~1 2>/dev/null || echo "HEAD")
+        else
+          BASE_SHA=$CI_COMMIT_BEFORE_SHA
+        fi
+      fi
+      
+      echo "Comparing changes from $BASE_SHA to $CI_COMMIT_SHA"
+      
+      # Check API
+      if git diff --name-only $BASE_SHA $CI_COMMIT_SHA | grep -E '^services/api/|^services/api/.rebuild'; then
+        echo "API_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "API_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "ANY_SERVICE_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "ANY_SERVICE_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "✓ API changed"
+      fi
+      
+      # Check Processor
+      if git diff --name-only $BASE_SHA $CI_COMMIT_SHA | grep -E '^services/processor/|^services/processor/.rebuild'; then
+        echo "PROCESSOR_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "PROCESSOR_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "ANY_SERVICE_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "ANY_SERVICE_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "✓ Processor changed"
+      fi
+      
+      # Check Realtime
+      if git diff --name-only $BASE_SHA $CI_COMMIT_SHA | grep -E '^services/realtime/|^services/realtime/.rebuild'; then
+        echo "REALTIME_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "REALTIME_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "ANY_SERVICE_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "ANY_SERVICE_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "✓ Realtime changed"
+      fi
+      
+      # Check Discord Bot
+      if git diff --name-only $BASE_SHA $CI_COMMIT_SHA | grep -E '^services/discord-bot/|^services/discord-bot/.rebuild'; then
+        echo "DISCORD_BOT_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "DISCORD_BOT_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "ANY_SERVICE_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "ANY_SERVICE_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "✓ Discord Bot changed"
+      fi
+      
+      # Check FCM
+      if git diff --name-only $BASE_SHA $CI_COMMIT_SHA | grep -E '^services/fcm/|^services/fcm/.rebuild'; then
+        echo "FCM_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "FCM_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "ANY_SERVICE_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "ANY_SERVICE_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "✓ FCM changed"
+      fi
+      
+      # Check Web App
+      if git diff --name-only $BASE_SHA $CI_COMMIT_SHA | grep -E '^web-app/|^web-app/.rebuild'; then
+        echo "WEB_APP_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "WEB_APP_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "ANY_SERVICE_CHANGED=true" > changes.env.tmp && cat changes.env | grep -v "ANY_SERVICE_CHANGED" >> changes.env.tmp && mv changes.env.tmp changes.env
+        echo "✓ Web App changed"
+      fi
+      
+      echo "Changes detected:"
+      cat changes.env
+  artifacts:
+    reports:
+      dotenv: changes.env
+    expire_in: 1 hour
+  only:
+    - main
+    - merge_requests
+
+# Build API Service
+build-api:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker info
+  script:
+    - |
+      if [ "$API_CHANGED" = "true" ]; then
+        echo "Building API service..."
+        docker build \
+          --build-arg API_BASE_URL=${API_BASE_URL:-http://api:3000} \
+          --build-arg WEBSOCKET_URL=${WEBSOCKET_URL:-http://realtime:3000} \
+          --build-arg KEYCLOAK_URL=${KEYCLOAK_URL:-https://keycloak.iit.vn} \
+          --build-arg KEYCLOAK_REALM=${KEYCLOAK_REALM:-master} \
+          --build-arg KEYCLOAK_BE_CLIENT_ID=${KEYCLOAK_BE_CLIENT_ID:-BE-log-monitoring} \
+          --build-arg KEYCLOAK_FE_CLIENT_ID=${KEYCLOAK_FE_CLIENT_ID:-FE-log-monitoring} \
+          --build-arg KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET} \
+          -t api:latest \
+          -t api:${CI_COMMIT_SHA} \
+          -f ./services/api/Dockerfile \
+          .
+        docker save api:latest -o api.tar
+      else
+        echo "Skipping API - no changes detected"
+        exit 0
+      fi
+  artifacts:
+    paths:
+      - api.tar
+    expire_in: 1 hour
+  dependencies:
+    - detect-changes
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - services/api/**/*
+        - services/api/.rebuild
+      when: always
+    - when: never
+
+# Build Processor Service
+build-processor:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker info
+  script:
+    - |
+      if [ "$PROCESSOR_CHANGED" = "true" ]; then
+        echo "Building Processor service..."
+        docker build \
+          -t processor:latest \
+          -t processor:${CI_COMMIT_SHA} \
+          -f ./services/processor/Dockerfile \
+          .
+        docker save processor:latest -o processor.tar
+      else
+        echo "Skipping Processor - no changes detected"
+        exit 0
+      fi
+  artifacts:
+    paths:
+      - processor.tar
+    expire_in: 1 hour
+  dependencies:
+    - detect-changes
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - services/processor/**/*
+        - services/processor/.rebuild
+      when: always
+    - when: never
+
+# Build Realtime Service
+build-realtime:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker info
+  script:
+    - |
+      if [ "$REALTIME_CHANGED" = "true" ]; then
+        echo "Building Realtime service..."
+        docker build \
+          -t realtime:latest \
+          -t realtime:${CI_COMMIT_SHA} \
+          -f ./services/realtime/Dockerfile \
+          .
+        docker save realtime:latest -o realtime.tar
+      else
+        echo "Skipping Realtime - no changes detected"
+        exit 0
+      fi
+  artifacts:
+    paths:
+      - realtime.tar
+    expire_in: 1 hour
+  dependencies:
+    - detect-changes
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - services/realtime/**/*
+        - services/realtime/.rebuild
+      when: always
+    - when: never
+
+# Build Discord Bot Service
+build-discord-bot:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker info
+  script:
+    - |
+      if [ "$DISCORD_BOT_CHANGED" = "true" ]; then
+        echo "Building Discord Bot service..."
+        docker build \
+          -t discord-bot:latest \
+          -t discord-bot:${CI_COMMIT_SHA} \
+          -f ./services/discord-bot/Dockerfile \
+          .
+        docker save discord-bot:latest -o discord-bot.tar
+      else
+        echo "Skipping Discord Bot - no changes detected"
+        exit 0
+      fi
+  artifacts:
+    paths:
+      - discord-bot.tar
+    expire_in: 1 hour
+  dependencies:
+    - detect-changes
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - services/discord-bot/**/*
+        - services/discord-bot/.rebuild
+      when: always
+    - when: never
+
+# Build FCM Service
+build-fcm:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker info
+  script:
+    - |
+      if [ "$FCM_CHANGED" = "true" ]; then
+        echo "Building FCM service..."
+        docker build \
+          -t fcm:latest \
+          -t fcm:${CI_COMMIT_SHA} \
+          -f ./services/fcm/Dockerfile \
+          .
+        docker save fcm:latest -o fcm.tar
+      else
+        echo "Skipping FCM - no changes detected"
+        exit 0
+      fi
+  artifacts:
+    paths:
+      - fcm.tar
+    expire_in: 1 hour
+  dependencies:
+    - detect-changes
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - services/fcm/**/*
+        - services/fcm/.rebuild
+      when: always
+    - when: never
+
+# Build Web App
+build-web-app:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker info
+  script:
+    - |
+      if [ "$WEB_APP_CHANGED" = "true" ]; then
+        echo "Building Web App..."
+        docker build \
+          --no-cache \
+          --build-arg API_BASE_URL=${API_BASE_URL:-http://api:3000} \
+          --build-arg WEBSOCKET_URL=${WEBSOCKET_URL:-http://realtime:3000} \
+          --build-arg KEYCLOAK_URL=${KEYCLOAK_URL:-https://keycloak.iit.vn} \
+          --build-arg KEYCLOAK_REALM=${KEYCLOAK_REALM:-master} \
+          --build-arg KEYCLOAK_BE_CLIENT_ID=${KEYCLOAK_BE_CLIENT_ID:-BE-log-monitoring} \
+          --build-arg KEYCLOAK_FE_CLIENT_ID=${KEYCLOAK_FE_CLIENT_ID:-FE-log-monitoring} \
+          --build-arg KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET} \
+          -t web-app:latest \
+          -t web-app:${CI_COMMIT_SHA} \
+          -f ./web-app/Dockerfile \
+          ./web-app
+        docker save web-app:latest -o web-app.tar
+      else
+        echo "Skipping Web App - no changes detected"
+        exit 0
+      fi
+  artifacts:
+    paths:
+      - web-app.tar
+    expire_in: 1 hour
+  dependencies:
+    - detect-changes
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - web-app/**/*
+        - web-app/.rebuild
+      when: always
+    - when: never
+
+# Deploy to VPS
+deploy-to-vps:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client rsync bash ncurses
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # Decode base64 encoded SSH key if needed
+    - echo "$VPS_SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa 2>/dev/null || echo "$VPS_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    # Configure SSH for bastion host
+    - |
+      cat >> ~/.ssh/config << EOF
+      Host bastion
+        HostName $VPS_BASTION_HOST
+        User $VPS_BASTION_USER
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+      
+      Host vps
+        HostName $VPS_HOST
+        User $VPS_USER
+        ProxyJump bastion
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+      EOF
+    - chmod 600 ~/.ssh/config
+  script:
+    - |
+      # Create deployment directory on VPS
+      ssh vps "mkdir -p ~/log-monitoring/deployment"
+      
+      # Transfer Docker images to VPS (only changed services)
+      if [ "$API_CHANGED" = "true" ] && [ -f api.tar ]; then
+        echo "Transferring API image..."
+        scp api.tar vps:~/log-monitoring/deployment/
+      fi
+      
+      if [ "$PROCESSOR_CHANGED" = "true" ] && [ -f processor.tar ]; then
+        echo "Transferring Processor image..."
+        scp processor.tar vps:~/log-monitoring/deployment/
+      fi
+      
+      if [ "$REALTIME_CHANGED" = "true" ] && [ -f realtime.tar ]; then
+        echo "Transferring Realtime image..."
+        scp realtime.tar vps:~/log-monitoring/deployment/
+      fi
+      
+      if [ "$DISCORD_BOT_CHANGED" = "true" ] && [ -f discord-bot.tar ]; then
+        echo "Transferring Discord Bot image..."
+        scp discord-bot.tar vps:~/log-monitoring/deployment/
+      fi
+      
+      if [ "$FCM_CHANGED" = "true" ] && [ -f fcm.tar ]; then
+        echo "Transferring FCM image..."
+        scp fcm.tar vps:~/log-monitoring/deployment/
+      fi
+      
+      if [ "$WEB_APP_CHANGED" = "true" ] && [ -f web-app.tar ]; then
+        echo "Transferring Web App image..."
+        scp web-app.tar vps:~/log-monitoring/deployment/
+      fi
+      
+      # Transfer Docker Compose and scripts
+      echo "Transferring Docker Compose and init scripts..."
+      scp docker-compose.yml vps:~/log-monitoring/
+      scp -r init-scripts vps:~/log-monitoring/
+      
+      # Deploy on VPS
+      ssh vps << 'ENDSSH'
+      cd ~/log-monitoring
+      
+      # Load images and mark them
+      for image in deployment/*.tar; do
+        if [ -f "$image" ]; then
+          SERVICE_NAME=$(basename "$image" .tar)
+          echo "Processing $SERVICE_NAME..."
+          
+          # Stop and remove old container
+          echo "Stopping old container..."
+          docker compose stop "$SERVICE_NAME" 2>/dev/null || true
+          docker compose rm -f "$SERVICE_NAME" 2>/dev/null || true
+          
+          # Remove old image
+          echo "Removing old image..."
+          docker rmi -f "${SERVICE_NAME}:latest" 2>/dev/null || true
+          docker rmi -f "log-monitoring-${SERVICE_NAME}" 2>/dev/null || true
+          
+          # Load new image
+          echo "Loading new image from $(basename $image)..."
+          docker load -i "$image"
+          
+          # Tag it properly for docker-compose
+          docker tag "${SERVICE_NAME}:latest" "log-monitoring-${SERVICE_NAME}:latest" 2>/dev/null || true
+          
+          touch "${image}.loaded"
+        fi
+      done
+      
+      # Determine which services to restart
+      SERVICES_TO_RESTART=()
+      
+      if [ -f deployment/api.tar.loaded ]; then
+        SERVICES_TO_RESTART+=("api")
+        rm deployment/api.tar deployment/api.tar.loaded
+      fi
+      if [ -f deployment/processor.tar.loaded ]; then
+        SERVICES_TO_RESTART+=("processor")
+        rm deployment/processor.tar deployment/processor.tar.loaded
+      fi
+      if [ -f deployment/realtime.tar.loaded ]; then
+        SERVICES_TO_RESTART+=("realtime")
+        rm deployment/realtime.tar deployment/realtime.tar.loaded
+      fi
+      if [ -f deployment/discord-bot.tar.loaded ]; then
+        SERVICES_TO_RESTART+=("discord-bot")
+        rm deployment/discord-bot.tar deployment/discord-bot.tar.loaded
+      fi
+      if [ -f deployment/fcm.tar.loaded ]; then
+        SERVICES_TO_RESTART+=("fcm")
+        rm deployment/fcm.tar deployment/fcm.tar.loaded
+      fi
+      if [ -f deployment/web-app.tar.loaded ]; then
+        SERVICES_TO_RESTART+=("web-app")
+        rm deployment/web-app.tar deployment/web-app.tar.loaded
+      fi
+      
+      # Restart only changed services
+      if [ ${#SERVICES_TO_RESTART[@]} -gt 0 ]; then
+        echo "Restarting services: ${SERVICES_TO_RESTART[@]}"
+        
+        # First, ensure all infrastructure dependencies are running
+        echo "Ensuring infrastructure services are running..."
+        docker compose up -d postgres mongodb redis kafka-1 kafka-2 kafka-3 || {
+          echo "ERROR: Failed to start infrastructure services"
+          docker compose ps
+          exit 1
+        }
+        
+        # Wait for dependencies to be healthy
+        echo "Waiting for dependencies to be ready..."
+        sleep 20
+        
+        # Check which services are actually running
+        echo "Current status:"
+        docker compose ps
+        
+        # Now restart the changed services (force recreate to use new image)
+        echo "Deploying application services..."
+        docker compose up -d --force-recreate --no-deps ${SERVICES_TO_RESTART[@]} || {
+          echo "ERROR: Failed to deploy application services"
+          docker compose ps
+          docker compose logs --tail=20
+          exit 1
+        }
+        
+        echo "Deployment completed successfully!"
+        echo "Restarted services:"
+        printf '  - %s\n' "${SERVICES_TO_RESTART[@]}"
+      else
+        echo "No services to restart"
+      fi
+      ENDSSH
+      
+      # Verify deployment
+      echo "Verifying deployment..."
+      ssh vps << 'ENDSSH'
+      cd ~/log-monitoring
+      echo "Running services:"
+      docker compose ps
+      ENDSSH
+      
+      # Cleanup old images
+      echo "Cleaning up old Docker images..."
+      ssh vps << 'ENDSSH'
+      docker image prune -f
+      ENDSSH
+  dependencies:
+    - detect-changes
+    - build-api
+    - build-processor
+    - build-realtime
+    - build-discord-bot
+    - build-fcm
+    - build-web-app
+  only:
+    - main
+  when: on_success
