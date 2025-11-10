@@ -330,14 +330,11 @@ deploy-to-vps:
     - apk add --no-cache openssh-client rsync bash ncurses
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    # Write SSH private key (ed25519)
     - echo "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
-    # Validate key format
     - ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null || (echo "ERROR: Invalid SSH key format" && exit 1)
-    # Configure SSH for bastion host
     - |
-      cat >> ~/.ssh/config << EOF
+      cat >> ~/.ssh/config << 'EOF'
       Host bastion
         HostName $VPS_BASTION_HOST
         User $VPS_BASTION_USER
@@ -353,6 +350,10 @@ deploy-to-vps:
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null
       EOF
+    - sed -i "s/\$VPS_BASTION_HOST/$VPS_BASTION_HOST/g" ~/.ssh/config
+    - sed -i "s/\$VPS_BASTION_USER/$VPS_BASTION_USER/g" ~/.ssh/config
+    - sed -i "s/\$VPS_HOST/$VPS_HOST/g" ~/.ssh/config
+    - sed -i "s/\$VPS_USER/$VPS_USER/g" ~/.ssh/config
     - chmod 600 ~/.ssh/config
   script:
     - |
