@@ -5,7 +5,10 @@ stages:
 
 variables:
   DOCKER_BUILDKIT: 1
+  DOCKER_HOST: tcp://docker:2376
   DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
   DOCKER_DRIVER: overlay2
 
 # Detect which services have changed
@@ -93,11 +96,11 @@ detect-changes:
 # Build API Service
 build-api:
   stage: build
-  image: docker:24-dind
+  image: docker:24-cli
   services:
     - docker:24-dind
   before_script:
-    - docker info
+    - until docker info; do sleep 1; done
   script:
     - |
       if [ "$API_CHANGED" = "true" ]; then
@@ -136,11 +139,11 @@ build-api:
 # Build Processor Service
 build-processor:
   stage: build
-  image: docker:24-dind
+  image: docker:24-cli
   services:
     - docker:24-dind
   before_script:
-    - docker info
+    - until docker info; do sleep 1; done
   script:
     - |
       if [ "$PROCESSOR_CHANGED" = "true" ]; then
@@ -172,11 +175,11 @@ build-processor:
 # Build Realtime Service
 build-realtime:
   stage: build
-  image: docker:24-dind
+  image: docker:24-cli
   services:
     - docker:24-dind
   before_script:
-    - docker info
+    - until docker info; do sleep 1; done
   script:
     - |
       if [ "$REALTIME_CHANGED" = "true" ]; then
@@ -208,11 +211,11 @@ build-realtime:
 # Build Discord Bot Service
 build-discord-bot:
   stage: build
-  image: docker:24-dind
+  image: docker:24-cli
   services:
     - docker:24-dind
   before_script:
-    - docker info
+    - until docker info; do sleep 1; done
   script:
     - |
       if [ "$DISCORD_BOT_CHANGED" = "true" ]; then
@@ -244,11 +247,11 @@ build-discord-bot:
 # Build FCM Service
 build-fcm:
   stage: build
-  image: docker:24-dind
+  image: docker:24-cli
   services:
     - docker:24-dind
   before_script:
-    - docker info
+    - until docker info; do sleep 1; done
   script:
     - |
       if [ "$FCM_CHANGED" = "true" ]; then
@@ -280,11 +283,11 @@ build-fcm:
 # Build Web App
 build-web-app:
   stage: build
-  image: docker:24-dind
+  image: docker:24-cli
   services:
     - docker:24-dind
   before_script:
-    - docker info
+    - until docker info; do sleep 1; done
   script:
     - |
       if [ "$WEB_APP_CHANGED" = "true" ]; then
