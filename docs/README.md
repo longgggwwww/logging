@@ -68,6 +68,7 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 
 ### General Documentation
 - **[MESSAGE_STRUCTURE.md](./MESSAGE_STRUCTURE.md)** - Chi tiết cấu trúc message
+- **[MESSAGE_EMIT_GUIDE.md](./MESSAGE_EMIT_GUIDE.md)** - 📤 Hướng dẫn emit message vào Kafka
 - **[NEW_STRUCTURE_GUIDE.md](./NEW_STRUCTURE_GUIDE.md)** - Hướng dẫn sử dụng
 - **[UPDATE_SUMMARY.md](./UPDATE_SUMMARY.md)** - Tổng hợp thay đổi
 - **[QUICK_START.md](./QUICK_START.md)** - Hướng dẫn quick start
