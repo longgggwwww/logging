@@ -56,7 +56,7 @@ const errorLog = {
 ### 3. Send to Kafka
 ```javascript
 await producer.send({
-  topic: 'error-logs',
+  topic: 'logs',
   messages: [{
     key: errorLog.id,
     value: JSON.stringify(errorLog)

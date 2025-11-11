@@ -13,9 +13,9 @@
 │                                                                       │
 │  Topics (Replication Factor: 3, Partitions: 3)                      │
 │  ┌─────────────────────────────────────────────────────────────┐   │
-│  │ • error-logs          (Main topic)                           │   │
-│  │ • error-logs-retry    (Retry queue)                          │   │
-│  │ • error-logs-dlq      (Dead Letter Queue)                    │   │
+│  │ • logs          (Main topic)                           │   │
+│  │ • logs-retry    (Retry queue)                          │   │
+│  │ • logs-dlq      (Dead Letter Queue)                    │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
                                     │
@@ -31,7 +31,7 @@
         └──────────────┘  └──────────────┘  └──────────────┘
                                     │
                                     │ Publish to
-                                    │ 'error-logs'
+                                    │ 'logs'
                                     │
                                     ▼
             ┌───────────────────────────────────────────┐
@@ -39,8 +39,8 @@
             │                                           │
             │  ┌─────────────────────────────────┐     │
             │  │   Consumer (index.js)           │     │
-            │  │   • Subscribe: error-logs +     │     │
-            │  │                error-logs-retry │     │
+            │  │   • Subscribe: logs +     │     │
+            │  │                logs-retry │     │
             │  │   • Auto-commit: 5s interval    │     │
             │  └─────────────────────────────────┘     │
             └───────────────────────────────────────────┘
@@ -90,7 +90,7 @@
                        │                │      │
                        │                ▼      ▼
                        │        ┌──────────────────┐
-                       │        │ error-logs-retry │
+                       │        │ logs-retry │
                        │        │                  │
                        │        │ Retry with delay │
                        │        │ (Exponential     │
@@ -103,7 +103,7 @@
                        │
                        ▼                  ▼
               ┌─────────────────┐  ┌──────────────────┐
-              │ Commit Offset   │  │ error-logs-dlq   │
+              │ Commit Offset   │  │ logs-dlq   │
               │ ✅ Success      │  │                  │
               └─────────────────┘  │ Store failed msg │
                                    │ with metadata:   │
@@ -118,29 +118,40 @@
 
 ### 1️⃣ Normal Flow (Success)
 ```
-Producer → error-logs → Consumer → Discord ✅ → Commit Offset
+Producer → logs → Consumer → Discord ✅ → Commit Offset
 ```
 
-### 2️⃣ Retry Flow (Temporary Failure)
+### 2️⃣ Retry Flow (with Discord failure)
 ```
-Producer → error-logs → Consumer → Discord ❌
-                         ↓
-                    error-logs-retry
+Producer → logs → Consumer → Discord ❌
+                    ↓
+                    logs-retry
                          ↓ (wait + backoff)
                     Consumer (retry 1) → Discord ✅ → Commit Offset
 ```
 
-### 3️⃣ DLQ Flow (Permanent Failure)
+### 3️⃣ DLQ Flow (after max retries)
 ```
-Producer → error-logs → Consumer → Discord ❌
+Producer → logs → Consumer → Discord ❌
+                    ↓
+                    logs-retry
+                    ↓ (retry 1) ❌
+                    logs-retry
+                    ↓ (retry 2) ❌
+                    logs-retry
+                    ↓ (retry 3) ❌
+                    logs-dlq ⚰️
+```
+```
+Producer → logs → Consumer → Discord ❌
                          ↓
-                    error-logs-retry
+                    logs-retry
                          ↓ (attempt 1) ❌
-                    error-logs-retry
+                    logs-retry
                          ↓ (attempt 2) ❌
-                    error-logs-retry
+                    logs-retry
                          ↓ (attempt 3) ❌
-                    error-logs-dlq ⚰️
+                    logs-dlq ⚰️
                          ↓
                     Manual Review/Reprocess
 ```
@@ -178,7 +189,7 @@ Discord Retry:
 Message Retry:
   maxRetries: 3
   retryDelay: 2000ms
-  queue: error-logs-retry
+  queue: logs-retry
 ```
 
 ## 📊 Monitoring Points
@@ -217,55 +228,28 @@ Message Retry:
 
 ## 📝 Topics Schema
 
-### error-logs (Main)
+## 📋 Topic Schemas
+
+### logs (Main)
 ```json
 {
-  "timestamp": "ISO 8601 string",
-  "level": "ERROR|WARNING|CRITICAL",
-  "message": "Error description",
-  "service": "Service name"
+  "service": "string",
+  "level": "string",
+  "message": "string",
+  "timestamp": "ISO8601"
 }
 ```
 
-### error-logs-retry (Retry Queue)
+### logs-retry (Retry Queue)
+
+### logs-dlq (Dead Letter)
 ```json
 {
-  "timestamp": "ISO 8601 string",
-  "level": "ERROR|WARNING|CRITICAL",
-  "message": "Error description",
-  "service": "Service name",
-  "_retry": {
-    "attemptCount": 1,
-    "lastAttempt": "ISO 8601 string",
-    "nextRetryAfter": 1234567890
-  }
-}
-```
+  "originalTopic": "logs",
+  "originalMessage": {},
 
-### error-logs-dlq (Dead Letter)
-```json
-{
-  "originalTopic": "error-logs",
-  "originalPartition": 0,
-  "originalOffset": "12345",
-  "error": {
-    "message": "Error description",
-    "stack": "Stack trace",
-    "timestamp": "ISO 8601 string"
-  },
-  "originalData": {...},
-  "attemptCount": 3,
-  "lastAttemptTime": "ISO 8601 string"
-}
-```
+## ✅ Deployment Checklist
 
-## 🚀 Deployment Checklist
-
-- [ ] Kafka cluster running (3 nodes)
-- [ ] Topics created (error-logs, error-logs-retry, error-logs-dlq)
-- [ ] Discord webhook configured
-- [ ] Consumer deployed and running
-- [ ] Monitoring setup (metrics logging)
-- [ ] DLQ monitoring script scheduled
-- [ ] Alerting for high DLQ size
-- [ ] Backup strategy for DLQ messages
+- [ ] Kafka cluster running (3 controllers)
+- [ ] Topics created (logs, logs-retry, logs-dlq)
+- [ ] Consumer groups configured

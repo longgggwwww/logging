@@ -4,7 +4,7 @@
 
 ### ✅ Dead Letter Queue (DLQ) - CÓ RỒI! ✅
 
-**Topic**: `error-logs-dlq`
+**Topic**: `logs-dlq`
 
 **Chức năng**:
 - ✅ Tự động gửi messages thất bại sau khi hết retry vào DLQ
@@ -59,7 +59,7 @@ Attempt 3: Wait 4s (2^2 * 1000ms)
 ```
 
 #### 2️⃣ **Message Processing Retry** (Queue-based)
-- ✅ **Topic**: `error-logs-retry`
+- ✅ **Topic**: `logs-retry`
 - ✅ **Max retries**: 3 lần
 - ✅ **Delay**: 2 seconds between attempts
 - ✅ **Smart scheduling**: Messages có thể delay trước khi retry
@@ -153,13 +153,13 @@ Message fails → Send to retry queue
 ### Scenario 1: Message hợp lệ
 ```
 Input: Valid JSON with all fields
-Flow: error-logs → Parse → Validate → Discord (success) → Commit ✅
+Flow: logs → Parse → Validate → Discord (success) → Commit ✅
 ```
 
 ### Scenario 2: Discord tạm thời lỗi
 ```
 Input: Valid message but Discord API down
-Flow: error-logs → Parse → Validate → Discord (fail)
+Flow: logs → Parse → Validate → Discord (fail)
       → Retry 1 (1s delay) → Discord (fail)
       → Retry 2 (2s delay) → Discord (success) ✅
 Result: Message processed sau 2 retries
@@ -168,22 +168,22 @@ Result: Message processed sau 2 retries
 ### Scenario 3: Message không hợp lệ
 ```
 Input: JSON thiếu field "message"
-Flow: error-logs → Parse ✅ → Validate ❌
-      → error-logs-retry (attempt 1) → Validate ❌
-      → error-logs-retry (attempt 2) → Validate ❌
-      → error-logs-retry (attempt 3) → Validate ❌
-      → error-logs-dlq ⚰️
+Flow: logs → Parse ✅ → Validate ❌
+      → logs-retry (attempt 1) → Validate ❌
+      → logs-retry (attempt 2) → Validate ❌
+      → logs-retry (attempt 3) → Validate ❌
+      → logs-dlq ⚰️
 Result: Message vào DLQ để review sau
 ```
 
 ### Scenario 4: Invalid JSON
 ```
 Input: "This is not JSON"
-Flow: error-logs → Parse ❌
-      → error-logs-retry (attempt 1) → Parse ❌
-      → error-logs-retry (attempt 2) → Parse ❌
-      → error-logs-retry (attempt 3) → Parse ❌
-      → error-logs-dlq ⚰️
+Flow: logs → Parse ❌
+      → logs-retry (attempt 1) → Parse ❌
+      → logs-retry (attempt 2) → Parse ❌
+      → logs-retry (attempt 3) → Parse ❌
+      → logs-dlq ⚰️
 ```
 
 ---
@@ -216,7 +216,7 @@ node test-producer.js
 ### Trả lời câu hỏi:
 
 1. **Có Dead Letter Queue không?** 
-   → ✅ **CÓ** (`error-logs-dlq`)
+   → ✅ **CÓ** (`logs-dlq`)
 
 2. **Có Error Handling không?** 
    → ✅ **CÓ ĐẦY ĐỦ** (parse, validate, network errors)

@@ -279,7 +279,7 @@ async function logError() {
   await producer.connect();
   
   await producer.send({
-    topic: "error-logs",
+    topic: "logs",
     messages: [
       {
         key: errorLog.project,
@@ -610,7 +610,7 @@ async function handleRequest(req: Request, res: Response) {
       // ...
     };
     
-    await sendLogMessage("error-logs", log);
+    await sendLogMessage("logs", log);
     
     res.status(500).json({ error: error.message });
   }

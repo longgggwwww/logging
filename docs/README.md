@@ -101,15 +101,17 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 - **[log-processor/ARCHITECTURE_DIAGRAM.md](./log-processor/ARCHITECTURE_DIAGRAM.md)** - System architecture
 - **[log-processor/QUICK_REFERENCE.md](./log-processor/QUICK_REFERENCE.md)** - Quick reference card
 
-### ✅ **Dead Letter Queue (DLQ)**
-- Messages thất bại sau khi retry tối đa sẽ được gửi vào `error-logs-dlq`
+- **Exponential Backoff**: Tăng thời gian chờ giữa các lần retry
+- Messages thất bại sau khi retry tối đa sẽ được gửi vào `logs-dlq`
+
+#### Dead Letter Queue (DLQ)
 - Lưu trữ đầy đủ thông tin lỗi, metadata, và số lần retry
 - Cho phép phân tích và xử lý lại messages lỗi sau này
 
 ### 🔄 **Retry Mechanism**
 - **Exponential backoff**: Thời gian retry tăng theo cấp số nhân (1s, 2s, 4s...)
 - **Configurable retries**: Mặc định 3 lần retry cho Discord webhook
-- **Retry Queue**: Messages thất bại được gửi vào `error-logs-retry` để xử lý lại
+- **Retry Queue**: Messages thất bại được gửi vào `logs-retry` để xử lý lại
 
 ### 🛡️ **Error Handling**
 - **Graceful degradation**: Consumer không crash khi có lỗi
@@ -136,12 +138,12 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 ### Services
 
 1. **Discord Webhook Service** - Gửi error logs đến Discord
-   - Xử lý messages từ `error-logs` topic
+   - Xử lý messages từ `logs` topic
    - Retry mechanism với exponential backoff
    - DLQ cho messages thất bại
 
 2. **FCM Service** - Push notifications qua Firebase Cloud Messaging
-   - Consumer từ `error-logs` topic
+   - Consumer từ `logs` topic
    - Gửi notifications đến mobile devices
 
 3. **Log Processor Service** 📊 **NEW**
@@ -154,9 +156,13 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 ## 📁 Cấu trúc Topics
 
 ```
-error-logs          → Main topic (messages mới)
-error-logs-retry    → Retry queue (messages đang retry)
-error-logs-dlq      → Dead Letter Queue (messages thất bại cuối cùng)
+### Kafka Topics
+
+```
+logs          → Main topic (messages mới)
+logs-retry    → Retry queue (messages đang retry)
+logs-dlq      → Dead Letter Queue (messages thất bại cuối cùng)
+```
 logs.error.dlq      → Error logs for database storage (Log Processor)
 ```
 
@@ -215,7 +221,7 @@ Test producer sẽ gửi 5 messages:
 
 ```
 ┌─────────────────┐
-│  error-logs     │ (Main topic)
+│  logs     │ (Main topic)
 │  (new messages) │
 └────────┬────────┘
          │
@@ -234,12 +240,12 @@ Test producer sẽ gửi 5 messages:
      │     ┌─────────────────┐
      │     │ Retry <= 3?     │
      │     └────┬──────┬─────┘
-     │          │      │
+     │          │
      │        YES    NO
      │          │      │
      │          ▼      ▼
      │     ┌─────────────────┐   ┌─────────────────┐
-     │     │ error-logs-retry│   │ error-logs-dlq  │
+     │     │ logs-retry│   │ logs-dlq  │
      │     │ (Retry queue)   │   │ (Dead Letter Q) │
      │     └────────┬────────┘   └─────────────────┘
      │              │
@@ -286,7 +292,7 @@ Test producer sẽ gửi 5 messages:
 ### Message trong DLQ:
 ```json
 {
-  "originalTopic": "error-logs",
+  "originalTopic": "logs",
   "originalPartition": 0,
   "originalOffset": "12345",
   "error": {

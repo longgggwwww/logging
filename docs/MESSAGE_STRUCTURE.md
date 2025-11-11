@@ -383,7 +383,7 @@ const errorLog = {
 };
 
 await producer.send({
-  topic: 'error-logs',
+  topic: 'logs',
   messages: [{
     value: JSON.stringify(errorLog)
   }]

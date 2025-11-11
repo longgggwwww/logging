@@ -14,9 +14,9 @@ WebSocket service for pushing real-time log messages to web-app clients.
 ```env
 # Kafka Configuration
 KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
-KAFKA_MAIN_TOPIC=error-logs
-KAFKA_DLQ_TOPIC=error-logs-dlq
-KAFKA_RETRY_TOPIC=error-logs-retry
+KAFKA_MAIN_TOPIC=logs
+KAFKA_DLQ_TOPIC=logs-dlq
+KAFKA_RETRY_TOPIC=logs-retry
 
 # WebSocket Configuration
 SOCKET_PORT=8080

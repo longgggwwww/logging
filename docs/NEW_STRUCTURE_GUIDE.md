@@ -169,7 +169,7 @@ const logToKafka = async (req, res, type, message, additionalData = {}) => {
   };
 
   await producer.send({
-    topic: 'error-logs',
+    topic: 'logs',
     messages: [{ value: JSON.stringify(log) }]
   });
 };
@@ -249,7 +249,7 @@ export class LoggingInterceptor implements NestInterceptor {
       latency: Date.now() - startTime
     };
 
-    await this.kafkaService.send('error-logs', log);
+    await this.kafkaService.send('logs', log);
   }
 }
 ```
@@ -309,7 +309,7 @@ class LogMiddleware:
                     "latency": latency
                 }
                 
-                self.producer.send('error-logs', value=log_data)
+                self.producer.send('logs', value=log_data)
                 
             await send(message)
 
@@ -359,9 +359,9 @@ node test-producer.js
 ## ⚙️ Configuration
 
 ### Kafka Topics
-- `error-logs`: Topic chính
-- `error-logs-retry`: Topic retry
-- `error-logs-dlq`: Dead letter queue
+- `logs`: Topic chính
+- `logs-retry`: Topic retry
+- `logs-dlq`: Dead letter queue
 
 ### Consumer Groups
 - `discord-group`: Discord webhook consumer
