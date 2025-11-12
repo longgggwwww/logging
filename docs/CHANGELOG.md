@@ -1,8 +1,68 @@
-# 🔄 Changelog - Message Structure Update
+# Changelog
 
-## 📅 Date: October 12, 2025
+All notable changes to this project will be documented in this file.
 
-## 🎯 Mục đích
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2025-11-12
+
+### 🎉 Initial Release
+
+This is the first stable release of the Log Monitoring System - a comprehensive microservices-based solution for real-time log monitoring and alerting.
+
+### ✨ Features
+
+#### Core Services
+- **API Service**: RESTful API for log management and querying
+- **Processor Service**: Real-time log processing from Kafka streams
+- **Realtime Service**: WebSocket server for live log streaming
+- **Discord Bot**: Automated alerting via Discord
+- **FCM Service**: Push notifications via Firebase Cloud Messaging
+- **Web Application**: Modern React-based UI for log visualization
+
+#### Infrastructure
+- Kafka-based message streaming architecture
+- PostgreSQL database with TimescaleDB for time-series data
+- Redis for caching and session management
+- Docker Compose orchestration
+- Comprehensive CI/CD pipelines (GitHub Actions & GitLab CI)
+
+#### Log Processing
+- Multi-level log support (INFO, WARNING, ERROR)
+- Rich log metadata and structured logging
+- Stack trace capture and analysis
+- User and request tracking
+- Custom additional data fields
+
+#### Monitoring & Alerting
+- Real-time log streaming via WebSocket
+- Discord webhook integration
+- Push notifications via FCM
+- Advanced filtering and search capabilities
+
+### 📚 Documentation
+- Complete architecture documentation
+- API quick start guide
+- CI/CD setup guides for GitHub and GitLab
+- Docker Compose architecture diagrams
+- Migration and workspace setup guides
+
+### � Technical Stack
+- **Backend**: Node.js with TypeScript
+- **Frontend**: React with Ant Design Pro
+- **Message Queue**: Apache Kafka
+- **Database**: PostgreSQL with TimescaleDB
+- **Cache**: Redis
+- **Containerization**: Docker & Docker Compose
+
+---
+
+## Previous Updates
+
+### Message Structure Update - October 12, 2025
+
+#### 🎯 Mục đích
 Cập nhật hệ thống để xử lý message lỗi theo cấu trúc mới với đầy đủ metadata và fields bổ sung.
 
 ## 📊 Cấu trúc Message Mới
