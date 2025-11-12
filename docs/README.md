@@ -93,6 +93,14 @@ Hệ thống logging phân tán sử dụng Kafka, Discord webhook và Firebase 
 #### Other
 - **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - NPM workspaces migration guide
 
+### 💾 MongoDB Backup System Documentation
+- **[MONGODB_BACKUP_GUIDE.md](./MONGODB_BACKUP_GUIDE.md)** - 📖 Complete user guide with setup instructions
+- **[MONGODB_BACKUP_IMPLEMENTATION.md](./MONGODB_BACKUP_IMPLEMENTATION.md)** - 🔧 Technical implementation details
+- **[MONGODB_BACKUP_QUICK_REF.md](./MONGODB_BACKUP_QUICK_REF.md)** - ⚡ Quick reference for daily operations
+- **[MONGODB_BACKUP_ENV_UPDATE.md](./MONGODB_BACKUP_ENV_UPDATE.md)** - ⚙️ Environment configuration guide
+- **[MONGODB_BACKUP_PERMISSION_FIX.md](./MONGODB_BACKUP_PERMISSION_FIX.md)** - 🔒 Permission troubleshooting
+- **[MONGODB_BACKUP_COMPLETE.md](./MONGODB_BACKUP_COMPLETE.md)** - ✅ Implementation completion summary
+
 ### 📊 Log Processor Service Documentation
 - **[LOG_PROCESSOR_IMPLEMENTATION.md](./LOG_PROCESSOR_IMPLEMENTATION.md)** - ✨ Complete implementation summary
 - **[LOG_PROCESSOR_SUMMARY.md](./LOG_PROCESSOR_SUMMARY.md)** - Technical summary
