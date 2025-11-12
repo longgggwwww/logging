@@ -7,3 +7,6 @@ service-account.json
 
 # Environment
 .env
+
+# MongoDB Backups
+backups/
