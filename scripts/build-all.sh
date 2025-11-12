@@ -19,6 +19,7 @@ SERVICES=(
   "fcm"
   "processor"
   "realtime"
+  "web-app"
 )
 
 if [ "$1" == "--parallel" ]; then
